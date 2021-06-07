@@ -37,7 +37,7 @@
 			<artifactId>plugin-rdbms-util</artifactId>
 			<version>${datax-project-version}</version>
 		</dependency>
-
+<!--
 		<dependency>
 			<groupId>com.oracle</groupId>
 			<artifactId>ojdbc6</artifactId>
@@ -45,7 +45,7 @@
 			<scope>system</scope>
             <systemPath>${basedir}/src/main/lib/ojdbc6-11.2.0.3.jar</systemPath>
 		</dependency>
-
+-->
 	</dependencies>
 	<build>
 		<plugins>
