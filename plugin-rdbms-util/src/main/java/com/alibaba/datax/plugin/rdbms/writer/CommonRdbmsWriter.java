@@ -341,6 +341,9 @@ public class CommonRdbmsWriter {
         public void destroy(Configuration writerSliceConfig) {
         }
 
+        private static final int MAX_BATCH_INSERT_COUNT = 30;
+        int batchInsertFaildCount = 0;
+
         protected void doBatchInsert(Connection connection, List<Record> buffer)
                 throws SQLException {
             PreparedStatement preparedStatement = null;
@@ -357,6 +360,9 @@ public class CommonRdbmsWriter {
                 preparedStatement.executeBatch();
                 connection.commit();
             } catch (SQLException e) {
+                if (++batchInsertFaildCount > MAX_BATCH_INSERT_COUNT) {
+                    throw e;
+                }
                 LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
                 connection.rollback();
                 doOneInsert(connection, buffer);
