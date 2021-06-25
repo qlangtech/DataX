@@ -51,19 +51,19 @@
         </dependency>
        -->
 
-        <dependency>
-            <groupId>com.alipay.oceanbase</groupId>
-            <artifactId>oceanbase-connector-java</artifactId>
-            <version>3.2.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/src/main/libs/oceanbase-connector-java-3.2.0.jar</systemPath>
-            <exclusions>
-            <exclusion>
-                <groupId>com.alipay.oceanbase</groupId>
-                <artifactId>oceanbase-client</artifactId>
-            </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.alipay.oceanbase</groupId>-->
+<!--            <artifactId>oceanbase-connector-java</artifactId>-->
+<!--            <version>3.2.0</version>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${basedir}/src/main/libs/oceanbase-connector-java-3.2.0.jar</systemPath>-->
+<!--            <exclusions>-->
+<!--            <exclusion>-->
+<!--                <groupId>com.alipay.oceanbase</groupId>-->
+<!--                <artifactId>oceanbase-client</artifactId>-->
+<!--            </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
 		<dependency>
 		  <groupId>log4j</groupId>

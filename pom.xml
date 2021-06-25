@@ -100,7 +100,7 @@
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>
         <module>oscarwriter</module>
-        <module>oceanbasev10writer</module>
+<!--        <module>oceanbasev10writer</module>-->
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
         <module>plugin-unstructured-storage-util</module>

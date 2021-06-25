@@ -26,8 +26,8 @@ public class ClickhouseWriter extends Writer {
 	private static final DataBaseType DATABASE_TYPE = DataBaseType.ClickHouse;
 
 	public static class Job extends Writer.Job {
-		private Configuration originalConfig = null;
-		private CommonRdbmsWriter.Job commonRdbmsWriterMaster;
+		protected Configuration originalConfig = null;
+		protected CommonRdbmsWriter.Job commonRdbmsWriterMaster;
 
 		@Override
 		public void init() {
@@ -58,9 +58,9 @@ public class ClickhouseWriter extends Writer {
 	}
 
 	public static class Task extends Writer.Task {
-		private Configuration writerSliceConfig;
+		protected Configuration writerSliceConfig;
 
-		private CommonRdbmsWriter.Task commonRdbmsWriterSlave;
+		protected CommonRdbmsWriter.Task commonRdbmsWriterSlave;
 
 		@Override
 		public void init() {
