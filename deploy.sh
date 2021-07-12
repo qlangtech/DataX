@@ -1,0 +1,1 @@
+mvn compile deploy -DaltDeploymentRepository=base::default::http://localhost:8080/snapshot

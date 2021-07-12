@@ -46,7 +46,7 @@ public abstract class AbstractDFSUtil {
     private String specifiedFileType = null;
     private HashSet<String> sourceHDFSAllFilesList = new HashSet<String>();
 
-    protected final org.apache.hadoop.conf.Configuration hadoopConf ;
+    protected final org.apache.hadoop.conf.Configuration hadoopConf;
 
     protected abstract FileSystem getFileSystem() throws IOException;
 
@@ -641,7 +641,7 @@ public abstract class AbstractDFSUtil {
         return sourceHDFSAllFilesList;
     }
 
-    private enum Type {
+    enum Type {
         STRING, LONG, BOOLEAN, DOUBLE, DATE,
     }
 }
