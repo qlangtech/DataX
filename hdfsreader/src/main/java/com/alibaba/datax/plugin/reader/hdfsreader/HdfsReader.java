@@ -39,7 +39,7 @@ public class HdfsReader extends Reader {
         private String encoding = null;
         private HashSet<String> sourceFiles;
         private String specifiedFileType = null;
-        private DFSUtil dfsUtil = null;
+        private AbstractDFSUtil dfsUtil = null;
         private List<String> path = null;
 
         @Override
@@ -48,9 +48,13 @@ public class HdfsReader extends Reader {
             LOG.info("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
             this.validate();
-            dfsUtil = new DFSUtil(this.readerOriginConfig);
+            dfsUtil = createDfsUtil();
             LOG.info("init() ok and end...");
 
+        }
+
+        protected DFSUtil createDfsUtil() {
+            return new DFSUtil(this.readerOriginConfig);
         }
 
         public void validate(){
@@ -231,7 +235,7 @@ public class HdfsReader extends Reader {
         private List<String> sourceFiles;
         private String specifiedFileType;
         private String encoding;
-        private DFSUtil dfsUtil = null;
+        private AbstractDFSUtil dfsUtil = null;
         private int bufferSize;
 
         @Override
@@ -241,9 +245,13 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.specifiedFileType = this.taskConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
             this.encoding = this.taskConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING, "UTF-8");
-            this.dfsUtil = new DFSUtil(this.taskConfig);
+            this.dfsUtil = createDfsUtil();
             this.bufferSize = this.taskConfig.getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.BUFFER_SIZE,
                     com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_BUFFER_SIZE);
+        }
+
+        protected DFSUtil createDfsUtil() {
+            return new DFSUtil(this.taskConfig);
         }
 
         @Override
