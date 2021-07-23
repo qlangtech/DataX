@@ -35,7 +35,7 @@ public class HdfsReader extends Reader {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        private Configuration readerOriginConfig = null;
+        protected Configuration readerOriginConfig = null;
         private String encoding = null;
         private HashSet<String> sourceFiles;
         private String specifiedFileType = null;
@@ -53,7 +53,7 @@ public class HdfsReader extends Reader {
 
         }
 
-        protected DFSUtil createDfsUtil() {
+        protected AbstractDFSUtil createDfsUtil() {
             return new DFSUtil(this.readerOriginConfig);
         }
 
@@ -231,7 +231,7 @@ public class HdfsReader extends Reader {
     public static class Task extends Reader.Task {
 
         private static Logger LOG = LoggerFactory.getLogger(Reader.Task.class);
-        private Configuration taskConfig;
+        protected Configuration taskConfig;
         private List<String> sourceFiles;
         private String specifiedFileType;
         private String encoding;
@@ -250,7 +250,7 @@ public class HdfsReader extends Reader {
                     com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_BUFFER_SIZE);
         }
 
-        protected DFSUtil createDfsUtil() {
+        protected AbstractDFSUtil createDfsUtil() {
             return new DFSUtil(this.taskConfig);
         }
 
