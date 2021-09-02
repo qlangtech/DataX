@@ -3,9 +3,7 @@ package com.alibaba.datax.plugin.writer.clickhousewriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum ClickhouseWriterErrorCode implements ErrorCode {
-    TUPLE_NOT_SUPPORTED_ERROR("ClickhouseWriter-00", "不支持TUPLE类型导入."),
-    REQUIRED_DATAX_PARAM_ERROR("ClickhouseWriter-01", "config param 'dataxName' is required"),
-    REQUIRED_TABLE_NAME_PARAM_ERROR("ClickhouseWriter-02", "config param 'tableName' is required");
+    TUPLE_NOT_SUPPORTED_ERROR("ClickhouseWriter-00", "不支持TUPLE类型导入.");
 
     private final String code;
     private final String description;

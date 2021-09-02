@@ -14,6 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -50,6 +52,25 @@ public class LoadUtil {
      * jarLoader的缓冲
      */
     private static Map<String, JarLoader> jarLoaderCenter = new HashMap<String, JarLoader>();
+//    public static void clearJarLoaderCenter() {
+//        jarLoaderCenter.clear();
+//    }
+//    public static void setJarLoader(String pluginKey,JarLoader classLoader){
+//        jarLoaderCenter.put(pluginKey, classLoader);
+//    }
+
+    public static void initializeJarClassLoader(Set<String> pluginKeys, JarLoader classLoader) {
+        // Map<String, JarLoader> jarLoaderCenter = (Map<String, JarLoader>) jarLoaderCenterField.get(null);
+        jarLoaderCenter.clear();
+
+        for (String pluginKey : pluginKeys) {
+            jarLoaderCenter.put(pluginKey, classLoader);
+        }
+//        jarLoaderCenter.put(this.getPluginReaderKey(), classLoader);
+//        jarLoaderCenter.put(this.getPluginWriterKey(), classLoader);
+        // jarLoaderCenter;
+        Objects.requireNonNull(jarLoaderCenter, "jarLoaderCenter can not be null");
+    }
 
     /**
      * 设置pluginConfigs，方便后面插件来获取
