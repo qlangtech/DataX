@@ -55,7 +55,7 @@ public class Engine {
         int taskGroupId = -1;
         if (isJob) {
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
-            container = new JobContainer(allConf);
+            container = createJobContainer(allConf);
             instanceId = allConf.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 
@@ -91,6 +91,10 @@ public class Engine {
         perfTrace.setJobInfo(jobInfoConfig, perfReportEnable, channelNumber);
         container.start();
         return container;
+    }
+
+    protected JobContainer createJobContainer(Configuration allConf) {
+        return new JobContainer(allConf);
     }
 
 

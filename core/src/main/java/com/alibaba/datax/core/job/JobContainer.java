@@ -142,7 +142,7 @@ public class JobContainer extends AbstractContainer {
 
                 AbstractContainerCommunicator tempContainerCollector;
                 // standalone
-                tempContainerCollector = new StandAloneJobContainerCommunicator(configuration);
+                tempContainerCollector = createContainerCommunicator(configuration);
 
                 super.setContainerCommunicator(tempContainerCollector);
             }
@@ -550,10 +550,13 @@ public class JobContainer extends AbstractContainer {
 
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
-        AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
+        AbstractContainerCommunicator containerCommunicator = createContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
-
         return new StandAloneScheduler(containerCommunicator);
+    }
+
+    protected StandAloneJobContainerCommunicator createContainerCommunicator(Configuration configuration) {
+        return new StandAloneJobContainerCommunicator(configuration);
     }
 
     private void post() {
