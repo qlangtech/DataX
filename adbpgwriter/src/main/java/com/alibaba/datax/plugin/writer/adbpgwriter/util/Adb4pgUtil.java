@@ -34,11 +34,9 @@ public class Adb4pgUtil {
             throw new Adb4pgClientException(Adb4pgClientException.CONFIG_ERROR, "Check config exception: " + e.getMessage(), null);
         }
     }
-
     public static DatabaseConfig convertConfiguration(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.USERNAME, COLUMN_SPLIT_ERROR);
         originalConfig.getNecessaryValue(Key.PASSWORD, COLUMN_SPLIT_ERROR);
-
 
         String userName = originalConfig.getString(Key.USERNAME);
         String passWord = originalConfig.getString(Key.PASSWORD);
