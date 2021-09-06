@@ -6,6 +6,7 @@ import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public final class OriginalConfPretreatmentUtil {
 //        doPretreatment(originalConfig,null);
 //    }
 
-    public static void doPretreatment(Configuration originalConfig, DataBaseType dataBaseType) {
+    public static void doPretreatment(Configuration originalConfig, IDataSourceFactoryGetter dataSourceFactoryGetter, DataBaseType dataBaseType) {
         // 检查 username/password 配置（必填）
         originalConfig.getNecessaryValue(Key.USERNAME, DBUtilErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.PASSWORD, DBUtilErrorCode.REQUIRED_VALUE);
@@ -32,7 +33,7 @@ public final class OriginalConfPretreatmentUtil {
 
         simplifyConf(originalConfig);
 
-        dealColumnConf(originalConfig);
+        dealColumnConf(dataSourceFactoryGetter, originalConfig);
         dealWriteMode(originalConfig, dataBaseType);
     }
 
@@ -99,10 +100,10 @@ public final class OriginalConfPretreatmentUtil {
         } else {
             boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
             List<String> allColumns;
-            if (isPreCheck){
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
-            }else{
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            if (isPreCheck) {
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+            } else {
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
             }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -122,12 +123,12 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                DBUtil.getColumnMetaData(connectionFactory.getConnecttion(), oneTable,StringUtils.join(userConfiguredColumns, ","));
+                DBUtil.getColumnMetaData(connectionFactory.getConnecttion(), oneTable, StringUtils.join(userConfiguredColumns, ","));
             }
         }
     }
 
-    public static void dealColumnConf(Configuration originalConfig) {
+    public static void dealColumnConf(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL));
 
@@ -136,7 +137,7 @@ public final class OriginalConfPretreatmentUtil {
         String oneTable = originalConfig.getString(String.format(
                 "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
-        JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(DATABASE_TYPE, jdbcUrl, username, password);
+        JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(dataSourceFactoryGetter, jdbcUrl, username, password);
         dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
     }
 
@@ -160,7 +161,7 @@ public final class OriginalConfPretreatmentUtil {
             forceUseUpdate = true;
         }
 
-        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode,dataBaseType, forceUseUpdate);
+        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode, dataBaseType, forceUseUpdate);
 
         LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]", writeDataSqlTemplate, jdbcUrl);
 

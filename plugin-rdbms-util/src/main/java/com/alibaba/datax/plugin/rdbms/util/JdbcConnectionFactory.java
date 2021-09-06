@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+
 import java.sql.Connection;
 
 /**
@@ -7,7 +9,7 @@ import java.sql.Connection;
  */
 public class JdbcConnectionFactory implements ConnectionFactory {
 
-    private DataBaseType dataBaseType;
+    private IDataSourceFactoryGetter dataBaseType;
 
     private String jdbcUrl;
 
@@ -15,7 +17,7 @@ public class JdbcConnectionFactory implements ConnectionFactory {
 
     private String password;
 
-    public JdbcConnectionFactory(DataBaseType dataBaseType, String jdbcUrl, String userName, String password) {
+    public JdbcConnectionFactory(IDataSourceFactoryGetter dataBaseType, String jdbcUrl, String userName, String password) {
         this.dataBaseType = dataBaseType;
         this.jdbcUrl = jdbcUrl;
         this.userName = userName;

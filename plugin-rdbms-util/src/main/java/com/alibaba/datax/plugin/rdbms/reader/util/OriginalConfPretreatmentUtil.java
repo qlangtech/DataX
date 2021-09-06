@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ public final class OriginalConfPretreatmentUtil {
 
     public static DataBaseType DATABASE_TYPE;
 
-    public static void doPretreatment(Configuration originalConfig) {
+    public static void doPretreatment(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
         // 检查 username/password 配置（必填）
         originalConfig.getNecessaryValue(Key.USERNAME,
                 DBUtilErrorCode.REQUIRED_VALUE);
@@ -30,15 +31,15 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         dealWhere(originalConfig);
 
-        simplifyConf(originalConfig);
+        simplifyConf(dataSourceFactoryGetter, originalConfig);
     }
 
     public static void dealWhere(Configuration originalConfig) {
         String where = originalConfig.getString(Key.WHERE, null);
-        if(StringUtils.isNotBlank(where)) {
+        if (StringUtils.isNotBlank(where)) {
             String whereImprove = where.trim();
-            if(whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
-                whereImprove = whereImprove.substring(0,whereImprove.length()-1);
+            if (whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
+                whereImprove = whereImprove.substring(0, whereImprove.length() - 1);
             }
             originalConfig.set(Key.WHERE, whereImprove);
         }
@@ -52,21 +53,21 @@ public final class OriginalConfPretreatmentUtil {
      * <li>对 table 模式，确定分表个数，并处理 column 转 *事项</li>
      * </ol>
      */
-    private static void simplifyConf(Configuration originalConfig) {
+    private static void simplifyConf(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
         boolean isTableMode = recognizeTableOrQuerySqlMode(originalConfig);
         originalConfig.set(Constant.IS_TABLE_MODE, isTableMode);
 
-        dealJdbcAndTable(originalConfig);
+        dealJdbcAndTable(dataSourceFactoryGetter, originalConfig);
 
-        dealColumnConf(originalConfig);
+        dealColumnConf(dataSourceFactoryGetter, originalConfig);
     }
 
-    private static void dealJdbcAndTable(Configuration originalConfig) {
+    private static void dealJdbcAndTable(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
         boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
-        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN,false);
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
@@ -86,10 +87,10 @@ public final class OriginalConfPretreatmentUtil {
 
             String jdbcUrl;
             if (isPreCheck) {
-                jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(DATABASE_TYPE, jdbcUrls,
+                jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(dataSourceFactoryGetter, jdbcUrls,
                         username, password, preSql, checkSlave);
             } else {
-                jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
+                jdbcUrl = DBUtil.chooseJdbcUrl(dataSourceFactoryGetter, jdbcUrls,
                         username, password, preSql, checkSlave);
             }
 
@@ -99,7 +100,7 @@ public final class OriginalConfPretreatmentUtil {
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.JDBC_URL), jdbcUrl);
 
-            LOG.info("Available jdbcUrl:{}.",jdbcUrl);
+            LOG.info("Available jdbcUrl:{}.", jdbcUrl);
 
             if (isTableMode) {
                 // table 方式
@@ -127,7 +128,7 @@ public final class OriginalConfPretreatmentUtil {
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
     }
 
-    private static void dealColumnConf(Configuration originalConfig) {
+    private static void dealColumnConf(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
 
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN,
@@ -157,7 +158,7 @@ public final class OriginalConfPretreatmentUtil {
                             "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
                     List<String> allColumns = DBUtil.getTableColumns(
-                            DATABASE_TYPE, jdbcUrl, username, password,
+                            DATABASE_TYPE, dataSourceFactoryGetter, jdbcUrl, username, password,
                             tableName);
                     LOG.info("table:[{}] has columns:[{}].",
                             tableName, StringUtils.join(allColumns, ","));

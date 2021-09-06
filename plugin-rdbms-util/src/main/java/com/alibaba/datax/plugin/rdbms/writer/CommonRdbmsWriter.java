@@ -12,6 +12,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class CommonRdbmsWriter {
 
     public static class Job {
         private DataBaseType dataBaseType;
+        private IDataSourceFactoryGetter dataSourceFactoryGetter;
 
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
@@ -38,11 +40,13 @@ public class CommonRdbmsWriter {
         }
 
         public void init(Configuration originalConfig) {
-            OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataBaseType);
+            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataSourceFactoryGetter ,this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                     originalConfig.toJSON());
         }
+
 
         /*目前只支持MySQL Writer跟Oracle Writer;检查PreSQL跟PostSQL语法以及insert，delete权限*/
         public void writerPreCheck(Configuration originalConfig, DataBaseType dataBaseType) {
@@ -69,14 +73,14 @@ public class CommonRdbmsWriter {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType, jdbcUrl, username, password, expandedTables);
+                boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataSourceFactoryGetter, jdbcUrl, username, password, expandedTables);
 
                 if (!hasInsertPri) {
                     throw RdbmsException.asInsertPriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                 }
 
                 if (DBUtil.needCheckDeletePrivilege(originalConfig)) {
-                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType, jdbcUrl, username, password, expandedTables);
+                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataSourceFactoryGetter, jdbcUrl, username, password, expandedTables);
                     if (!hasDeletePri) {
                         throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                     }
@@ -113,8 +117,7 @@ public class CommonRdbmsWriter {
                     // 说明有 preSql 配置，则此处删除掉
                     originalConfig.remove(Key.PRE_SQL);
 
-                    Connection conn = DBUtil.getConnection(dataBaseType,
-                            jdbcUrl, username, password);
+                    Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, username, password);
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
@@ -153,8 +156,7 @@ public class CommonRdbmsWriter {
                     // 说明有 postSql 配置，则此处删除掉
                     originalConfig.remove(Key.POST_SQL);
 
-                    Connection conn = DBUtil.getConnection(this.dataBaseType,
-                            jdbcUrl, username, password);
+                    Connection conn = DBUtil.getConnection(this.dataSourceFactoryGetter, jdbcUrl, username, password);
 
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
@@ -175,6 +177,7 @@ public class CommonRdbmsWriter {
                 .getLogger(Task.class);
 
         protected DataBaseType dataBaseType;
+        private IDataSourceFactoryGetter dataSourceFactoryGetter;
         private static final String VALUE_HOLDER = "?";
 
         protected String username;
@@ -237,13 +240,13 @@ public class CommonRdbmsWriter {
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
             this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
 
-            BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
-                    this.jdbcUrl, this.table);
+            BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
+
+            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig);
         }
 
         public void prepare(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
+            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username, password);
 
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     this.dataBaseType, BASIC_MESSAGE);
@@ -312,7 +315,7 @@ public class CommonRdbmsWriter {
         public void startWrite(RecordReceiver recordReceiver,
                                Configuration writerSliceConfig,
                                TaskPluginCollector taskPluginCollector) {
-            Connection connection = DBUtil.getConnection(this.dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter,
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     this.dataBaseType, BASIC_MESSAGE);
@@ -329,7 +332,7 @@ public class CommonRdbmsWriter {
                 return;
             }
 
-            Connection connection = DBUtil.getConnection(this.dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter,
                     this.jdbcUrl, username, password);
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
@@ -581,4 +584,6 @@ public class CommonRdbmsWriter {
             return VALUE_HOLDER;
         }
     }
+
+
 }
