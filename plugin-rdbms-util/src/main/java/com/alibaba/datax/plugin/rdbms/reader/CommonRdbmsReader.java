@@ -37,7 +37,7 @@ public class CommonRdbmsReader {
 
     public static class Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
-        private IDataSourceFactoryGetter dataSourceFactoryGetter;
+        public IDataSourceFactoryGetter dataSourceFactoryGetter;
 
         public Job(DataBaseType dataBaseType) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
@@ -115,7 +115,7 @@ public class CommonRdbmsReader {
         protected final byte[] EMPTY_CHAR_ARRAY = new byte[0];
 
         private DataBaseType dataBaseType;
-        private IDataSourceFactoryGetter readerDataSourceFactoryGetter;
+        protected IDataSourceFactoryGetter readerDataSourceFactoryGetter;
         private int taskGroupId = -1;
         private int taskId = -1;
 

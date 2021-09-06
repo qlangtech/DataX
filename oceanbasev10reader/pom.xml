@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>datax-all</artifactId>
         <groupId>com.alibaba.datax</groupId>
@@ -12,6 +13,10 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>com.qlangtech.tis</groupId>
+            <artifactId>tis-plugin</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-common</artifactId>
@@ -31,12 +36,12 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-		<dependency>
-			<groupId>com.alibaba.datax</groupId>
-			<artifactId>plugin-rdbms-util</artifactId>
-			<version>${datax-project-version}</version>
-		</dependency>
-		<dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>plugin-rdbms-util</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.40</version>

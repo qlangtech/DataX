@@ -3,17 +3,11 @@ package com.alibaba.datax.plugin.writer.adbpgwriter.util;
 import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClient;
 import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClientException;
 import com.alibaba.cloud.analyticdb.adb4pgclient.DatabaseConfig;
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +23,7 @@ public class Adb4pgUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(Adb4pgUtil.class);
     private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
+
     public static void checkConfig(Configuration originalConfig) {
         try {
 
@@ -74,7 +69,7 @@ public class Adb4pgUtil {
     private static Map<String, List<String>> splitBySchemaName(List<String> tables) {
         HashMap<String, List<String>> res = new HashMap<String, List<String>>(16);
 
-        for (String schemaNameTableName: tables) {
+        for (String schemaNameTableName : tables) {
             String[] s = schemaNameTableName.split("\\.");
             if (!res.containsKey(s[0])) {
                 res.put(s[0], new ArrayList<String>());
@@ -90,7 +85,9 @@ public class Adb4pgUtil {
         String userName = conf.getString(Key.USERNAME);
         String passWord = conf.getString(Key.PASSWORD);
 
-        return DBUtil.getConnection(DataBaseType.PostgreSQL, generateJdbcUrl(conf), userName, passWord);
+        com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(conf);
+
+        return DBUtil.getConnection(dsFactoryGetter, generateJdbcUrl(conf), userName, passWord);
 
     }
 
@@ -102,6 +99,7 @@ public class Adb4pgUtil {
         return jdbcUrl;
 
     }
+
     public static void prepare(Configuration originalConfig) {
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                 String.class);
@@ -136,7 +134,7 @@ public class Adb4pgUtil {
 
         configuration.remove(Key.POST_SQL);
 
-        Connection conn =  getAdbpgConnect(configuration);
+        Connection conn = getAdbpgConnect(configuration);
 
         WriterUtil.executeSqls(conn, renderedPostSqls, generateJdbcUrl(configuration), DATABASE_TYPE);
         DBUtil.closeDBResources(null, null, conn);

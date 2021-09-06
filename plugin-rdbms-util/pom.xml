@@ -10,17 +10,13 @@
     <name>plugin-rdbms-util</name>
     <packaging>jar</packaging>
 
-    <properties>
-        <tis.version>2.3.0</tis.version>
-    </properties>
+
 
     <dependencies>
 
         <dependency>
             <groupId>com.qlangtech.tis</groupId>
             <artifactId>tis-plugin</artifactId>
-            <version>${tis.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>

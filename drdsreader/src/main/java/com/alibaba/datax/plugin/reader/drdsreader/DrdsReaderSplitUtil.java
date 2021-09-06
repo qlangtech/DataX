@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class DrdsReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(DrdsReaderSplitUtil.class);
 
-    public static List<Configuration> doSplit(Configuration originalSliceConfig,
+    public static List<Configuration> doSplit(IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig,
                                               int adviceNumber) {
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int tableNumber = originalSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
@@ -36,16 +37,16 @@ public class DrdsReaderSplitUtil {
             originalSliceConfig.set(Key.JDBC_URL, DataBaseType.DRDS.appendJDBCSuffixForReader(jdbcUrl));
 
             originalSliceConfig.remove(Constant.CONN_MARK);
-            return doDrdsReaderSplit(originalSliceConfig);
+            return doDrdsReaderSplit(dataBaseType, originalSliceConfig);
         } else {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR, "您的配置信息中的表(table)的配置有误. 因为Drdsreader 只需要读取一张逻辑表,后台会通过DRDS Proxy自动获取实际对应物理表的数据. 请检查您的配置并作出修改.");
         }
     }
 
-    private static List<Configuration> doDrdsReaderSplit(Configuration originalSliceConfig) {
+    private static List<Configuration> doDrdsReaderSplit(IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig) {
         List<Configuration> splittedConfigurations = new ArrayList<Configuration>();
 
-        Map<String, List<String>> topology = getTopology(originalSliceConfig);
+        Map<String, List<String>> topology = getTopology(dataBaseType, originalSliceConfig);
         if (null == topology || topology.isEmpty()) {
             throw DataXException.asDataXException(DrdsReaderErrorCode.GET_TOPOLOGY_FAILED,
                     "获取 drds 表拓扑结构失败, 拓扑结构不能为空.");
@@ -84,7 +85,7 @@ public class DrdsReaderSplitUtil {
     }
 
 
-    private static Map<String, List<String>> getTopology(Configuration configuration) {
+    private static Map<String, List<String>> getTopology(IDataSourceFactoryGetter dataBaseType, Configuration configuration) {
         Map<String, List<String>> topology = new HashMap<String, List<String>>();
 
         String jdbcURL = configuration.getString(Key.JDBC_URL);
@@ -95,7 +96,7 @@ public class DrdsReaderSplitUtil {
         Connection conn = null;
         ResultSet rs = null;
         try {
-            conn = DBUtil.getConnection(DataBaseType.DRDS, jdbcURL, username, password);
+            conn = DBUtil.getConnection(dataBaseType, jdbcURL, username, password);
             rs = DBUtil.query(conn, "SHOW TOPOLOGY " + logicTable);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String groupName = rs.getString("GROUP_NAME");
