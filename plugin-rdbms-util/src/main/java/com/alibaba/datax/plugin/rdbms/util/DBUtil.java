@@ -631,8 +631,9 @@ public final class DBUtil {
                 return true;
             }
         } catch (Exception e) {
-            LOG.warn("test connection of [{}] failed, for {}.", url,
-                    e.getMessage());
+//            LOG.warn("test connection of [{}] failed, for {}.", url,
+//                    e.getMessage());
+            throw new RuntimeException("test connection of [" + url + "] failed", e);
         } finally {
             DBUtil.closeDBResources(null, connection);
         }
@@ -669,8 +670,7 @@ public final class DBUtil {
 
     public static ResultSet query(Connection conn, String sql)
             throws SQLException {
-        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
+        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         //默认3600 seconds
         stmt.setQueryTimeout(Constant.SOCKET_TIMEOUT_INSECOND);
         return query(stmt, sql);

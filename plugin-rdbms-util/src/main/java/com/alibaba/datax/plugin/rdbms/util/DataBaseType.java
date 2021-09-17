@@ -34,9 +34,9 @@ public enum DataBaseType {
         this.driverClassName = driverClassName;
     }
 
-    public String getDriverClassName() {
-        return this.driverClassName;
-    }
+//    public String getDriverClassName() {
+//        return this.driverClassName;
+//    }
 
     public String appendJDBCSuffixForReader(String jdbc) {
         String result = jdbc;
