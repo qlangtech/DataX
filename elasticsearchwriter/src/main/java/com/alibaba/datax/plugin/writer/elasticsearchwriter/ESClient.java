@@ -16,6 +16,7 @@ import io.searchbox.indices.DeleteIndex;
 import io.searchbox.indices.IndicesExists;
 import io.searchbox.indices.aliases.*;
 import io.searchbox.indices.mapping.PutMapping;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +40,12 @@ public class ESClient {
     }
 
     public void createClient(String endpoint,
-                                   String user,
-                                   String passwd,
-                                   boolean multiThread,
-                                   int readTimeout,
-                                   boolean compression,
-                                   boolean discovery) {
+                             String user,
+                             String passwd,
+                             boolean multiThread,
+                             int readTimeout,
+                             boolean compression,
+                             boolean discovery) {
 
         JestClientFactory factory = new JestClientFactory();
         Builder httpClientConfig = new HttpClientConfig
@@ -58,7 +59,8 @@ public class ESClient {
                 .discoveryEnabled(discovery)
                 .discoveryFrequency(5l, TimeUnit.MINUTES);
 
-        if (!("".equals(user) || "".equals(passwd))) {
+        //if (!("".equals(user) || "".equals(passwd))) {
+        if (StringUtils.isNotBlank(user) && StringUtils.isNotBlank(passwd)) {
             httpClientConfig.defaultCredentials(user, passwd);
         }
 
@@ -108,11 +110,13 @@ public class ESClient {
             rst = jestClient.execute(
                     new CreateIndex.Builder(indexName)
                             .settings(settings)
+                            .mappings(String.valueOf(mappings))
                             .setParameter("master_timeout", "5m")
                             .build()
             );
             //index_already_exists_exception
             if (!rst.isSucceeded()) {
+                log.error("createIndex faild:{} ", rst.getErrorMessage());
                 if (getStatus(rst) == 400) {
                     log.info(String.format("index [%s] already exists", indexName));
                     return true;
@@ -124,36 +128,35 @@ public class ESClient {
                 log.info(String.format("create [%s] index success", indexName));
             }
         }
-
-        int idx = 0;
-        while (idx < 5) {
-            if (indicesExists(indexName)) {
-                break;
-            }
-            Thread.sleep(2000);
-            idx ++;
-        }
-        if (idx >= 5) {
-            return false;
-        }
-
-        if (dynamic) {
-            log.info("ignore mappings");
-            return true;
-        }
-        log.info("create mappings for " + indexName + "  " + mappings);
-        rst = jestClient.execute(new PutMapping.Builder(indexName, typeName, mappings)
-                .setParameter("master_timeout", "5m").build());
-        if (!rst.isSucceeded()) {
-            if (getStatus(rst) == 400) {
-                log.info(String.format("index [%s] mappings already exists", indexName));
-            } else {
-                log.error(rst.getErrorMessage());
-                return false;
-            }
-        } else {
-            log.info(String.format("index [%s] put mappings success", indexName));
-        }
+//        int idx = 0;
+//        while (idx < 5) {
+//            if (indicesExists(indexName)) {
+//                break;
+//            }
+//            Thread.sleep(2000);
+//            idx++;
+//        }
+//        if (idx >= 5) {
+//            return false;
+//        }
+//
+//        if (dynamic) {
+//            log.info("ignore mappings");
+//            return true;
+//        }
+//        log.info("create mappings for " + indexName + "  " + mappings);
+//        rst = jestClient.execute(new PutMapping.Builder(indexName, typeName, mappings)
+//                .setParameter("master_timeout", "5m").build());
+//        if (!rst.isSucceeded()) {
+//            if (getStatus(rst) == 400) {
+//                log.info(String.format("index [%s] mappings already exists", indexName));
+//            } else {
+//                log.error(rst.getErrorMessage());
+//                return false;
+//            }
+//        } else {
+//            log.info(String.format("index [%s] put mappings success", indexName));
+//        }
         return true;
     }
 
@@ -188,8 +191,8 @@ public class ESClient {
         List<AliasMapping> list = new ArrayList<AliasMapping>();
         if (rst.isSucceeded()) {
             JsonParser jp = new JsonParser();
-            JsonObject jo = (JsonObject)jp.parse(rst.getJsonString());
-            for(Map.Entry<String, JsonElement> entry : jo.entrySet()){
+            JsonObject jo = (JsonObject) jp.parse(rst.getJsonString());
+            for (Map.Entry<String, JsonElement> entry : jo.entrySet()) {
                 String tindex = entry.getKey();
                 if (indexname.equals(tindex)) {
                     continue;
@@ -226,7 +229,6 @@ public class ESClient {
 
     /**
      * 关闭JestClient客户端
-     *
      */
     public void closeJestClient() {
         if (jestClient != null) {
