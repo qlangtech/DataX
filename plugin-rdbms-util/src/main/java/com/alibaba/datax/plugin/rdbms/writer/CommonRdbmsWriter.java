@@ -41,7 +41,7 @@ public class CommonRdbmsWriter {
 
         public void init(Configuration originalConfig) {
             this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
-            OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataSourceFactoryGetter ,this.dataBaseType);
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataSourceFactoryGetter, this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                     originalConfig.toJSON());
@@ -248,11 +248,9 @@ public class CommonRdbmsWriter {
         public void prepare(Configuration writerSliceConfig) {
             Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username, password);
 
-            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
+            DBUtil.dealWithSessionConfig(connection, writerSliceConfig, this.dataBaseType, BASIC_MESSAGE);
 
-            int tableNumber = writerSliceConfig.getInt(
-                    Constant.TABLE_NUMBER_MARK);
+            int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
             if (tableNumber != 1) {
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                         StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);

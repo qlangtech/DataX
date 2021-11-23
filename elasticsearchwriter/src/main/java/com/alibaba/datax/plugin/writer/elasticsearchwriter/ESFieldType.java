@@ -1,11 +1,13 @@
 package com.alibaba.datax.plugin.writer.elasticsearchwriter;
 
 /**
+ * https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html
+ * <p>
  * Created by xiongfeng.bxf on 17/3/1.
  */
 public enum ESFieldType {
     ID,
-    STRING,
+   // STRING,
     TEXT,
     KEYWORD,
     LONG,

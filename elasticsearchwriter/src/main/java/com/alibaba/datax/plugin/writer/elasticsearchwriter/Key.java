@@ -81,10 +81,10 @@ public final class Key {
     }
 
     public static String getTypeName(Configuration conf) {
-        String indexType = conf.getString("indexType");
-        if(StringUtils.isBlank(indexType)){
-            indexType = conf.getString("type", getIndexName(conf));
-        }
+        String indexType = conf.getString("type");
+//        if(StringUtils.isBlank(indexType)){
+//            indexType = conf.getString("type", getIndexName(conf));
+//        }
         return indexType;
     }
 

@@ -1,77 +1,45 @@
 package com.alibaba.datax.plugin.writer.elasticsearchwriter;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.searchbox.action.Action;
-import io.searchbox.client.JestClient;
-import io.searchbox.client.JestClientFactory;
 import io.searchbox.client.JestResult;
-import io.searchbox.client.config.HttpClientConfig;
-import io.searchbox.client.config.HttpClientConfig.Builder;
 import io.searchbox.core.Bulk;
 import io.searchbox.indices.CreateIndex;
 import io.searchbox.indices.DeleteIndex;
 import io.searchbox.indices.IndicesExists;
 import io.searchbox.indices.aliases.*;
-import io.searchbox.indices.mapping.PutMapping;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Created by xiongfeng.bxf on 17/2/8.
  */
 public class ESClient {
     private static final Logger log = LoggerFactory.getLogger(ESClient.class);
+    final ESInitialization es;
 
-    private JestClient jestClient;
-
-    public JestClient getClient() {
-        return jestClient;
+    public ESClient(ESInitialization es) {
+        this.es = es;
     }
 
-    public void createClient(String endpoint,
-                             String user,
-                             String passwd,
-                             boolean multiThread,
-                             int readTimeout,
-                             boolean compression,
-                             boolean discovery) {
-
-        JestClientFactory factory = new JestClientFactory();
-        Builder httpClientConfig = new HttpClientConfig
-                .Builder(endpoint)
-                .setPreemptiveAuth(new HttpHost(endpoint))
-                .multiThreaded(multiThread)
-                .connTimeout(30000)
-                .readTimeout(readTimeout)
-                .maxTotalConnection(200)
-                .requestCompressionEnabled(compression)
-                .discoveryEnabled(discovery)
-                .discoveryFrequency(5l, TimeUnit.MINUTES);
-
-        //if (!("".equals(user) || "".equals(passwd))) {
-        if (StringUtils.isNotBlank(user) && StringUtils.isNotBlank(passwd)) {
-            httpClientConfig.defaultCredentials(user, passwd);
-        }
-
-        factory.setHttpClientConfig(httpClientConfig.build());
-
-        jestClient = factory.getObject();
-    }
 
     public boolean indicesExists(String indexName) throws Exception {
         boolean isIndicesExists = false;
-        JestResult rst = jestClient.execute(new IndicesExists.Builder(indexName).build());
+        JestResult rst = es.jestClient.execute(new IndicesExists.Builder(indexName).build());
         if (rst.isSucceeded()) {
             isIndicesExists = true;
         } else {
@@ -107,7 +75,7 @@ public class ESClient {
         JestResult rst = null;
         if (!indicesExists(indexName)) {
             log.info("create index " + indexName);
-            rst = jestClient.execute(
+            rst = es.jestClient.execute(
                     new CreateIndex.Builder(indexName)
                             .settings(settings)
                             .mappings(String.valueOf(mappings))
@@ -117,13 +85,15 @@ public class ESClient {
             //index_already_exists_exception
             if (!rst.isSucceeded()) {
                 log.error("createIndex faild:{} ", rst.getErrorMessage());
-                if (getStatus(rst) == 400) {
-                    log.info(String.format("index [%s] already exists", indexName));
-                    return true;
-                } else {
-                    log.error(rst.getErrorMessage());
-                    return false;
-                }
+                //if (getStatus(rst) == 400) {
+                //   log.info(String.format("index [%s] already exists", indexName));
+                // return true;
+                //}
+//                else {
+//                    log.error(rst.getErrorMessage());
+//
+//                }
+                return false;
             } else {
                 log.info(String.format("create [%s] index success", indexName));
             }
@@ -162,7 +132,7 @@ public class ESClient {
 
     public JestResult execute(Action<JestResult> clientRequest) throws Exception {
         JestResult rst = null;
-        rst = jestClient.execute(clientRequest);
+        rst = es.jestClient.execute(clientRequest);
         if (!rst.isSucceeded()) {
             //log.warn(rst.getErrorMessage());
         }
@@ -186,11 +156,12 @@ public class ESClient {
     public boolean alias(String indexname, String aliasname, boolean needClean) throws IOException {
         GetAliases getAliases = new GetAliases.Builder().addIndex(aliasname).build();
         AliasMapping addAliasMapping = new AddAliasMapping.Builder(indexname, aliasname).build();
-        JestResult rst = jestClient.execute(getAliases);
+        JestResult rst = es.jestClient.execute(getAliases);
         log.info(rst.getJsonString());
         List<AliasMapping> list = new ArrayList<AliasMapping>();
         if (rst.isSucceeded()) {
             JsonParser jp = new JsonParser();
+//            JSONObject jo = JSONObject.parseObject(rst.getJsonString());
             JsonObject jo = (JsonObject) jp.parse(rst.getJsonString());
             for (Map.Entry<String, JsonElement> entry : jo.entrySet()) {
                 String tindex = entry.getKey();
@@ -207,7 +178,7 @@ public class ESClient {
         }
 
         ModifyAliases modifyAliases = new ModifyAliases.Builder(addAliasMapping).addAlias(list).setParameter("master_timeout", "5m").build();
-        rst = jestClient.execute(modifyAliases);
+        rst = es.jestClient.execute(modifyAliases);
         if (!rst.isSucceeded()) {
             log.error(rst.getErrorMessage());
             return false;
@@ -220,7 +191,7 @@ public class ESClient {
         // illegal_argument_exception
         // cluster_block_exception
         JestResult rst = null;
-        rst = jestClient.execute(bulk.build());
+        rst = es.jestClient.execute(bulk.build());
         if (!rst.isSucceeded()) {
             log.warn(rst.getErrorMessage());
         }
@@ -231,8 +202,127 @@ public class ESClient {
      * 关闭JestClient客户端
      */
     public void closeJestClient() {
-        if (jestClient != null) {
-            jestClient.shutdownClient();
+        if (es.jestClient != null) {
+            es.jestClient.shutdownClient();
         }
     }
+
+    /**
+     * https://www.elastic.co/guide/en/elasticsearch/reference/current/explicit-mapping.html
+     *
+     * @param typeName
+     * @return
+     */
+    public String genMappings(JSONArray column, String typeName, Consumer<List<ESColumn>> colsConsumer) {
+        String mappings = null;
+        Map<String, Object> propMap = new HashMap<String, Object>();
+        List<ESColumn> columnList = new ArrayList<ESColumn>();
+
+        //   JSONArray column = (JSONArray) conf.getList("column");
+        if (column != null) {
+            for (Object col : column) {
+                JSONObject jo = (JSONObject) col;
+                String colName = jo.getString("name");
+                String colTypeStr = jo.getString("type");
+                if (colTypeStr == null) {
+                    //throw DataXException.asDataXException(ESWriterErrorCode.BAD_CONFIG_VALUE, col.toString() + " column must have type");
+                    throw new IllegalStateException(col.toString() + " column must have type");
+                }
+                ESFieldType colType = ESFieldType.getESFieldType(colTypeStr);
+                if (colType == null) {
+                    // throw DataXException.asDataXException(ESWriterErrorCode.BAD_CONFIG_VALUE, col.toString() + " unsupported type");
+                    throw new IllegalStateException(col.toString() + " unsupported type");
+                }
+
+                ESColumn columnItem = new ESColumn();
+
+                if (colName.equals(Key.PRIMARY_KEY_COLUMN_NAME)) {
+                    // 兼容已有版本
+                    colType = ESFieldType.ID;
+                    colTypeStr = "id";
+                }
+
+                columnItem.setName(colName);
+                columnItem.setType(colTypeStr);
+
+                if (colType == ESFieldType.ID) {
+                    columnList.add(columnItem);
+                    // 如果是id,则properties为空
+                    continue;
+                }
+
+                Boolean array = jo.getBoolean("array");
+                if (array != null) {
+                    columnItem.setArray(array);
+                }
+                Map<String, Object> field = new HashMap<String, Object>();
+                field.put("type", colTypeStr);
+                //https://www.elastic.co/guide/en/elasticsearch/reference/5.2/breaking_50_mapping_changes.html#_literal_index_literal_property
+                // https://www.elastic.co/guide/en/elasticsearch/guide/2.x/_deep_dive_on_doc_values.html#_disabling_doc_values
+                field.put("doc_values", jo.getBoolean("doc_values"));
+                field.put("ignore_above", jo.getInteger("ignore_above"));
+                field.put("index", jo.getBoolean("index"));
+
+                switch (colType) {
+//                    case STRING:
+//                        // 兼容string类型,ES5之前版本
+//                        break;
+                    case KEYWORD:
+                        // https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html#_warm_up_global_ordinals
+                        Boolean eagerGlobalOrdinals = jo.getBoolean("eager_global_ordinals");
+                        if (eagerGlobalOrdinals != null) {
+                            field.put("eager_global_ordinals", eagerGlobalOrdinals);
+                        }
+                        break;
+                    case TEXT:
+                        field.put("analyzer", jo.getString("analyzer"));
+                        // 优化disk使用,也同步会提高index性能
+                        // https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-disk-usage.html
+                        field.put("norms", jo.getBoolean("norms"));
+                        field.put("index_options", jo.getBoolean("index_options"));
+                        break;
+                    case DATE:
+                        columnItem.setTimeZone(jo.getString("timezone"));
+                        columnItem.setFormat(jo.getString("format"));
+                        // 后面时间会处理为带时区的标准时间,所以不需要给ES指定格式
+                            /*
+                            if (jo.getString("format") != null) {
+                                field.put("format", jo.getString("format"));
+                            } else {
+                                //field.put("format", "strict_date_optional_time||epoch_millis||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd");
+                            }
+                            */
+                        break;
+                    case GEO_SHAPE:
+                        field.put("tree", jo.getString("tree"));
+                        field.put("precision", jo.getString("precision"));
+                    default:
+                        break;
+                }
+                propMap.put(colName, field);
+                columnList.add(columnItem);
+            }
+        } else {
+            throw new IllegalStateException("conf.getList(\"column\") can not be empty");
+        }
+
+        colsConsumer.accept(columnList);
+        // conf.set(WRITE_COLUMNS, JSON.toJSONString(columnList));
+
+
+        Map<String, Object> rootMappings = new HashMap<String, Object>();
+        Map<String, Object> typeMappings = new HashMap<String, Object>();
+        typeMappings.put("properties", propMap);
+        rootMappings.put(typeName, typeMappings);
+
+        mappings = StringUtils.isNotBlank(typeName) ? JSON.toJSONString(rootMappings) : JSON.toJSONString(typeMappings);
+
+        if (StringUtils.isEmpty(mappings)) {
+            //throw DataXException.asDataXException(ESWriterErrorCode.BAD_CONFIG_VALUE, "must have mappings");
+            throw new IllegalStateException("must have mappings");
+        }
+        log.info(mappings);
+        return mappings;
+    }
+
 }
