@@ -146,7 +146,8 @@ public class CommonRdbmsReader {
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
 
             //ob10的处理
-            if (this.jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING) && this.dataBaseType == DataBaseType.MySql) {
+            if (this.jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)
+                    && this.dataBaseType == DataBaseType.MySql) {
                 String[] ss = this.jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
                 if (ss.length != 3) {
                     throw DataXException
@@ -167,7 +168,8 @@ public class CommonRdbmsReader {
 
         public void startRead(Configuration readerSliceConfig,
                               RecordSender recordSender,
-                              TaskPluginCollector taskPluginCollector, int fetchSize) {
+                              TaskPluginCollector taskPluginCollector //, int fetchSize this param seems as useless
+        ) {
             String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
             String table = readerSliceConfig.getString(Key.TABLE);
 
@@ -188,7 +190,7 @@ public class CommonRdbmsReader {
             int columnNumber = 0;
             ResultSet rs = null;
             try {
-                rs = DBUtil.query(conn, querySql, fetchSize);
+                rs = DBUtil.query(conn, querySql, this.readerDataSourceFactoryGetter.getRowFetchSize());
                 queryPerfRecord.end();
 
                 ResultSetMetaData metaData = rs.getMetaData();

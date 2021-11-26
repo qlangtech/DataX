@@ -29,8 +29,8 @@ public class OracleReader extends Reader {
 		@Override
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();
-			
-			dealFetchSize(this.originalConfig);
+
+			//dealFetchSize(this.originalConfig);
 
 			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
 					DATABASE_TYPE);
@@ -62,20 +62,20 @@ public class OracleReader extends Reader {
 			this.commonRdbmsReaderJob.destroy(this.originalConfig);
 		}
 
-		private void dealFetchSize(Configuration originalConfig) {
-			int fetchSize = originalConfig.getInt(
-					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
-					Constant.DEFAULT_FETCH_SIZE);
-			if (fetchSize < 1) {
-				throw DataXException
-						.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
-								String.format("您配置的 fetchSize 有误，fetchSize:[%d] 值不能小于 1.",
-										fetchSize));
-			}
-			originalConfig.set(
-					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
-					fetchSize);
-		}
+//		private void dealFetchSize(Configuration originalConfig) {
+//			int fetchSize = originalConfig.getInt(
+//					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+//					Constant.DEFAULT_FETCH_SIZE);
+//			if (fetchSize < 1) {
+//				throw DataXException
+//						.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
+//								String.format("您配置的 fetchSize 有误，fetchSize:[%d] 值不能小于 1.",
+//										fetchSize));
+//			}
+//			originalConfig.set(
+//					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+//					fetchSize);
+//		}
 
 		private void dealHint(Configuration originalConfig) {
 			String hint = originalConfig.getString(Key.HINT);
@@ -104,11 +104,11 @@ public class OracleReader extends Reader {
 
 		@Override
 		public void startRead(RecordSender recordSender) {
-			int fetchSize = this.readerSliceConfig
-					.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
+//			int fetchSize = this.readerSliceConfig
+//					.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
 			this.commonRdbmsReaderTask.startRead(this.readerSliceConfig,
-					recordSender, super.getTaskPluginCollector(), fetchSize);
+					recordSender, super.getTaskPluginCollector());
 		}
 
 		@Override

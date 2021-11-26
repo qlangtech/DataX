@@ -92,7 +92,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
      */
     @Override
     public void startRead(Configuration readerSliceConfig, RecordSender recordSender,
-                          TaskPluginCollector taskPluginCollector, int fetchSize) {
+                          TaskPluginCollector taskPluginCollector) {
         String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
         String table = readerSliceConfig.getString(Key.TABLE);
         PerfTrace.getInstance().addTaskDetails(taskId, table + "," + jdbcUrl);
@@ -108,7 +108,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         if (readBatchSize < 10000) {
             readBatchSize = 10000;
         }
-        TaskContext context = new TaskContext(table, columns, where, fetchSize);
+        TaskContext context = new TaskContext(table, columns, where, 2000);
         context.setQuerySql(querySql);
         context.setWeakRead(weakRead);
         context.setCompatibleMode(compatibleMode);

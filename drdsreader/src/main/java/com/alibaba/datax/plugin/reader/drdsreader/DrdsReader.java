@@ -128,10 +128,10 @@ public class DrdsReader extends Reader {
 
         @Override
         public void startRead(RecordSender recordSender) {
-            int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
+          //  int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderTask.startRead(this.readerSliceConfig,
-                    recordSender, super.getTaskPluginCollector(), fetchSize);
+                    recordSender, super.getTaskPluginCollector());
         }
 
         @Override

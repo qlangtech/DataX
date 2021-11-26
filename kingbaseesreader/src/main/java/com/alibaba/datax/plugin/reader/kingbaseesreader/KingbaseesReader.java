@@ -22,13 +22,13 @@ public class KingbaseesReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
-                    Constant.DEFAULT_FETCH_SIZE);
-            if (fetchSize < 1) {
-            	throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
-					String.format("您配置的fetchSize有误，根据DataX的设计，fetchSize : [%d] 设置值不能小于 1.", fetchSize));
-            }
-            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
+//            int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+//                    Constant.DEFAULT_FETCH_SIZE);
+//            if (fetchSize < 1) {
+//            	throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
+//					String.format("您配置的fetchSize有误，根据DataX的设计，fetchSize : [%d] 设置值不能小于 1.", fetchSize));
+//            }
+//            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
             this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
@@ -65,10 +65,10 @@ public class KingbaseesReader extends Reader {
 
         @Override
         public void startRead(RecordSender recordSender) {
-            int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
+            //int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
-                    super.getTaskPluginCollector(), fetchSize);
+                    super.getTaskPluginCollector());
         }
 
         @Override

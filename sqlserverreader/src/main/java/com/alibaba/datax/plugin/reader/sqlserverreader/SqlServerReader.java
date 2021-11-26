@@ -73,11 +73,10 @@ public class SqlServerReader extends Reader {
 
 		@Override
 		public void startRead(RecordSender recordSender) {
-			int fetchSize = this.readerSliceConfig
-					.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
+//			int fetchSize = this.readerSliceConfig
+//					.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
-			this.commonRdbmsReaderTask.startRead(this.readerSliceConfig,
-					recordSender, super.getTaskPluginCollector(), fetchSize);
+			this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender, super.getTaskPluginCollector());
 		}
 
 		@Override

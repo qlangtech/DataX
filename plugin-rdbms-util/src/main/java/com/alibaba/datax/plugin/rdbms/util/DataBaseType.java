@@ -45,7 +45,7 @@ public enum DataBaseType {
             case MySql:
             case DRDS:
             case OceanBase:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true";
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true&DataBaseType=true";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {

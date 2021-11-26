@@ -6,6 +6,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.mysql.jdbc.Driver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,22 +26,23 @@ public class MysqlReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-
-            Integer userConfigedFetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE);
-            if (userConfigedFetchSize != null) {
-                LOG.warn("对 mysqlreader 不需要配置 fetchSize, mysqlreader 将会忽略这项配置. 如果您不想再看到此警告,请去除fetchSize 配置.");
+            if ("5.0".compareTo(Driver.VERSION) > 0) {
+                //https://blog.csdn.net/Shadow_Light/article/details/100749537
+                Integer userConfigedFetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE);
+                if (userConfigedFetchSize != null) {
+                    LOG.warn("对 mysqlreader 不需要配置 fetchSize, mysqlreader 将会忽略这项配置. 如果您不想再看到此警告,请去除fetchSize 配置.");
+                }
+                this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             }
-
-            this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
 
             this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
         @Override
-        public void preCheck(){
+        public void preCheck() {
             init();
-            this.commonRdbmsReaderJob.preCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsReaderJob.preCheck(this.originalConfig, DATABASE_TYPE);
 
         }
 
@@ -69,17 +71,17 @@ public class MysqlReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE,super.getTaskGroupId(), super.getTaskId());
+            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
-            int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
+          //  int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender,
-                    super.getTaskPluginCollector(), fetchSize);
+                    super.getTaskPluginCollector());
         }
 
         @Override
