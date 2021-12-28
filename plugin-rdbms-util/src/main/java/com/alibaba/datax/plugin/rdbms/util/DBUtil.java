@@ -609,7 +609,7 @@ public final class DBUtil {
             }
         } catch (Exception e) {
             LOG.warn("test connection of [{}] failed, for {}.", url,
-                    e.getMessage());
+                    e.getMessage(), e);
         } finally {
             DBUtil.closeDBResources(null, connection);
         }
