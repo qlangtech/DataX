@@ -31,7 +31,7 @@ public class StreamWriter extends Writer {
             String path = this.originalConfig.getString(Key.PATH, null);
             String fileName = this.originalConfig.getString(Key.FILE_NAME, null);
 
-            if(StringUtils.isNoneBlank(path) && StringUtils.isNoneBlank(fileName)) {
+            if (StringUtils.isNoneBlank(path) && StringUtils.isNoneBlank(fileName)) {
                 validateParameter(path, fileName);
             }
         }
@@ -61,7 +61,7 @@ public class StreamWriter extends Writer {
 
                 String fileFullPath = buildFilePath(path, fileName);
                 File newFile = new File(fileFullPath);
-                if(newFile.exists()) {
+                if (newFile.exists()) {
                     try {
                         FileUtils.forceDelete(newFile);
                     } catch (IOException e) {
@@ -117,6 +117,7 @@ public class StreamWriter extends Writer {
         private long recordNumBeforSleep;
         private long sleepTime;
 
+        private java.io.Writer contentWriter;
 
 
         @Override
@@ -131,12 +132,14 @@ public class StreamWriter extends Writer {
             this.fileName = this.writerSliceConfig.getString(Key.FILE_NAME, null);
             this.recordNumBeforSleep = this.writerSliceConfig.getLong(Key.RECORD_NUM_BEFORE_SLEEP, 0);
             this.sleepTime = this.writerSliceConfig.getLong(Key.SLEEP_TIME, 0);
-            if(recordNumBeforSleep < 0) {
+            if (recordNumBeforSleep < 0) {
                 throw DataXException.asDataXException(StreamWriterErrorCode.CONFIG_INVALID_EXCEPTION, "recordNumber 不能为负值");
             }
-            if(sleepTime <0) {
+            if (sleepTime < 0) {
                 throw DataXException.asDataXException(StreamWriterErrorCode.CONFIG_INVALID_EXCEPTION, "sleep 不能为负值");
             }
+
+            this.contentWriter = this.writerSliceConfig.get(Key.CONTENT_WRITER, java.io.Writer.class);
 
         }
 
@@ -148,27 +151,26 @@ public class StreamWriter extends Writer {
         public void startWrite(RecordReceiver recordReceiver) {
 
 
-                if(StringUtils.isNoneBlank(path) && StringUtils.isNoneBlank(fileName)) {
-                    writeToFile(recordReceiver,path, fileName, recordNumBeforSleep, sleepTime);
-                } else {
-                    try {
-                        BufferedWriter writer = new BufferedWriter(
-                                new OutputStreamWriter(System.out, "UTF-8"));
+            if (StringUtils.isNoneBlank(path) && StringUtils.isNoneBlank(fileName)) {
+                writeToFile(recordReceiver, path, fileName, recordNumBeforSleep, sleepTime);
+            } else {
+                try {
+                    java.io.Writer writer = getCreateWriter();
 
-                        Record record;
-                        while ((record = recordReceiver.getFromReader()) != null) {
-                            if (this.print) {
-                                writer.write(recordToString(record));
-                            } else {
-                        /* do nothing */
-                            }
+                    Record record;
+                    while ((record = recordReceiver.getFromReader()) != null) {
+                        if (this.print) {
+                            writer.write(recordToString(record));
+                        } else {
+                            /* do nothing */
                         }
-                        writer.flush();
-
-                    } catch (Exception e) {
-                        throw DataXException.asDataXException(StreamWriterErrorCode.RUNTIME_EXCEPTION, e);
                     }
+                    writer.flush();
+
+                } catch (Exception e) {
+                    throw DataXException.asDataXException(StreamWriterErrorCode.RUNTIME_EXCEPTION, e);
                 }
+            }
         }
 
         private void writeToFile(RecordReceiver recordReceiver, String path, String fileName,
@@ -186,17 +188,17 @@ public class StreamWriter extends Writer {
                         new OutputStreamWriter(new FileOutputStream(newFile, true), "UTF-8"));
 
                 Record record;
-                int count =0;
+                int count = 0;
                 while ((record = recordReceiver.getFromReader()) != null) {
-                    if(recordNumBeforSleep > 0 && sleepTime >0 &&count == recordNumBeforSleep) {
-                        LOG.info("StreamWriter start to sleep ... recordNumBeforSleep={},sleepTime={}",recordNumBeforSleep,sleepTime);
+                    if (recordNumBeforSleep > 0 && sleepTime > 0 && count == recordNumBeforSleep) {
+                        LOG.info("StreamWriter start to sleep ... recordNumBeforSleep={},sleepTime={}", recordNumBeforSleep, sleepTime);
                         try {
                             Thread.sleep(sleepTime * 1000l);
                         } catch (InterruptedException e) {
                         }
                     }
-                   writer.write(recordToString(record));
-                   count++;
+                    writer.write(recordToString(record));
+                    count++;
                 }
                 writer.flush();
             } catch (Exception e) {
@@ -231,7 +233,21 @@ public class StreamWriter extends Writer {
 
             return sb.toString();
         }
+
+        private java.io.Writer getCreateWriter() throws UnsupportedEncodingException {
+//        if (threadLocalWriter.get() != null) {
+//            return threadLocalWriter.get();
+//        }
+            if (this.contentWriter != null) {
+                return this.contentWriter;
+            }
+            return new BufferedWriter(
+                    new OutputStreamWriter(System.out, "UTF-8"));
+        }
     }
+
+    //public static ThreadLocal<BufferedWriter> threadLocalWriter = new ThreadLocal<>();
+
 
     private static String buildFilePath(String path, String fileName) {
         boolean isEndWithSeparator = false;

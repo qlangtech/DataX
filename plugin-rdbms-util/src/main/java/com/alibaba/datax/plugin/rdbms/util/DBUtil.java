@@ -594,26 +594,29 @@ public final class DBUtil {
 
     public static boolean testConnWithoutRetry(IDataSourceFactoryGetter dataBaseType,
                                                String url, String user, String pass, boolean checkSlave) {
-        Connection connection = null;
 
-        try {
-            connection = connect(dataBaseType, url, user, pass);
-            if (connection != null) {
+        // try {
+        try (Connection connection = connect(dataBaseType, url, user, pass)) {
+            return (connection != null);
+        } catch (SQLException e) {
+            throw new RuntimeException(url, e);
+        }
+
 //                if (dataBaseType.equals(dataBaseType.MySql) && checkSlave) {
 //                    //dataBaseType.MySql
 //                    boolean connOk = !isSlaveBehind(connection);
 //                    return connOk;
 //                } else {
-                return true;
-                //}
-            }
-        } catch (Exception e) {
-            LOG.warn("test connection of [{}] failed, for {}.", url,
-                    e.getMessage(), e);
-        } finally {
-            DBUtil.closeDBResources(null, connection);
-        }
-        return false;
+        //    return true;
+        //}
+        // }
+//        } catch (Exception e) {
+//            LOG.warn("test connection of [{}] failed, for {}.", url,
+//                    e.getMessage(), e);
+//        } finally {
+//            DBUtil.closeDBResources(null, connection);
+//        }
+//        return false;
     }
 
     public static boolean testConnWithoutRetry(IDataSourceFactoryGetter dataBaseType,
@@ -829,7 +832,8 @@ public final class DBUtil {
         });
     }
 
-    private static IDataSourceFactoryGetter getDataSourceFactoryGetter(Configuration originalConfig, Function<String, Describable> callable) {
+    private static IDataSourceFactoryGetter getDataSourceFactoryGetter(Configuration
+                                                                               originalConfig, Function<String, Describable> callable) {
         String dataXName = originalConfig.getString(DataxUtils.DATAX_NAME);
         if (StringUtils.isEmpty(dataXName)) {
             throw new IllegalArgumentException("param dataXName:" + dataXName + "can not be null");

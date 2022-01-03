@@ -7,6 +7,8 @@ public class Key {
 
     public static final String PATH = "path";
 
+    public static final String CONTENT_WRITER = "contentWriter";
+
     public static final String FILE_NAME = "fileName";
 
     public static final String RECORD_NUM_BEFORE_SLEEP = "recordNumBeforeSleep";
