@@ -190,7 +190,11 @@ public class CommonRdbmsReader {
             int columnNumber = 0;
             ResultSet rs = null;
             try {
-                rs = DBUtil.query(conn, querySql, this.readerDataSourceFactoryGetter.getRowFetchSize());
+                Integer rowFetchSize = this.readerDataSourceFactoryGetter.getRowFetchSize();
+                if(rowFetchSize == null){
+ throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
+                }
+                rs = DBUtil.query(conn, querySql, rowFetchSize);
                 queryPerfRecord.end();
 
                 ResultSetMetaData metaData = rs.getMetaData();
