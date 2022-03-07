@@ -7,9 +7,9 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.google.common.collect.Lists;
+import com.qlangtech.tis.plugin.ds.DataType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
@@ -338,7 +338,7 @@ public class HdfsHelper {
                                    TaskPluginCollector taskPluginCollector) {
         char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER);
         //   List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
-        List<ImmutableTriple<String, SupportHiveDataType, CsvType>> colsMeta = getColsMeta(config);
+        List<HdfsColMeta> colsMeta = HdfsColMeta.getColsMeta(config);
         String compress = config.getString(Key.COMPRESS, null);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm");
@@ -377,7 +377,7 @@ public class HdfsHelper {
 
     public static MutablePair<Text, Boolean> transportOneRecord(
             Record record, char fieldDelimiter
-            , List<ImmutableTriple<String, SupportHiveDataType, CsvType>> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
+            , List<HdfsColMeta> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
         MutablePair<List<Object>, Boolean> transportResultList
                 = transportOneRecord(record, columnsConfiguration, taskPluginCollector);
         //保存<转换后的数据,是否是脏数据>
@@ -411,44 +411,6 @@ public class HdfsHelper {
         return codecClass;
     }
 
-    public static List<ImmutableTriple<String, SupportHiveDataType, CsvType>> getColsMeta(Configuration config) {
-        List<ImmutableTriple<String, SupportHiveDataType, CsvType>> result = Lists.newArrayList();
-        List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
-        SupportHiveDataType hiveType = null;
-        for (Configuration cfg : columns) {
-            hiveType = SupportHiveDataType.valueOf(cfg.getString(Key.TYPE).toUpperCase());
-            result.add(ImmutableTriple.of(cfg.getString(Key.NAME), hiveType, parseCsvType(hiveType)));
-        }
-        return result;
-    }
-
-    public enum CsvType {
-        STRING,
-        NUMBER,
-        BOOLEAN
-    }
-
-    private static CsvType parseCsvType(SupportHiveDataType hiveType) {
-        switch (hiveType) {
-            case DATE:
-            case CHAR:
-            case STRING:
-            case VARCHAR:
-            case TIMESTAMP:
-                return CsvType.STRING;
-            case TINYINT:
-            case INT:
-            case FLOAT:
-            case BIGINT:
-            case DOUBLE:
-            case SMALLINT:
-                return CsvType.NUMBER;
-            case BOOLEAN:
-                return CsvType.BOOLEAN;
-            default:
-                throw new IllegalStateException(" relevant type:" + hiveType + " is illegal");
-        }
-    }
 
     /**
      * 写orcfile类型文件
@@ -460,10 +422,10 @@ public class HdfsHelper {
      */
     public void orcFileStartWrite(RecordReceiver lineReceiver, Configuration config, String fileName,
                                   TaskPluginCollector taskPluginCollector) {
-        List<ImmutableTriple<String, SupportHiveDataType, CsvType>> colsMeta = getColsMeta(config);
+        List<HdfsColMeta> colsMeta = HdfsColMeta.getColsMeta(config);
         // List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
         String compress = config.getString(Key.COMPRESS, null);
-        List<String> columnNames = colsMeta.stream().map((c) -> c.left).collect(Collectors.toList());
+        List<String> columnNames = colsMeta.stream().map((c) -> c.colName).collect(Collectors.toList());
         List<ObjectInspector> columnTypeInspectors = getColumnTypeInspectors(colsMeta);
         StructObjectInspector inspector = ObjectInspectorFactory
                 .getStandardStructObjectInspector(columnNames, columnTypeInspectors);
@@ -510,10 +472,10 @@ public class HdfsHelper {
      * @param
      * @return
      */
-    public List<ObjectInspector> getColumnTypeInspectors(List<ImmutableTriple<String, SupportHiveDataType, CsvType>> colsMeta) {
+    public List<ObjectInspector> getColumnTypeInspectors(List<HdfsColMeta> colsMeta) {
         List<ObjectInspector> columnTypeInspectors = Lists.newArrayList();
-        for (ImmutableTriple<String, SupportHiveDataType, CsvType> eachColumnConf : colsMeta) {
-            SupportHiveDataType columnType = eachColumnConf.middle;//SupportHiveDataType.valueOf(eachColumnConf.getString(Key.TYPE).toUpperCase());
+        for (HdfsColMeta eachColumnConf : colsMeta) {
+            SupportHiveDataType columnType = DataType.convert2HiveType(eachColumnConf.type);//SupportHiveDataType.valueOf(eachColumnConf.getString(Key.TYPE).toUpperCase());
             ObjectInspector objectInspector = null;
             switch (columnType) {
                 case TINYINT:
@@ -554,8 +516,8 @@ public class HdfsHelper {
                                     HdfsWriterErrorCode.ILLEGAL_VALUE,
                                     String.format(
                                             "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
-                                            eachColumnConf.left,
-                                            eachColumnConf.right));
+                                            eachColumnConf.colName,
+                                            eachColumnConf.type));
             }
 
             columnTypeInspectors.add(objectInspector);
@@ -579,14 +541,14 @@ public class HdfsHelper {
     }
 
     public static MutablePair<List<Object>, Boolean> transportOneRecord(
-            Record record, List<ImmutableTriple<String, SupportHiveDataType, CsvType>> columnsConfiguration,
+            Record record, List<HdfsColMeta> columnsConfiguration,
             TaskPluginCollector taskPluginCollector) {
 
         MutablePair<List<Object>, Boolean> transportResult = new MutablePair<List<Object>, Boolean>();
         transportResult.setRight(false);
         List<Object> recordList = Lists.newArrayList();
         int recordLength = record.getColumnNumber();
-        ImmutableTriple<String, SupportHiveDataType, CsvType> colMeta = null;
+        HdfsColMeta colMeta = null;
         if (0 != recordLength) {
             Column column;
             for (int i = 0; i < recordLength; i++) {
@@ -596,8 +558,7 @@ public class HdfsHelper {
                 if (null != column.getRawData()) {
                     colMeta = columnsConfiguration.get(i);
                     String rowData = column.getRawData().toString();
-                    SupportHiveDataType columnType =
-                            columnsConfiguration.get(i).middle;
+                    SupportHiveDataType columnType = DataType.convert2HiveType(colMeta.type);
                     //根据writer端类型配置做类型转换
                     try {
                         switch (columnType) {
@@ -639,14 +600,14 @@ public class HdfsHelper {
                                                 HdfsWriterErrorCode.ILLEGAL_VALUE,
                                                 String.format(
                                                         "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
-                                                        colMeta.left,
-                                                        colMeta.right));
+                                                        colMeta.colName,
+                                                        colMeta.type));
                         }
                     } catch (Exception e) {
                         // warn: 此处认为脏数据
                         String message = String.format(
                                 "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
-                                colMeta.right, column.getRawData().toString());
+                                colMeta.type, column.getRawData().toString());
                         taskPluginCollector.collectDirtyRecord(record, message);
                         transportResult.setRight(true);
                         break;

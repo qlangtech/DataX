@@ -83,13 +83,13 @@ public class HdfsWriter extends Writer {
             //fileName
             getFileName();
             //columns check
-            this.columns = this.writerSliceConfig.getListConfiguration(Key.COLUMN);
+            this.columns = this.writerSliceConfig.getListConfiguration(HdfsColMeta.KEY_COLUMN);
             if (null == columns || columns.size() == 0) {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.REQUIRED_VALUE, "您需要指定 columns");
             } else {
                 for (Configuration eachColumnConf : columns) {
-                    eachColumnConf.getNecessaryValue(Key.NAME, HdfsWriterErrorCode.COLUMN_REQUIRED_VALUE);
-                    eachColumnConf.getNecessaryValue(Key.TYPE, HdfsWriterErrorCode.COLUMN_REQUIRED_VALUE);
+                    eachColumnConf.getNecessaryValue(HdfsColMeta.KEY_NAME, HdfsWriterErrorCode.COLUMN_REQUIRED_VALUE);
+                    eachColumnConf.getNecessaryValue(HdfsColMeta.KEY_TYPE, HdfsWriterErrorCode.COLUMN_REQUIRED_VALUE);
                 }
             }
             //writeMode check
@@ -102,19 +102,23 @@ public class HdfsWriter extends Writer {
                                 writeMode));
             }
             this.writerSliceConfig.set(Key.WRITE_MODE, writeMode);
-            //fieldDelimiter check
-            this.fieldDelimiter = this.writerSliceConfig.getString(Key.FIELD_DELIMITER, null);
-            if (null == fieldDelimiter) {
-                throw DataXException.asDataXException(HdfsWriterErrorCode.REQUIRED_VALUE,
-                        String.format("您提供配置文件有误，[%s]是必填参数.", Key.FIELD_DELIMITER));
-            } else if (1 != fieldDelimiter.length()) {
-                // warn: if have, length must be one
-                throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", fieldDelimiter));
-            }
+
             //compress check
             this.compress = this.writerSliceConfig.getString(Key.COMPRESS, null);
             if (fileType.equalsIgnoreCase("TEXT")) {
+
+                //fieldDelimiter check, 只有在TEXT类型的时 分隔符才有意义
+                this.fieldDelimiter = this.writerSliceConfig.getString(Key.FIELD_DELIMITER, null);
+                if (null == fieldDelimiter) {
+                    throw DataXException.asDataXException(HdfsWriterErrorCode.REQUIRED_VALUE,
+                            String.format("您提供配置文件有误，[%s]是必填参数.", Key.FIELD_DELIMITER));
+                } else if (1 != fieldDelimiter.length()) {
+                    // warn: if have, length must be one
+                    throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", fieldDelimiter));
+                }
+
+
                 Set<String> textSupportedCompress = Sets.newHashSet("GZIP", "BZIP2");
                 //用户可能配置的是compress:"",空字符串,需要将compress设置为null
                 if (StringUtils.isBlank(compress)) {

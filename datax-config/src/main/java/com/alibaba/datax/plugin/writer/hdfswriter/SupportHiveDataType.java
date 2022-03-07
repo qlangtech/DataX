@@ -1,6 +1,9 @@
 package com.alibaba.datax.plugin.writer.hdfswriter;
 
+import java.util.Objects;
+
 public enum SupportHiveDataType {
+
     TINYINT,
     SMALLINT,
     INT,
@@ -16,4 +19,6 @@ public enum SupportHiveDataType {
     CHAR,
 
     BOOLEAN
+
+
 }

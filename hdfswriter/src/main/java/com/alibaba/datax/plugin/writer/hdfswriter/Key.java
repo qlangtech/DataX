@@ -13,9 +13,7 @@ public class Key {
     // must have
     public static final String FILE_NAME = "fileName";
     // must have for column
-    public static final String COLUMN = "column";
-    public static final String NAME = "name";
-    public static final String TYPE = "type";
+
     public static final String DATE_FORMAT = "dateFormat";
     // must have
     public static final String WRITE_MODE = "writeMode";
