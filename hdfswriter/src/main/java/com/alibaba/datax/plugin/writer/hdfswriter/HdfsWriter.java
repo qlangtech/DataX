@@ -34,7 +34,7 @@ public class HdfsWriter extends Writer {
         protected String compress;
         protected String encoding;
 
-        private List<TempFile> allFiles = Lists.newArrayList();
+        private List<HdfsHelper.TempFile> allFiles = Lists.newArrayList();
 
 //        protected HashSet<String> tmpFiles = new HashSet<String>();//临时文件全路径
 //        protected HashSet<String> endFiles = new HashSet<String>();//最终文件全路径
@@ -175,7 +175,7 @@ public class HdfsWriter extends Writer {
         @Override
         public void prepare() {
             //若路径已经存在，检查path是否是目录
-            if (hdfsHelper.isPathexists(path)) {
+            if (hdfsHelper.isPathexists(hdfsHelper.fileSystem, path)) {
                 if (!hdfsHelper.isPathDir(path)) {
                     throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
                             String.format("您配置的path: [%s] 不是一个合法的目录, 请您注意文件重名, 不合法目录名等情况.",
@@ -246,7 +246,7 @@ public class HdfsWriter extends Writer {
             String endStorePath = buildFilePath();
             this.path = endStorePath;
 
-            TempFile tmpFile = null;
+            HdfsHelper.TempFile tmpFile = null;
             for (int i = 0; i < mandatoryNumber; i++) {
                 // handle same file name
 
@@ -255,7 +255,7 @@ public class HdfsWriter extends Writer {
 //                String endFullFileName = null;
 //
                 fileSuffix = StringUtils.replace(String.valueOf(UUID.randomUUID()), "-", "_");
-                tmpFile = new TempFile(String.format("%s%s__%s", storePath, filePrefix, fileSuffix)
+                tmpFile = new HdfsHelper.TempFile(String.format("%s%s__%s", storePath, filePrefix, fileSuffix)
                         , String.format("%s%s__%s", endStorePath, filePrefix, fileSuffix));
 //                fullFileName = ;
 //                endFullFileName = String.format("%s%s__%s", endStorePath, filePrefix, fileSuffix);
@@ -290,16 +290,6 @@ public class HdfsWriter extends Writer {
             }
             LOG.info("end do split.");
             return writerSplitConfigs;
-        }
-
-        public static class TempFile {
-            final String fullTempFileName;
-            final String endFullFileName;
-
-            public TempFile(String fullTempFileName, String endFullFileName) {
-                this.fullTempFileName = fullTempFileName;
-                this.endFullFileName = endFullFileName;
-            }
         }
 
         private String buildFilePath() {
@@ -352,7 +342,7 @@ public class HdfsWriter extends Writer {
             } else {
                 tmpFilePath = String.format("%s__%s%s", userPath.substring(0, userPath.length() - 1), tmpSuffix, IOUtils.DIR_SEPARATOR);
             }
-            while (hdfsHelper.isPathexists(tmpFilePath)) {
+            while (hdfsHelper.isPathexists(hdfsHelper.fileSystem, tmpFilePath)) {
                 tmpSuffix = UUID.randomUUID().toString().replace('-', '_');
                 if (!isEndWithSeparator) {
                     tmpFilePath = String.format("%s__%s%s", userPath, tmpSuffix, IOUtils.DIR_SEPARATOR);
@@ -405,11 +395,11 @@ public class HdfsWriter extends Writer {
             LOG.info(String.format("write to file : [%s]", this.fileName));
             if (fileType.equalsIgnoreCase("TEXT")) {
                 //写TEXT FILE
-                hdfsHelper.textFileStartWrite(lineReceiver, this.writerSliceConfig, this.fileName,
+                FileFormatUtils.textFileStartWrite(hdfsHelper, lineReceiver, this.writerSliceConfig, this.fileName,
                         this.getTaskPluginCollector());
             } else if (fileType.equalsIgnoreCase("ORC")) {
                 //写ORC FILE
-                hdfsHelper.orcFileStartWrite(lineReceiver, this.writerSliceConfig, this.fileName,
+                FileFormatUtils.orcFileStartWrite(hdfsHelper.fileSystem, hdfsHelper.conf, lineReceiver, this.writerSliceConfig, this.fileName,
                         this.getTaskPluginCollector());
             } else if (fileType.equalsIgnoreCase("CSV")) {
                 this.csvFileStartWrite(lineReceiver

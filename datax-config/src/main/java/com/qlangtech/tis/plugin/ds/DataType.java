@@ -135,6 +135,16 @@ public class DataType implements Serializable {
             }
 
             @Override
+            public SupportHiveDataType dateType(DataType type) {
+                return SupportHiveDataType.DATE;
+            }
+
+            @Override
+            public SupportHiveDataType timestampType(DataType type) {
+                return SupportHiveDataType.TIMESTAMP;
+            }
+
+            @Override
             public SupportHiveDataType tinyIntType(DataType dataType) {
                 return SupportHiveDataType.TINYINT;
             }
@@ -154,15 +164,6 @@ public class DataType implements Serializable {
                 return SupportHiveDataType.DOUBLE;
             }
 
-            @Override
-            public SupportHiveDataType dateType(DataType type) {
-                return SupportHiveDataType.DATE;
-            }
-
-            @Override
-            public SupportHiveDataType timestampType(DataType type) {
-                return SupportHiveDataType.TIMESTAMP;
-            }
 
             @Override
             public SupportHiveDataType bitType(DataType type) {
