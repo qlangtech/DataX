@@ -404,12 +404,18 @@ public class HdfsWriter extends Writer {
             } else if (fileType.equalsIgnoreCase("CSV")) {
                 this.csvFileStartWrite(lineReceiver
                         , this.writerSliceConfig, this.fileName, this.getTaskPluginCollector());
+            } else if (fileType.equalsIgnoreCase("AVRO")) {
+                this.avroFileStartWrite(lineReceiver
+                        , this.writerSliceConfig, this.fileName, this.getTaskPluginCollector());
             } else {
                 throw new IllegalStateException("illegal file type:" + fileType);
             }
 
             LOG.info("end do write");
         }
+
+        protected abstract void avroFileStartWrite(
+                RecordReceiver lineReceiver, Configuration writerSliceConfig, String fileName, TaskPluginCollector taskPluginCollector);
 
         protected abstract void csvFileStartWrite(
                 RecordReceiver lineReceiver, Configuration config, String fileName,
