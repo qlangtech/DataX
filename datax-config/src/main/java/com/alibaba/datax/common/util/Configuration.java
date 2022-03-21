@@ -61,15 +61,15 @@ public class Configuration {
 
     private Object root = null;
 
-    private final Map<String, Object> attribute = new HashMap<>();
+//    private final Map<String, Object> attribute = new HashMap<>();
 
-    public void setAttr(String key, Object val) {
-        this.attribute.put(key, val);
-    }
-
-    public <T> T getAttr(String key) {
-        return (T) this.attribute.get(key);
-    }
+//    public void setAttr(String key, Object val) {
+//        this.attribute.put(key, val);
+//    }
+//
+//    public <T> T getAttr(String key) {
+//        return (T) this.attribute.get(key);
+//    }
 
     /**
      * 初始化空白的Configuration
