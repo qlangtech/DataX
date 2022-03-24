@@ -117,7 +117,7 @@ public class StreamWriter extends Writer {
         private long recordNumBeforSleep;
         private long sleepTime;
 
-        private java.io.Writer contentWriter;
+       // private java.io.Writer contentWriter;
 
 
         @Override
@@ -139,7 +139,7 @@ public class StreamWriter extends Writer {
                 throw DataXException.asDataXException(StreamWriterErrorCode.CONFIG_INVALID_EXCEPTION, "sleep 不能为负值");
             }
 
-            this.contentWriter = this.writerSliceConfig.get(Key.CONTENT_WRITER, java.io.Writer.class);
+
 
         }
 
@@ -235,12 +235,7 @@ public class StreamWriter extends Writer {
         }
 
         private java.io.Writer getCreateWriter() throws UnsupportedEncodingException {
-//        if (threadLocalWriter.get() != null) {
-//            return threadLocalWriter.get();
-//        }
-            if (this.contentWriter != null) {
-                return this.contentWriter;
-            }
+
             return new BufferedWriter(
                     new OutputStreamWriter(System.out, "UTF-8"));
         }

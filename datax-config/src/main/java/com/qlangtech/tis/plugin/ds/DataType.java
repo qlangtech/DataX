@@ -80,7 +80,7 @@ public class DataType implements Serializable {
             case Types.SMALLINT:
                 return visitor.smallIntType(this);
             case Types.BIGINT:
-                return visitor.longType(this);
+                return visitor.bigInt(this);
             case Types.FLOAT:
                 return visitor.floatType(this);
             case Types.DOUBLE:
@@ -155,7 +155,7 @@ public class DataType implements Serializable {
             }
 
             @Override
-            public SupportHiveDataType longType(DataType type) {
+            public SupportHiveDataType bigInt(DataType type) {
                 return SupportHiveDataType.BIGINT;
             }
 
@@ -183,7 +183,7 @@ public class DataType implements Serializable {
     }
 
     public Integer getDecimalDigits() {
-        return decimalDigits;
+        return this.decimalDigits == null ? 0 : decimalDigits;
     }
 
     public void setDecimalDigits(Integer decimalDigits) {
@@ -235,10 +235,10 @@ public class DataType implements Serializable {
 
     public interface TypeVisitor<T> {
         default T intType(DataType type) {
-            return longType(type);
+            return bigInt(type);
         }
 
-        T longType(DataType type);
+        T bigInt(DataType type);
 
         default T floatType(DataType type) {
             return doubleType(type);
