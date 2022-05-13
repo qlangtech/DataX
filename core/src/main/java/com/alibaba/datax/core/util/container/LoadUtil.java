@@ -10,12 +10,12 @@ import com.alibaba.datax.core.taskgroup.runner.AbstractRunner;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -51,7 +51,7 @@ public class LoadUtil {
     /**
      * jarLoader的缓冲
      */
-    private static Map<String, JarLoader> jarLoaderCenter = new HashMap<String, JarLoader>();
+    private static Map<String, JarLoader> jarLoaderCenter = new ConcurrentHashMap<>();
 //    public static void clearJarLoaderCenter() {
 //        jarLoaderCenter.clear();
 //    }
@@ -59,10 +59,12 @@ public class LoadUtil {
 //        jarLoaderCenter.put(pluginKey, classLoader);
 //    }
 
+    public static void cleanJarLoaderCenter(){
+        jarLoaderCenter.clear();
+    }
+
     public static void initializeJarClassLoader(Set<String> pluginKeys, JarLoader classLoader) {
         // Map<String, JarLoader> jarLoaderCenter = (Map<String, JarLoader>) jarLoaderCenterField.get(null);
-        jarLoaderCenter.clear();
-
         for (String pluginKey : pluginKeys) {
             jarLoaderCenter.put(pluginKey, classLoader);
         }
@@ -201,21 +203,21 @@ public class LoadUtil {
     public static synchronized JarLoader getJarLoader(PluginType pluginType,
                                                       String pluginName) {
         Configuration pluginConf = getPluginConf(pluginType, pluginName);
-
-        JarLoader jarLoader = jarLoaderCenter.get(generatePluginKey(pluginType,
-                pluginName));
+        String pluginKey = generatePluginKey(pluginType, pluginName);
+        JarLoader jarLoader = jarLoaderCenter.get(pluginKey);
         if (null == jarLoader) {
-            String pluginPath = pluginConf.getString("path");
-            if (StringUtils.isBlank(pluginPath)) {
-                throw DataXException.asDataXException(
-                        FrameworkErrorCode.RUNTIME_ERROR,
-                        String.format(
-                                "%s插件[%s]路径非法!",
-                                pluginType, pluginName));
-            }
-            jarLoader = new JarLoader(new String[]{pluginPath});
-            jarLoaderCenter.put(generatePluginKey(pluginType, pluginName),
-                    jarLoader);
+            throw new IllegalStateException("pluginKey :" + pluginKey + " relevant jarLoader can not be null");
+//            String pluginPath = pluginConf.getString("path");
+//            if (StringUtils.isBlank(pluginPath)) {
+//                throw DataXException.asDataXException(
+//                        FrameworkErrorCode.RUNTIME_ERROR,
+//                        String.format(
+//                                "%s插件[%s]路径非法!",
+//                                pluginType, pluginName));
+//            }
+//            jarLoader = new JarLoader(new String[]{pluginPath});
+//            jarLoaderCenter.put(generatePluginKey(pluginType, pluginName),
+//                    jarLoader);
         }
 
         return jarLoader;
