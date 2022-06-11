@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.writer.hdfswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import org.apache.commons.collections.CollectionUtils;
-
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
@@ -224,9 +223,14 @@ public class HdfsHelper {
                     }
                     LOG.info(String.format("finish rename file [%s] to file [%s].", srcFile, dstFile));
                 } else {
-                    LOG.info(String.format("文件［%s］内容为空,请检查写入是否正常！", srcFile));
+                   // LOG.info(String.format("文件［%s］内容为空,请检查写入是否正常！", srcFile));
+                    throw DataXException.asDataXException(
+                            HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, String.format("文件［%s］内容为空,请检查写入是否正常！", srcFile));
                 }
             }
+
+        } catch (DataXException e) {
+            throw e;
         } catch (Exception e) {
             String message = String.format("重命名文件时发生异常,请检查您的网络是否正常！");
             LOG.error(message);
