@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 /**
  * https://github.com/alibaba/DataX/blob/master/mysqlreader/doc/mysqlreader.md#33-%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2
+ *
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2022-02-19 09:12
  **/
@@ -15,7 +16,7 @@ public enum DataXReaderColType {
     Long("long", new DataType(Types.BIGINT)),
     INT("int", new DataType(Types.INTEGER)),
     Double("double", new DataType(Types.DOUBLE)),
-    STRING("string", new DataType(Types.VARCHAR, 256)),
+    STRING("string", new DataType(Types.VARCHAR, "VARCHAR", 256)),
     Boolean("boolean", new DataType(Types.BOOLEAN)),
     Date("date", new DataType(Types.DATE)),
     Bytes("bytes", new DataType(Types.BLOB));

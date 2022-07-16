@@ -1,7 +1,5 @@
 package com.alibaba.datax.plugin.writer.hdfswriter;
 
-import java.util.Objects;
-
 public enum SupportHiveDataType {
 
     TINYINT,

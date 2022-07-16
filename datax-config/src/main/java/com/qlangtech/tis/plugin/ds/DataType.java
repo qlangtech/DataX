@@ -36,11 +36,30 @@ public class DataType implements Serializable {
 
     public final int type;
     public final int columnSize;
+    private final String typeName;
     // decimal 的小数位长度
     private Integer decimalDigits;
 
+
     public DataType(int type) {
-        this(type, -1);
+        this(type, StringUtils.EMPTY, -1);
+    }
+
+    /**
+     * @param type       java.sql.Types
+     * @param columnSize
+     */
+    public DataType(int type, String typeName, int columnSize) {
+        this.type = type;
+        this.columnSize = columnSize;
+        this.typeName = typeName;
+    }
+
+    /**
+     * is UNSIGNED
+     */
+    public boolean isUnsigned() {
+        return StringUtils.containsIgnoreCase(this.typeName, "UNSIGNED");
     }
 
     public DataXReaderColType getCollapse() {
@@ -73,8 +92,13 @@ public class DataType implements Serializable {
 
     public <T> T accept(TypeVisitor<T> visitor) {
         switch (this.type) {
-            case Types.INTEGER:
-                return visitor.intType(this);
+            case Types.INTEGER: {
+                if (this.isUnsigned()) {
+                    return visitor.bigInt(this);
+                } else {
+                    return visitor.intType(this);
+                }
+            }
             case Types.TINYINT:
                 return visitor.tinyIntType(this);
             case Types.SMALLINT:
@@ -190,14 +214,6 @@ public class DataType implements Serializable {
         this.decimalDigits = decimalDigits;
     }
 
-    /**
-     * @param type       java.sql.Types
-     * @param columnSize
-     */
-    public DataType(int type, int columnSize) {
-        this.type = type;
-        this.columnSize = columnSize;
-    }
 
     public String getS() {
         return this.type + "," + this.columnSize
@@ -216,7 +232,7 @@ public class DataType implements Serializable {
         if (!matcher.matches()) {
             throw new IllegalStateException("val is illegal:" + ser);
         }
-        DataType type = new DataType(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+        DataType type = new DataType(Integer.parseInt(matcher.group(1)), StringUtils.EMPTY, Integer.parseInt(matcher.group(2)));
         String d = matcher.group(3);
         if (StringUtils.isNotEmpty(d)) {
             type.decimalDigits = Integer.parseInt(d);
