@@ -36,7 +36,7 @@ public class DataType implements Serializable {
 
     public final int type;
     public final int columnSize;
-    private final String typeName;
+    public final String typeName;
     // decimal 的小数位长度
     private Integer decimalDigits;
 
@@ -46,8 +46,9 @@ public class DataType implements Serializable {
     }
 
     /**
-     * @param type       java.sql.Types
+     * @param type
      * @param columnSize
+     * @see java.sql.Types
      */
     public DataType(int type, String typeName, int columnSize) {
         this.type = type;
@@ -71,7 +72,9 @@ public class DataType implements Serializable {
                 return DataXReaderColType.Long;
             case Types.FLOAT:
             case Types.DOUBLE:
+            case Types.REAL:
             case Types.DECIMAL:
+            case Types.NUMERIC:
                 return DataXReaderColType.Double;
             case Types.DATE:
             case Types.TIME:
@@ -93,11 +96,7 @@ public class DataType implements Serializable {
     public <T> T accept(TypeVisitor<T> visitor) {
         switch (this.type) {
             case Types.INTEGER: {
-                if (this.isUnsigned()) {
-                    return visitor.bigInt(this);
-                } else {
-                    return visitor.intType(this);
-                }
+                return visitor.intType(this);
             }
             case Types.TINYINT:
                 return visitor.tinyIntType(this);
@@ -106,10 +105,12 @@ public class DataType implements Serializable {
             case Types.BIGINT:
                 return visitor.bigInt(this);
             case Types.FLOAT:
+            case Types.REAL:
                 return visitor.floatType(this);
             case Types.DOUBLE:
                 return visitor.doubleType(this);
             case Types.DECIMAL:
+            case Types.NUMERIC:
                 return visitor.decimalType(this);
             case Types.DATE:
                 return visitor.dateType(this);
@@ -118,6 +119,7 @@ public class DataType implements Serializable {
             case Types.TIMESTAMP:
                 return visitor.timestampType(this);
             case Types.BIT:
+                return visitor.boolType(this);
             case Types.BOOLEAN:
                 return visitor.bitType(this);
             case Types.BLOB:
@@ -244,6 +246,7 @@ public class DataType implements Serializable {
     public String toString() {
         return "{" +
                 "type=" + type +
+                ",typeName=" + this.typeName +
                 ", columnSize=" + columnSize +
                 ", decimalDigits=" + decimalDigits +
                 '}';
@@ -286,6 +289,10 @@ public class DataType implements Serializable {
 
         default T smallIntType(DataType dataType) {
             return intType(dataType);
+        }
+
+        default T boolType(DataType dataType) {
+            return bitType(dataType);
         }
     }
 }

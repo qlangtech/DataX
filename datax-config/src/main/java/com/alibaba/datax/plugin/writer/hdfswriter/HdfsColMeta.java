@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.hdfswriter;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.qlangtech.tis.plugin.ds.DataType;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ import java.util.Objects;
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2022-02-18 15:47
  **/
-public class HdfsColMeta implements Serializable {
+public class HdfsColMeta implements Serializable, IColMetaGetter {
 
     public static final String KEY_COLUMN = "column";
     public static final String KEY_NAME = "name";
@@ -48,6 +49,16 @@ public class HdfsColMeta implements Serializable {
         this.type = dataType;
         this.csvType = parseCsvType(dataType);
         this.pk = pk;
+    }
+
+    @Override
+    public boolean isPk() {
+        return this.pk;
+    }
+
+    @Override
+    public DataType getType() {
+        return this.type;
     }
 
     public String getName() {
