@@ -71,6 +71,7 @@ under the License.
             <groupId>com.qlangtech.tis</groupId>
             <artifactId>tis-plugin</artifactId>
         </dependency>
+
     </dependencies>
     <build>
         <plugins>

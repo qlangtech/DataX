@@ -11,7 +11,6 @@ import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
-import com.qlangtech.tis.plugin.KeyedPluginStore;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -820,15 +819,17 @@ public final class DBUtil {
 
     public static IDataSourceFactoryGetter getWriterDataSourceFactoryGetter(Configuration config) {
         return getDataSourceFactoryGetter(config, (dataXName) -> {
-            KeyedPluginStore<DataxWriter> pluginStore = DataxWriter.getPluginStore(null, dataXName);
-            return pluginStore.getPlugin();
+            return DataxWriter.load(null, dataXName);
+//            KeyedPluginStore<DataxWriter> pluginStore = DataxWriter.getPluginStore(null, dataXName);
+//            return pluginStore.getPlugin();
         });
     }
 
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config) {
         return getDataSourceFactoryGetter(config, (dataXName) -> {
-            KeyedPluginStore<DataxReader> pluginStore = DataxReader.getPluginStore(null, dataXName);
-            return pluginStore.getPlugin();
+            return DataxReader.load(null, dataXName);
+//            KeyedPluginStore<DataxReader> pluginStore = DataxReader.getPluginStore(null, dataXName);
+//            return pluginStore.getPlugin();
         });
     }
 

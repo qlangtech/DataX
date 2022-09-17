@@ -29,6 +29,7 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.druid.sql.parser.ParserException;
 import com.google.common.base.Strings;
+import com.qlangtech.tis.offline.DataxUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
