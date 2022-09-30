@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+
 import java.sql.Connection;
 
 /**
@@ -9,7 +11,7 @@ public interface ConnectionFactory {
 
     public Connection getConnecttion();
 
-    public Connection getConnecttionWithoutRetry();
+    public IDataSourceFactoryGetter getConnecttionWithoutRetry();
 
     public String getConnectionInfo();
 

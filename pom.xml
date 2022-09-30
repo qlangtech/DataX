@@ -78,6 +78,7 @@
         <!--        <module>oceanbasev10reader</module>-->
 
         <!-- writer -->
+        <module>starrockswriter</module>
         <module>doriswriter</module>
         <module>mysqlwriter</module>
         <module>drdswriter</module>

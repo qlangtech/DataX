@@ -6,13 +6,16 @@ import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class OriginalConfPretreatmentUtil {
     private static final Logger LOG = LoggerFactory
@@ -103,7 +106,7 @@ public final class OriginalConfPretreatmentUtil {
             if (isPreCheck) {
                 allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
             } else {
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
             }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -123,7 +126,12 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                DBUtil.getColumnMetaData(connectionFactory.getConnecttion(), oneTable, StringUtils.join(userConfiguredColumns, ","));
+                String cfgCols = StringUtils.join(userConfiguredColumns, ",");
+                List<ColumnMetaData> cols = DBUtil.getColumnMetaData(connectionFactory.getConnecttionWithoutRetry(), oneTable, userConfiguredColumns);
+                List<String> existCols = cols.stream().map((c) -> c.getName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEqualCollection(existCols, userConfiguredColumns)) {
+                    throw new IllegalStateException("db table:" + oneTable + " exist cols:" + StringUtils.join(existCols, ",") + " not equal with config cols:" + cfgCols);
+                }
             }
         }
     }

@@ -11,18 +11,22 @@ import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
+import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class DBUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
@@ -511,84 +515,107 @@ public final class DBUtil {
 
     public static List<String> getTableColumns(DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter,
                                                String jdbcUrl, String user, String pass, String tableName) {
-        Connection conn = getConnection(dataSourceFactoryGetter, jdbcUrl, user, pass);
-        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:" + jdbcUrl);
+        return getTableColums(dataSourceFactoryGetter, tableName);
+//        Connection conn = getConnection(dataSourceFactoryGetter, jdbcUrl, user, pass);
+//        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:" + jdbcUrl);
     }
 
-    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, Connection conn, String tableName, String basicMsg) {
+    private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, String tableName) {
+        List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName);
+        return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
+    }
 
-        List<String> columns = new ArrayList<String>();
-        Statement statement = null;
-        ResultSet rs = null;
-        String queryColumnSql = null;
-        try {
-            statement = conn.createStatement();
-            queryColumnSql = String.format("select * from %s where 1=2",
-                    tableName);
-            rs = statement.executeQuery(queryColumnSql);
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
-                columns.add(rsMetaData.getColumnName(i + 1));
-            }
+    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, IDataSourceFactoryGetter conn, String tableName, String basicMsg) {
+        return getTableColums(conn, tableName);
+//        List<String> columns = new ArrayList<String>();
+//        Statement statement = null;
+//        ResultSet rs = null;
+//        String queryColumnSql = null;
+//        try {
+//            statement = conn.createStatement();
+//            queryColumnSql = String.format("select * from %s where 1=2",
+//                    tableName);
+//            rs = statement.executeQuery(queryColumnSql);
+//            ResultSetMetaData rsMetaData = rs.getMetaData();
+//            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
+//                columns.add(rsMetaData.getColumnName(i + 1));
+//            }
+//
+//        } catch (SQLException e) {
+//            throw RdbmsException.asQueryException(null, e, queryColumnSql, tableName, null);
+//        } finally {
+//            DBUtil.closeDBResources(rs, statement, conn);
+//        }
+//
+//        return columns;
+    }
 
-        } catch (SQLException e) {
-            throw RdbmsException.asQueryException(null, e, queryColumnSql, tableName, null);
-        } finally {
-            DBUtil.closeDBResources(rs, statement, conn);
-        }
+    /**
+     * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
+//     */
+//    public static List<ColumnMetaData> getColumnMetaData(
+//            IDataSourceFactoryGetter dataBaseType, String jdbcUrl, String user,
+//            String pass, String tableName, String column) {
+//        // Connection conn = null;
+//        //  try {
+//        //  conn = getConnection(dataBaseType, jdbcUrl, user, pass);
+//        //try {
+//        return getColumnMetaData(dataBaseType, tableName, column);
+////        } catch (SQLException e) {
+////            throw new RuntimeException(e);
+////        }
+//        // } finally {
+//        //  DBUtil.closeDBResources(null, null, conn);
+//        //}
+//    }
 
-        return columns;
+    public static List<ColumnMetaData> getColumnMetaData(
+            IDataSourceFactoryGetter dsGetter, String tableName, List<String> userConfiguredColumns) {
+        return getColumnMetaData(Optional.empty(), dsGetter, tableName, userConfiguredColumns);
     }
 
     /**
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
-    public static Triple<List<String>, List<Integer>, List<String>> getColumnMetaData(
-            IDataSourceFactoryGetter dataBaseType, String jdbcUrl, String user,
-            String pass, String tableName, String column) {
-        Connection conn = null;
-        try {
-            conn = getConnection(dataBaseType, jdbcUrl, user, pass);
-            return getColumnMetaData(conn, tableName, column);
-        } finally {
-            DBUtil.closeDBResources(null, null, conn);
+    public static List<ColumnMetaData> getColumnMetaData(
+            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, String tableName, List<String> userConfiguredColumns) {
+        if (CollectionUtils.isEmpty(userConfiguredColumns)) {
+            throw new IllegalArgumentException("param userConfiguredColumns can not be empty");
         }
-    }
-
-    /**
-     * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
-     */
-    public static Triple<List<String>, List<Integer>, List<String>> getColumnMetaData(
-            Connection conn, String tableName, String column) {
-        Statement statement = null;
-        ResultSet rs = null;
-
-        Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
-                new ArrayList<String>(), new ArrayList<Integer>(),
-                new ArrayList<String>());
-        try {
-            statement = conn.createStatement();
-            String queryColumnSql = "select " + column + " from " + tableName
-                    + " where 1=2";
-
-            rs = statement.executeQuery(queryColumnSql);
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
-
-                columnMetaData.getLeft().add(rsMetaData.getColumnName(i + 1));
-                columnMetaData.getMiddle().add(rsMetaData.getColumnType(i + 1));
-                columnMetaData.getRight().add(
-                        rsMetaData.getColumnTypeName(i + 1));
-            }
-            return columnMetaData;
-
-        } catch (SQLException e) {
-            throw DataXException
-                    .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-                            String.format("获取表:%s 的字段的元信息时失败. 请联系 DBA 核查该库、表信息.", tableName), e);
-        } finally {
-            DBUtil.closeDBResources(rs, statement, null);
-        }
+        List<ColumnMetaData> tabCols = connection.isPresent()
+                ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName)
+                : dsGetter.getDataSourceFactory().getTableMetadata(tableName);
+        return tabCols.stream().filter((c) -> userConfiguredColumns.contains(c.getName())).collect(Collectors.toList());
+        // return tabCols;
+//        Statement statement = null;
+//        ResultSet rs = null;
+//
+//        Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
+//                new ArrayList<String>(), new ArrayList<Integer>(),
+//                new ArrayList<String>());
+//        try {
+//            statement = conn.createStatement();
+//            String queryColumnSql = "select " + column + " from " + tableName
+//                    + " where 1=2";
+//
+//            rs = statement.executeQuery(queryColumnSql);
+//            ResultSetMetaData rsMetaData = rs.getMetaData();
+//            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
+//
+//                columnMetaData.getLeft().add(rsMetaData.getColumnName(i + 1));
+//                columnMetaData.getMiddle().add(rsMetaData.getColumnType(i + 1));
+//                columnMetaData.getRight().add(
+//                        rsMetaData.getColumnTypeName(i + 1));
+//            }
+//            return columnMetaData;
+//
+//        } catch (SQLException e) {
+//            throw DataXException
+//                    .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
+//                            String.format("获取表:%s 的字段的元信息时失败. 请联系 DBA 核查该库、表信息.", tableName), e);
+//        } finally {
+//            DBUtil.closeDBResources(rs, statement, null);
+//        }
     }
 
     public static boolean testConnWithoutRetry(IDataSourceFactoryGetter dataBaseType,

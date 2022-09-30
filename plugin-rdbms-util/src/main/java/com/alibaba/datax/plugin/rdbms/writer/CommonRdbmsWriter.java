@@ -12,9 +12,9 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CommonRdbmsWriter {
 
@@ -200,7 +201,7 @@ public class CommonRdbmsWriter {
         protected String writeRecordSql;
         protected String writeMode;
         protected boolean emptyAsNull;
-        protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
+        protected List<ColumnMetaData> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
             this.dataBaseType = dataBaseType;
@@ -264,8 +265,11 @@ public class CommonRdbmsWriter {
             this.taskPluginCollector = taskPluginCollector;
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
-            this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
-                    this.table, StringUtils.join(this.columns, ","));
+//            this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
+//                    this.table, StringUtils.join(this.columns, ","));
+
+            this.resultSetMetaData = DBUtil.getColumnMetaData(Optional.of(connection), this.dataSourceFactoryGetter, this.table, columns);
+
             // 写数据库的SQL语句
             calcWriteRecordSql();
 
@@ -407,10 +411,12 @@ public class CommonRdbmsWriter {
         // 直接使用了两个类变量：columnNumber,resultSetMetaData
         protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
                 throws SQLException {
+            ColumnMetaData col = null;
             for (int i = 0; i < this.columnNumber; i++) {
-                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
-                String typeName = this.resultSetMetaData.getRight().get(i);
-                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, typeName, record.getColumn(i));
+                col = this.resultSetMetaData.get(i);
+//                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
+//                String typeName = this.resultSetMetaData.getRight().get(i);
+                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, col.getType().type, col.getType().typeName, record.getColumn(i));
             }
 
             return preparedStatement;
@@ -423,6 +429,9 @@ public class CommonRdbmsWriter {
 
         protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex,
                                                                     int columnSqltype, String typeName, Column column) throws SQLException {
+
+            ColumnMetaData cm = this.resultSetMetaData.get(columnIndex);
+
             java.util.Date utilDate;
             switch (columnSqltype) {
                 case Types.CHAR:
@@ -466,7 +475,7 @@ public class CommonRdbmsWriter {
                 // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                 case Types.DATE:
                     if (typeName == null) {
-                        typeName = this.resultSetMetaData.getRight().get(columnIndex);
+                        typeName = cm.getType().typeName; //this.resultSetMetaData.getRight().get(columnIndex);
                     }
 
                     if (typeName.equalsIgnoreCase("year")) {
@@ -549,12 +558,9 @@ public class CommonRdbmsWriter {
                                     DBUtilErrorCode.UNSUPPORTED_TYPE,
                                     String.format(
                                             "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
-                                            this.resultSetMetaData.getLeft()
-                                                    .get(columnIndex),
-                                            this.resultSetMetaData.getMiddle()
-                                                    .get(columnIndex),
-                                            this.resultSetMetaData.getRight()
-                                                    .get(columnIndex)));
+                                            cm.getName(),
+                                            cm.getType().type,
+                                            cm.getType().typeName));
             }
             return preparedStatement;
         }
@@ -563,7 +569,7 @@ public class CommonRdbmsWriter {
             if (!VALUE_HOLDER.equals(calcValueHolder(""))) {
                 List<String> valueHolders = new ArrayList<String>(columnNumber);
                 for (int i = 0; i < columns.size(); i++) {
-                    String type = resultSetMetaData.getRight().get(i);
+                    String type = resultSetMetaData.get(i).getType().typeName;
                     valueHolders.add(calcValueHolder(type));
                 }
 

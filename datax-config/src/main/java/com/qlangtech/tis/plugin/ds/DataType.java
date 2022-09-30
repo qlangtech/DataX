@@ -119,9 +119,9 @@ public class DataType implements Serializable {
             case Types.TIMESTAMP:
                 return visitor.timestampType(this);
             case Types.BIT:
-                return visitor.boolType(this);
-            case Types.BOOLEAN:
                 return visitor.bitType(this);
+            case Types.BOOLEAN:
+                return visitor.boolType(this);
             case Types.BLOB:
             case Types.BINARY:
             case Types.LONGVARBINARY:
@@ -293,6 +293,78 @@ public class DataType implements Serializable {
 
         default T boolType(DataType dataType) {
             return bitType(dataType);
+        }
+    }
+
+    public static class DefaultTypeVisitor<T> implements TypeVisitor<T> {
+        @Override
+        public T bigInt(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T doubleType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T dateType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T timestampType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T bitType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T blobType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T varcharType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T intType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T floatType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T decimalType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T timeType(DataType type) {
+            return null;
+        }
+
+        @Override
+        public T tinyIntType(DataType dataType) {
+            return null;
+        }
+
+        @Override
+        public T smallIntType(DataType dataType) {
+            return null;
+        }
+
+        @Override
+        public T boolType(DataType dataType) {
+            return null;
         }
     }
 }
