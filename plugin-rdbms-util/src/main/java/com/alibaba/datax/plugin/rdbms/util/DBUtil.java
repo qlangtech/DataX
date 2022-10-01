@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -13,7 +14,6 @@ import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -552,7 +552,8 @@ public final class DBUtil {
 
     /**
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
-//     */
+     * //
+     */
 //    public static List<ColumnMetaData> getColumnMetaData(
 //            IDataSourceFactoryGetter dataBaseType, String jdbcUrl, String user,
 //            String pass, String tableName, String column) {
@@ -568,9 +569,8 @@ public final class DBUtil {
 //        //  DBUtil.closeDBResources(null, null, conn);
 //        //}
 //    }
-
     public static List<ColumnMetaData> getColumnMetaData(
-            IDataSourceFactoryGetter dsGetter, String tableName, List<String> userConfiguredColumns) {
+            IDataSourceFactoryGetter dsGetter, String tableName, SelectCols userConfiguredColumns) {
         return getColumnMetaData(Optional.empty(), dsGetter, tableName, userConfiguredColumns);
     }
 
@@ -578,14 +578,14 @@ public final class DBUtil {
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
     public static List<ColumnMetaData> getColumnMetaData(
-            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, String tableName, List<String> userConfiguredColumns) {
-        if (CollectionUtils.isEmpty(userConfiguredColumns)) {
-            throw new IllegalArgumentException("param userConfiguredColumns can not be empty");
-        }
+            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, String tableName, SelectCols userConfiguredColumns) {
+//        if (userConfiguredColumns.) {
+//            throw new IllegalArgumentException("param userConfiguredColumns can not be empty");
+//        }
         List<ColumnMetaData> tabCols = connection.isPresent()
                 ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName)
                 : dsGetter.getDataSourceFactory().getTableMetadata(tableName);
-        return tabCols.stream().filter((c) -> userConfiguredColumns.contains(c.getName())).collect(Collectors.toList());
+        return tabCols.stream().filter((c) -> userConfiguredColumns.containsCol(c.getName())).collect(Collectors.toList());
         // return tabCols;
 //        Statement statement = null;
 //        ResultSet rs = null;

@@ -15,7 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
@@ -92,7 +94,7 @@ public final class WriterUtil {
         return renderedSqls;
     }
 
-    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage,DataBaseType dataBaseType) {
+    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage, DataBaseType dataBaseType) {
         Statement stmt = null;
         String currentSql = null;
         try {
@@ -102,13 +104,13 @@ public final class WriterUtil {
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
         } catch (Exception e) {
-            throw RdbmsException.asQueryException(dataBaseType,e,currentSql,null,null);
+            throw RdbmsException.asQueryException(dataBaseType, e, currentSql, null, null);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }
     }
 
-    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
+    public static String getWriteTemplate(SelectCols columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
         boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
                 || writeMode.trim().toLowerCase().startsWith("replace")
                 || writeMode.trim().toLowerCase().startsWith("update");
@@ -121,14 +123,14 @@ public final class WriterUtil {
         String writeDataSqlTemplate;
         if (forceUseUpdate ||
                 ((dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Tddl) && writeMode.trim().toLowerCase().startsWith("update"))
-                ) {
+        ) {
             //update只在mysql下使用
 
             writeDataSqlTemplate = new StringBuilder()
                     .append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ","))
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
                     .append(")")
-                    .append(onDuplicateKeyUpdateString(columnHolders))
+                    .append(columnHolders.onDuplicateKeyUpdateString())
                     .toString();
         } else {
 
@@ -137,34 +139,12 @@ public final class WriterUtil {
                 writeMode = "replace";
             }
             writeDataSqlTemplate = new StringBuilder().append(writeMode)
-                    .append(" INTO %s (").append(StringUtils.join(columnHolders, ","))
+                    .append(" INTO %s (").append(columnHolders.getCols()) //StringUtils.join(columnHolders, ",")
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
                     .append(")").toString();
         }
 
         return writeDataSqlTemplate;
-    }
-
-    public static String onDuplicateKeyUpdateString(List<String> columnHolders){
-        if (columnHolders == null || columnHolders.size() < 1) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(" ON DUPLICATE KEY UPDATE ");
-        boolean first = true;
-        for(String column:columnHolders){
-            if(!first){
-                sb.append(",");
-            }else{
-                first = false;
-            }
-            sb.append(column);
-            sb.append("=VALUES(");
-            sb.append(column);
-            sb.append(")");
-        }
-
-        return sb.toString();
     }
 
     public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type) {
@@ -180,11 +160,11 @@ public final class WriterUtil {
         if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
             LOG.info("Begin to preCheck preSqls:[{}].",
                     StringUtils.join(renderedPreSqls, ";"));
-            for(String sql : renderedPreSqls) {
-                try{
+            for (String sql : renderedPreSqls) {
+                try {
                     DBUtil.sqlValid(sql, type);
-                }catch(ParserException e) {
-                    throw RdbmsException.asPreSQLParserException(type,e,sql);
+                } catch (ParserException e) {
+                    throw RdbmsException.asPreSQLParserException(type, e, sql);
                 }
             }
         }
@@ -203,11 +183,11 @@ public final class WriterUtil {
 
             LOG.info("Begin to preCheck postSqls:[{}].",
                     StringUtils.join(renderedPostSqls, ";"));
-            for(String sql : renderedPostSqls) {
-                try{
+            for (String sql : renderedPostSqls) {
+                try {
                     DBUtil.sqlValid(sql, type);
-                }catch(ParserException e){
-                    throw RdbmsException.asPostSQLParserException(type,e,sql);
+                } catch (ParserException e) {
+                    throw RdbmsException.asPostSQLParserException(type, e, sql);
                 }
 
             }

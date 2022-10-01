@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
 
@@ -403,7 +404,7 @@ public class OdpsUtil {
     }
 
     public static List<Integer> parsePosition(List<String> allColumnList,
-                                              List<String> userConfiguredColumns) {
+                                              SelectCols userConfiguredColumns) {
         List<Integer> retList = new ArrayList<Integer>();
 
         boolean hasColumn;

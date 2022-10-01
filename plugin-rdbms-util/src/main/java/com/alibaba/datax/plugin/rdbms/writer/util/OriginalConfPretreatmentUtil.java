@@ -2,13 +2,11 @@ package com.alibaba.datax.plugin.rdbms.writer.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,44 +94,47 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable) {
-        List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
-        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
-            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                    "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
+        //SelectCols userConfiguredColumns =  SelectCols.createSelectCols( originalConfig.getList(Key.COLUMN, String.class) ,originalConfig.get(Key.ESCAPE_CHAR, String.class) );
+        SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
+//        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
+//            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
+//                    "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
+//        } else {
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
+        List<String> allColumns;
+        if (isPreCheck) {
+            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
         } else {
-            boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
-            List<String> allColumns;
-            if (isPreCheck) {
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
-            } else {
-                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
-            }
+            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+        }
 
-            LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
-                    StringUtils.join(allColumns, ","));
+        LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
+                StringUtils.join(allColumns, ","));
 
-            if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
-                LOG.warn("您的配置文件中的列配置信息存在风险. 因为您配置的写入数据库表的列为*，当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。请检查您的配置并作出修改.");
+        if (userConfiguredColumns.isSelectAllCols()) {
+            LOG.warn("您的配置文件中的列配置信息存在风险. 因为您配置的写入数据库表的列为*，当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。请检查您的配置并作出修改.");
 
-                // 回填其值，需要以 String 的方式转交后续处理
-                originalConfig.set(Key.COLUMN, allColumns);
-            } else if (userConfiguredColumns.size() > allColumns.size()) {
-                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                        String.format("您的配置文件中的列配置信息有误. 因为您所配置的写入数据库表的字段个数:%s 大于目的表的总字段总个数:%s. 请检查您的配置并作出修改.",
-                                userConfiguredColumns.size(), allColumns.size()));
-            } else {
-                // 确保用户配置的 column 不重复
-                ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
+            // 回填其值，需要以 String 的方式转交后续处理
+            originalConfig.set(Key.COLUMN, allColumns);
+        } else if (userConfiguredColumns.size() > allColumns.size()) {
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
+                    String.format("您的配置文件中的列配置信息有误. 因为您所配置的写入数据库表的字段个数:%s 大于目的表的总字段总个数:%s. 请检查您的配置并作出修改.",
+                            userConfiguredColumns.size(), allColumns.size()));
+        } else {
+            // 确保用户配置的 column 不重复
+            userConfiguredColumns.makeSureNoValueDuplicate(false);
 
-                // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                String cfgCols = StringUtils.join(userConfiguredColumns, ",");
-                List<ColumnMetaData> cols = DBUtil.getColumnMetaData(connectionFactory.getConnecttionWithoutRetry(), oneTable, userConfiguredColumns);
+            // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
+            String cfgCols = StringUtils.join(userConfiguredColumns, ",");
+            List<ColumnMetaData> cols = DBUtil.getColumnMetaData(connectionFactory.getConnecttionWithoutRetry(), oneTable, userConfiguredColumns);
+
+            if (cols.size() != userConfiguredColumns.size()) {
                 List<String> existCols = cols.stream().map((c) -> c.getName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEqualCollection(existCols, userConfiguredColumns)) {
-                    throw new IllegalStateException("db table:" + oneTable + " exist cols:" + StringUtils.join(existCols, ",") + " not equal with config cols:" + cfgCols);
-                }
+                throw new IllegalStateException("db table:" + oneTable + " exist cols:"
+                        + StringUtils.join(existCols, ",") + " not equal with config cols:" + cfgCols);
             }
         }
+        // }
     }
 
     public static void dealColumnConf(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {
@@ -150,7 +151,7 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType) {
-        List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
+        SelectCols columns = SelectCols.createSelectCols( originalConfig );//.getList(Key.COLUMN, String.class);
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL, String.class));

@@ -11,6 +11,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
@@ -185,13 +186,14 @@ public class CommonRdbmsWriter {
         protected String password;
         protected String jdbcUrl;
         protected String table;
-        protected List<String> columns;
+        protected SelectCols columns;
         protected List<String> preSqls;
         protected List<String> postSqls;
         protected int batchSize;
         protected int batchByteSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;
+
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         protected static String BASIC_MESSAGE;
@@ -228,7 +230,9 @@ public class CommonRdbmsWriter {
 
             this.table = writerSliceConfig.getString(Key.TABLE);
 
-            this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
+
+            this.columns = SelectCols.createSelectCols(writerSliceConfig);
+
             this.columnNumber = this.columns.size();
 
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
@@ -239,7 +243,7 @@ public class CommonRdbmsWriter {
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
-            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
+            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, "\"" + this.table + "\"");
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 

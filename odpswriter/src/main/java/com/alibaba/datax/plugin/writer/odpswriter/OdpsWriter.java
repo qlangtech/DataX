@@ -8,9 +8,9 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
-
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.Table;
 import com.aliyun.odps.TableSchema;
@@ -70,7 +70,7 @@ public class OdpsWriter extends Writer {
             this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
             //检查表等配置是否正确
-            this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
+            this.table = OdpsUtil.getTable(odps, this.projectName, this.tableName);
 
             //检查列信息是否正确
             List<String> allColumns = OdpsUtil.getAllColumns(this.table.getSchema());
@@ -117,7 +117,7 @@ public class OdpsWriter extends Writer {
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
-            if(this.blockSizeInMB < 8) {
+            if (this.blockSizeInMB < 8) {
                 this.blockSizeInMB = 8;
             }
             this.originalConfig.set(Key.BLOCK_SIZE_IN_MB, this.blockSizeInMB);
@@ -149,7 +149,7 @@ public class OdpsWriter extends Writer {
             this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
             //检查表等配置是否正确
-            this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
+            this.table = OdpsUtil.getTable(odps, this.projectName, this.tableName);
 
             OdpsUtil.dealTruncate(this.odps, this.table, this.partition, this.truncate);
         }
@@ -197,16 +197,16 @@ public class OdpsWriter extends Writer {
 
         private void dealColumn(Configuration originalConfig, List<String> allColumns) {
             //之前已经检查了userConfiguredColumns 一定不为空
-            List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
-            if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
-                userConfiguredColumns = allColumns;
+            SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
+            if (userConfiguredColumns.isSelectAllCols()) {
+                userConfiguredColumns = SelectCols.createSelectCols(allColumns);
                 originalConfig.set(Key.COLUMN, allColumns);
             } else {
                 //检查列是否重复，大小写不敏感（所有写入，都是不允许写入段的列重复的）
-                ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
+                userConfiguredColumns.makeSureNoValueDuplicate(false);
 
-                //检查列是否存在，大小写不敏感
-                ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
+                // 检查列是否存在，大小写不敏感
+              //  ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
             }
 
             List<Integer> columnPositions = OdpsUtil.parsePosition(allColumns, userConfiguredColumns);
@@ -309,7 +309,7 @@ public class OdpsWriter extends Writer {
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
 
-                PerfRecord blockClose = new PerfRecord(super.getTaskGroupId(),super.getTaskId(), PerfRecord.PHASE.ODPS_BLOCK_CLOSE);
+                PerfRecord blockClose = new PerfRecord(super.getTaskGroupId(), super.getTaskId(), PerfRecord.PHASE.ODPS_BLOCK_CLOSE);
                 blockClose.start();
                 long blockCloseUsedTime = 0;
                 while ((dataXRecord = recordReceiver.getFromReader()) != null) {
@@ -325,14 +325,14 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            synchronized (lock){
-                if(failoverState==0){
+            synchronized (lock) {
+                if (failoverState == 0) {
                     failoverState = 2;
                     LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
                             StringUtils.join(blocks, ","));
                     OdpsUtil.masterCompleteBlocks(this.managerUpload, blocks.toArray(new Long[0]));
                     LOG.info("Slave which uploadId=[{}] commit blocks ok.", this.uploadId);
-                }else{
+                } else {
                     throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
                 }
             }
@@ -343,9 +343,9 @@ public class OdpsWriter extends Writer {
         }
 
         @Override
-        public boolean supportFailOver(){
-            synchronized (lock){
-                if(failoverState==0){
+        public boolean supportFailOver() {
+            synchronized (lock) {
+                if (failoverState == 0) {
                     failoverState = 1;
                     return true;
                 }
