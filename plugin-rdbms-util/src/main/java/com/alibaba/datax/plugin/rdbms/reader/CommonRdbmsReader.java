@@ -16,7 +16,9 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.google.common.collect.Lists;
+import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,15 +27,24 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CommonRdbmsReader {
+
+    public static void main(String[] args) {
+        Matcher matcher = Task.PATTERN_FROM_TABLE.matcher("select * frome user where from =1");
+        if (matcher.find()) {
+            System.out.println(matcher.group(1));
+        } else {
+            throw new IllegalStateException("have not find");
+        }
+    }
 
     public static class Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
@@ -123,6 +134,7 @@ public class CommonRdbmsReader {
         private String password;
         private String jdbcUrl;
         private String mandatoryEncoding;
+        private static final Pattern PATTERN_FROM_TABLE = Pattern.compile("[fF][rR][oO][mM]\\s+(\\S+)");
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private String basicMsg;
@@ -172,6 +184,14 @@ public class CommonRdbmsReader {
         ) {
             String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
             String table = readerSliceConfig.getString(Key.TABLE);
+            if (StringUtils.isEmpty(table)) {
+                Matcher m = PATTERN_FROM_TABLE.matcher(querySql);
+                if (m.find()) {
+                    table = m.group(1);
+                } else {
+                    throw new IllegalStateException("can not find table name from query sql:" + querySql);
+                }
+            }
 
             PerfTrace.getInstance().addTaskDetails(taskId, table + "," + basicMsg);
 
@@ -182,6 +202,12 @@ public class CommonRdbmsReader {
 
             Connection conn = DBUtil.getConnection(this.readerDataSourceFactoryGetter, jdbcUrl,
                     username, password);
+            Map<String, ColumnMetaData> tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
+                    .getTableMetadata(conn, table));
+            if (MapUtils.isEmpty(tabCols)) {
+                throw new IllegalStateException("table:" + table + " relevant tabCols can not be empty");
+            }
+            List<ColumnMetaData> cols = Lists.newArrayList();
 
             // session config .etc related
             DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
@@ -191,14 +217,17 @@ public class CommonRdbmsReader {
             ResultSet rs = null;
             try {
                 Integer rowFetchSize = this.readerDataSourceFactoryGetter.getRowFetchSize();
-                if(rowFetchSize == null){
- throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
+                if (rowFetchSize == null) {
+                    throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
                 }
                 rs = DBUtil.query(conn, querySql, rowFetchSize);
                 queryPerfRecord.end();
 
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = metaData.getColumnCount();
+                for (int colIdx = 1; colIdx <= columnNumber; colIdx++) {
+                    cols.add(Objects.requireNonNull(tabCols.get(metaData.getColumnName(colIdx))));
+                }
 
                 //这个统计干净的result_Next时间
                 PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
@@ -209,7 +238,7 @@ public class CommonRdbmsReader {
                 while (rs.next()) {
                     rsNextUsedTime += (System.nanoTime() - lastTime);
                     this.transportOneRecord(recordSender, rs,
-                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                            cols, columnNumber, mandatoryEncoding, taskPluginCollector);
                     lastTime = System.nanoTime();
                 }
 
@@ -234,20 +263,21 @@ public class CommonRdbmsReader {
         }
 
         protected Record transportOneRecord(RecordSender recordSender, ResultSet rs,
-                                            ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding,
+                                            List<ColumnMetaData> cols, int columnNumber, String mandatoryEncoding,
                                             TaskPluginCollector taskPluginCollector) {
-            Record record = buildRecord(recordSender, rs, metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+            Record record = buildRecord(recordSender, rs, cols, columnNumber, mandatoryEncoding, taskPluginCollector);
             recordSender.sendToWriter(record);
             return record;
         }
 
-        protected Record buildRecord(RecordSender recordSender, ResultSet rs, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding,
+        protected Record buildRecord(RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols, int columnNumber, String mandatoryEncoding,
                                      TaskPluginCollector taskPluginCollector) {
             Record record = recordSender.createRecord();
-
+            ColumnMetaData cm = null;
             try {
                 for (int i = 1; i <= columnNumber; i++) {
-                    switch (metaData.getColumnType(i)) {
+                    cm = cols.get(i - 1);
+                    switch (cm.getType().type) {
 
                         case Types.CHAR:
                         case Types.NCHAR:
@@ -294,7 +324,7 @@ public class CommonRdbmsReader {
 
                         // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                         case Types.DATE:
-                            if (metaData.getColumnTypeName(i).equalsIgnoreCase("year")) {
+                            if (cm.getType().typeName.equalsIgnoreCase("year")) {
                                 record.addColumn(new LongColumn(rs.getInt(i)));
                             } else {
                                 record.addColumn(new DateColumn(rs.getDate(i)));
@@ -332,10 +362,8 @@ public class CommonRdbmsReader {
                                     .asDataXException(
                                             DBUtilErrorCode.UNSUPPORTED_TYPE,
                                             String.format(
-                                                    "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s]. 请尝试使用数据库函数将其转换datax支持的类型 或者不同步该字段 .",
-                                                    metaData.getColumnName(i),
-                                                    metaData.getColumnType(i),
-                                                    metaData.getColumnClassName(i)));
+                                                    "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库读取这种字段类型. 字段:[%s]. 请尝试使用数据库函数将其转换datax支持的类型 或者不同步该字段 .",
+                                                    cm.toString()));
                     }
                 }
             } catch (Exception e) {

@@ -12,6 +12,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
@@ -106,13 +107,17 @@ public class CommonRdbmsWriter {
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 originalConfig.set(Key.JDBC_URL, jdbcUrl);
 
-                String table = connConf.getList(Key.TABLE, String.class).get(0);
-                originalConfig.set(Key.TABLE, table);
+                SelectTable table = SelectTable.create(connConf);
+
+                // String table = connConf.getList(Key.TABLE, String.class).get(0);
+                originalConfig.set(Key.TABLE, table.getUnescapeTabName());
+                if (table.isContainEscapeChar()) {
+                    originalConfig.set(Key.ESCAPE_CHAR, table.getEscapeChar());
+                }
 
                 List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                         String.class);
-                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
-                        preSqls, table);
+                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
 
                 originalConfig.remove(Constant.CONN_MARK);
                 if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
@@ -138,6 +143,7 @@ public class CommonRdbmsWriter {
         }
 
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
+
         public void post(Configuration originalConfig) {
             int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
             if (tableNumber == 1) {
@@ -147,7 +153,7 @@ public class CommonRdbmsWriter {
                 // 已经由 prepare 进行了appendJDBCSuffix处理
                 String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
 
-                String table = originalConfig.getString(Key.TABLE);
+                SelectTable table = SelectTable.createInTask( originalConfig);//.getString(Key.TABLE);
 
                 List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                         String.class);
@@ -185,7 +191,7 @@ public class CommonRdbmsWriter {
         protected String username;
         protected String password;
         protected String jdbcUrl;
-        protected String table;
+        protected SelectTable table;
         protected SelectCols columns;
         protected List<String> preSqls;
         protected List<String> postSqls;
@@ -228,7 +234,7 @@ public class CommonRdbmsWriter {
                 LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
             }
 
-            this.table = writerSliceConfig.getString(Key.TABLE);
+            this.table = SelectTable.createInTask(writerSliceConfig);
 
 
             this.columns = SelectCols.createSelectCols(writerSliceConfig);
@@ -243,8 +249,7 @@ public class CommonRdbmsWriter {
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
-            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, "\"" + this.table + "\"");
-
+            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 
             this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig);

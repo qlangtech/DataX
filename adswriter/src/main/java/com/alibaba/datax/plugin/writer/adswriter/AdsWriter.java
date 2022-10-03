@@ -7,6 +7,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
@@ -28,7 +29,6 @@ import com.aliyun.odps.OdpsException;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,16 +71,16 @@ public class AdsWriter extends Writer {
             startTime = System.currentTimeMillis();
             this.originalConfig = super.getPluginJobConf();
             this.writeMode = this.originalConfig.getString(Key.WRITE_MODE);
-            if(null == this.writeMode) {
+            if (null == this.writeMode) {
                 LOG.warn("您未指定[writeMode]参数,  默认采用load模式, load模式只能用于离线表");
                 this.writeMode = Constant.LOADMODE;
                 this.originalConfig.set(Key.WRITE_MODE, "load");
             }
 
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 loadModeInit();
-            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
+            } else if (Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(originalConfig);
                 AdsInsertUtil.dealColumnConf(originalConfig, allColumns);
@@ -132,7 +132,7 @@ public class AdsWriter extends Writer {
                 tableMeta = TableMetaHelper.createTempODPSTable(tableInfo, lifeCycle);
                 this.odpsTransTableName = tableMeta.getTableName();
                 String sql = tableMeta.toDDL();
-                LOG.info("正在创建ODPS临时表： "+sql);
+                LOG.info("正在创建ODPS临时表： " + sql);
                 Instance instance = SQLTask.run(odps, transProjConf.getProject(), sql, null, null);
                 boolean terminated = false;
                 int time = 0;
@@ -144,10 +144,10 @@ public class AdsWriter extends Writer {
                 LOG.info("正在创建ODPS临时表成功");
             } catch (AdsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED, e);
-            }catch (OdpsException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+            } catch (OdpsException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED, e);
             } catch (InterruptedException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED, e);
             }
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig, this.odpsTransTableName,
@@ -170,14 +170,14 @@ public class AdsWriter extends Writer {
                 userConfiguredPartitions = Collections.emptyList();
             }
 
-            if(userConfiguredPartitions.size() > 1) {
+            if (userConfiguredPartitions.size() > 1) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_PARTITION_FAILED, "");
             }
 
-            if(userConfiguredPartitions.size() == 0) {
-                loadAdsData(adsHelper, odpsTableName,null);
-            }else {
-                loadAdsData(adsHelper, odpsTableName,userConfiguredPartitions.get(0));
+            if (userConfiguredPartitions.size() == 0) {
+                loadAdsData(adsHelper, odpsTableName, null);
+            } else {
+                loadAdsData(adsHelper, odpsTableName, userConfiguredPartitions.get(0));
             }
             System.exit(0);
         }
@@ -185,12 +185,12 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 //导数据到odps表中
                 this.odpsWriterJobProxy.prepare();
             } else {
                 // 实时表模式非分库分表
-                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                SelectTable adsTable = SelectTable.createInTask(this.originalConfig);// this.originalConfig.getString(Key.ADS_TABLE);
                 List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,
                         String.class);
                 List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
@@ -212,11 +212,11 @@ public class AdsWriter extends Writer {
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 return this.odpsWriterJobProxy.split(mandatoryNumber);
             } else {
                 List<Configuration> splitResult = new ArrayList<Configuration>();
-                for(int i = 0; i < mandatoryNumber; i++) {
+                for (int i = 0; i < mandatoryNumber; i++) {
                     splitResult.add(this.originalConfig.clone());
                 }
                 return splitResult;
@@ -226,16 +226,15 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 loadAdsData(odpsAdsHelper, this.odpsTransTableName, null);
                 this.odpsWriterJobProxy.post();
             } else {
                 // 实时表模式非分库分表
-                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                SelectTable adsTable = SelectTable.createInTask(this.originalConfig);// this.originalConfig.getString(Key.ADS_TABLE);
                 List<String> postSqls = this.originalConfig.getList(
                         Key.POST_SQL, String.class);
-                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
-                        postSqls, adsTable);
+                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, adsTable);
                 if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
                     // 说明有 preSql 配置，则此处删除掉
                     this.originalConfig.remove(Key.POST_SQL);
@@ -254,7 +253,7 @@ public class AdsWriter extends Writer {
 
         @Override
         public void destroy() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 this.odpsWriterJobProxy.destroy();
             } else {
                 //insert mode do noting
@@ -271,33 +270,33 @@ public class AdsWriter extends Writer {
                 project = this.transProjConf.getProject();
             }
             String partition = this.originalConfig.getString(Key.PARTITION);
-            String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,odpsPartition);
+            String sourcePath = AdsUtil.generateSourcePath(project, odpsTableName, odpsPartition);
             /**
              * 因为之前检查过，所以不用担心unbox的时候NPE
              */
             boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITE);
             try {
-                String id = helper.loadData(table,partition,sourcePath,overwrite);
+                String id = helper.loadData(table, partition, sourcePath, overwrite);
                 LOG.info("ADS Load Data任务已经提交，job id: " + id);
                 boolean terminated = false;
                 int time = 0;
-                while(!terminated) {
+                while (!terminated) {
                     Thread.sleep(120000);
                     terminated = helper.checkLoadDataJobStatus(id);
                     time += 2;
-                    LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 "+ time+" 分钟");
+                    LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 " + time + " 分钟");
                 }
                 LOG.info("ADS 导数据已成功");
             } catch (AdsException e) {
                 if (super.getPeerPluginName().equals(ODPS_READER)) {
                     // TODO 使用云账号
                     AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED.setAdsAccount(helper.getUserName());
-                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED,e);
+                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED, e);
                 } else {
-                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_TEMP_ODPS_FAILED,e);
+                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_TEMP_ODPS_FAILED, e);
                 }
             } catch (InterruptedException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED, e);
             }
         }
     }
@@ -323,12 +322,12 @@ public class AdsWriter extends Writer {
             writerSliceConfig = super.getPluginJobConf();
             this.writeMode = this.writerSliceConfig.getString(Key.WRITE_MODE);
             this.schema = writerSliceConfig.getString(Key.SCHEMA);
-            this.table =  writerSliceConfig.getString(Key.ADS_TABLE);
+            this.table = writerSliceConfig.getString(Key.ADS_TABLE);
 
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.setPluginJobConf(writerSliceConfig);
                 odpsWriterTaskProxy.init();
-            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
+            } else if (Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
 
                 if (Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
                     this.writeProxy = "datax";
@@ -343,7 +342,7 @@ public class AdsWriter extends Writer {
                     throw DataXException.asDataXException(AdsWriterErrorCode.CREATE_ADS_HELPER_FAILED, e);
                 }
                 List<String> allColumns = new ArrayList<String>();
-                List<ColumnInfo> columnInfo =  this.tableInfo.getColumns();
+                List<ColumnInfo> columnInfo = this.tableInfo.getColumns();
                 for (ColumnInfo eachColumn : columnInfo) {
                     allColumns.add(eachColumn.getName());
                 }
@@ -358,7 +357,7 @@ public class AdsWriter extends Writer {
 
         @Override
         public void prepare() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.prepare();
             } else {
                 //do nothing
@@ -367,7 +366,7 @@ public class AdsWriter extends Writer {
 
         public void startWrite(RecordReceiver recordReceiver) {
             // 这里的是非odps数据源->odps中转临时表数据同步, load操作在job post阶段完成
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.setTaskPluginCollector(super.getTaskPluginCollector());
                 odpsWriterTaskProxy.startWrite(recordReceiver);
             } else {
@@ -387,7 +386,7 @@ public class AdsWriter extends Writer {
 
         @Override
         public void post() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.post();
             } else {
                 //do noting until now
@@ -396,7 +395,7 @@ public class AdsWriter extends Writer {
 
         @Override
         public void destroy() {
-            if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+            if (Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.destroy();
             } else {
                 //do noting until now

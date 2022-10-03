@@ -93,7 +93,7 @@ public final class OriginalConfPretreatmentUtil {
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
     }
 
-    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable) {
+    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, SelectTable oneTable) {
         //SelectCols userConfiguredColumns =  SelectCols.createSelectCols( originalConfig.getList(Key.COLUMN, String.class) ,originalConfig.get(Key.ESCAPE_CHAR, String.class) );
         SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
 //        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
@@ -143,15 +143,16 @@ public final class OriginalConfPretreatmentUtil {
 
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
-        String oneTable = originalConfig.getString(String.format(
-                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
+        SelectTable oneTable = SelectTable.create(originalConfig);
+//        .getString(String.format(
+//                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
         JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(dataSourceFactoryGetter, jdbcUrl, username, password);
         dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
     }
 
     public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType) {
-        SelectCols columns = SelectCols.createSelectCols( originalConfig );//.getList(Key.COLUMN, String.class);
+        SelectCols columns = SelectCols.createSelectCols(originalConfig);//.getList(Key.COLUMN, String.class);
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL, String.class));

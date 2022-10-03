@@ -5,6 +5,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -514,18 +515,18 @@ public final class DBUtil {
     }
 
     public static List<String> getTableColumns(DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter,
-                                               String jdbcUrl, String user, String pass, String tableName) {
+                                               String jdbcUrl, String user, String pass, SelectTable tableName) {
         return getTableColums(dataSourceFactoryGetter, tableName);
 //        Connection conn = getConnection(dataSourceFactoryGetter, jdbcUrl, user, pass);
 //        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:" + jdbcUrl);
     }
 
-    private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, String tableName) {
-        List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName);
+    private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, SelectTable tableName) {
+        List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
         return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
     }
 
-    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, IDataSourceFactoryGetter conn, String tableName, String basicMsg) {
+    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, IDataSourceFactoryGetter conn, SelectTable tableName, String basicMsg) {
         return getTableColums(conn, tableName);
 //        List<String> columns = new ArrayList<String>();
 //        Statement statement = null;
@@ -570,7 +571,7 @@ public final class DBUtil {
 //        //}
 //    }
     public static List<ColumnMetaData> getColumnMetaData(
-            IDataSourceFactoryGetter dsGetter, String tableName, SelectCols userConfiguredColumns) {
+            IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
         return getColumnMetaData(Optional.empty(), dsGetter, tableName, userConfiguredColumns);
     }
 
@@ -578,13 +579,13 @@ public final class DBUtil {
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
     public static List<ColumnMetaData> getColumnMetaData(
-            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, String tableName, SelectCols userConfiguredColumns) {
+            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
 //        if (userConfiguredColumns.) {
 //            throw new IllegalArgumentException("param userConfiguredColumns can not be empty");
 //        }
         List<ColumnMetaData> tabCols = connection.isPresent()
-                ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName)
-                : dsGetter.getDataSourceFactory().getTableMetadata(tableName);
+                ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName.getUnescapeTabName())
+                : dsGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
         return tabCols.stream().filter((c) -> userConfiguredColumns.containsCol(c.getName())).collect(Collectors.toList());
         // return tabCols;
 //        Statement statement = null;

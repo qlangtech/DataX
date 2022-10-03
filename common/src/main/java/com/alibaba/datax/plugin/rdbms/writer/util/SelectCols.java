@@ -17,10 +17,8 @@ import java.util.stream.Collectors;
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2022-09-30 14:23
  **/
-public class SelectCols implements Iterable<String> {
+public class SelectCols extends EscapeableEntity implements Iterable<String> {
     protected final List<String> columns;
-    private final String escapeChar;
-    private final boolean containEscapeChar;
 
     @Override
     public Iterator<String> iterator() {
@@ -37,9 +35,8 @@ public class SelectCols implements Iterable<String> {
     }
 
     private SelectCols(List<String> columns, String escapeChar) {
+        super(escapeChar);
         this.columns = columns;
-        this.escapeChar = escapeChar;
-        this.containEscapeChar = StringUtils.isNotEmpty(escapeChar);
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("param colums can not be empty ");
         }
@@ -83,16 +80,8 @@ public class SelectCols implements Iterable<String> {
 
     public String getCols() {
         return columns.stream().map((c) -> {
-            return escapeCol(c);
+            return escapeEntity(c);
         }).collect(Collectors.joining(","));
-    }
-
-    private String escapeCol(String val) {
-        if (containEscapeChar) {
-            return escapeChar + val + escapeChar;
-        } else {
-            return val;
-        }
     }
 
     /**

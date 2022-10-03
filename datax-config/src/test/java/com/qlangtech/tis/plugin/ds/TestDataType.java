@@ -13,7 +13,7 @@ public class TestDataType extends TestCase {
     public void testDataTypeSerialize() {
         int decimalDigits = 4;
         int columnSize = 20;
-        DataType dt = new DataType(Types.BINARY, columnSize);
+        DataType dt = new DataType(Types.BINARY, "binary", columnSize);
         dt.setDecimalDigits(decimalDigits);
 
         DataType actual = DataType.ds(dt.getS());

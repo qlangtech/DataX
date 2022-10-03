@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -154,8 +155,9 @@ public final class OriginalConfPretreatmentUtil {
                     String username = originalConfig.getString(Key.USERNAME);
                     String password = originalConfig.getString(Key.PASSWORD);
 
-                    String tableName = originalConfig.getString(String.format(
-                            "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
+                    SelectTable tableName = SelectTable.create(originalConfig);
+//                    String tableName = originalConfig.getString(String.format(
+//                            "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
                     List<String> allColumns = DBUtil.getTableColumns(
                             DATABASE_TYPE, dataSourceFactoryGetter, jdbcUrl, username, password,

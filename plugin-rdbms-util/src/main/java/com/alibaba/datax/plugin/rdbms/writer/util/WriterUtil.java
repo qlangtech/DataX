@@ -50,9 +50,8 @@ public final class WriterUtil {
         List<String> preSqls = simplifiedConf.getList(Key.PRE_SQL, String.class);
         List<String> postSqls = simplifiedConf.getList(Key.POST_SQL, String.class);
 
-        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK,
-                Object.class);
-
+        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK, Object.class);
+        SelectTable selTable = null;
         for (Object conn : conns) {
             Configuration sliceConfig = simplifiedConf.clone();
 
@@ -63,12 +62,14 @@ public final class WriterUtil {
             sliceConfig.remove(Constant.CONN_MARK);
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
-
             for (String table : tables) {
+
+                selTable = SelectTable.create(table, simplifiedConf);
+
                 Configuration tempSlice = sliceConfig.clone();
                 tempSlice.set(Key.TABLE, table);
-                tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
-                tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
+                tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, selTable));
+                tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, selTable));
 
                 splitResultConfigs.add(tempSlice);
             }
@@ -78,7 +79,7 @@ public final class WriterUtil {
         return splitResultConfigs;
     }
 
-    public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, String tableName) {
+    public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, SelectTable selTable) {
         if (null == preOrPostSqls) {
             return Collections.emptyList();
         }
@@ -87,7 +88,7 @@ public final class WriterUtil {
         for (String sql : preOrPostSqls) {
             //preSql为空时，不加入执行队列
             if (StringUtils.isNotBlank(sql)) {
-                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, selTable.getTabName()));
             }
         }
 
@@ -148,14 +149,16 @@ public final class WriterUtil {
     }
 
     public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type) {
-        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
-        Configuration connConf = Configuration.from(conns.get(0).toString());
-        String table = connConf.getList(Key.TABLE, String.class).get(0);
+//        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+//        Configuration connConf = Configuration.from(conns.get(0).toString());
+//        String table = connConf.getList(Key.TABLE, String.class).get(0);
+
+        SelectTable selTab = SelectTable.create(originalConfig);
 
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                 String.class);
         List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
-                preSqls, table);
+                preSqls, selTab);
 
         if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
             LOG.info("Begin to preCheck preSqls:[{}].",
@@ -171,14 +174,16 @@ public final class WriterUtil {
     }
 
     public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type) {
-        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
-        Configuration connConf = Configuration.from(conns.get(0).toString());
-        String table = connConf.getList(Key.TABLE, String.class).get(0);
+//        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+//        Configuration connConf = Configuration.from(conns.get(0).toString());
+//        String table = connConf.getList(Key.TABLE, String.class).get(0);
+
+        SelectTable selTab = SelectTable.create(originalConfig);
 
         List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                 String.class);
         List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
-                postSqls, table);
+                postSqls, selTab);
         if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
 
             LOG.info("Begin to preCheck postSqls:[{}].",

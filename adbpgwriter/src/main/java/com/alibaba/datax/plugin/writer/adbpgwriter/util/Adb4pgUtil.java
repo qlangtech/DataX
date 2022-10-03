@@ -7,6 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +103,7 @@ public class Adb4pgUtil {
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                 String.class);
 
-        String tableName = originalConfig.getString(Key.TABLE);
+        SelectTable tableName = SelectTable.createInTask(originalConfig);// originalConfig.getString(Key.TABLE);
         List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
                 preSqls, tableName);
 
@@ -122,7 +123,7 @@ public class Adb4pgUtil {
     public static void post(Configuration configuration) {
         List<String> postSqls = configuration.getList(Key.POST_SQL,
                 String.class);
-        String tableName = configuration.getString(Key.TABLE);
+        SelectTable tableName = SelectTable.createInTask( configuration);//.getString(Key.TABLE);
         List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
                 postSqls, tableName);
 
