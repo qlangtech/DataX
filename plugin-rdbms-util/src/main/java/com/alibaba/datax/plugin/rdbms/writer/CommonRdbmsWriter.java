@@ -107,7 +107,7 @@ public class CommonRdbmsWriter {
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 originalConfig.set(Key.JDBC_URL, jdbcUrl);
 
-                SelectTable table = SelectTable.create(connConf);
+                SelectTable table = SelectTable.create(originalConfig);
 
                 // String table = connConf.getList(Key.TABLE, String.class).get(0);
                 originalConfig.set(Key.TABLE, table.getUnescapeTabName());
