@@ -26,8 +26,12 @@ public class SelectCols extends EscapeableEntity implements Iterable<String> {
     }
 
     public static SelectCols createSelectCols(Configuration conf) {
+        return createSelectCols(conf, null);
+    }
+
+    public static SelectCols createSelectCols(Configuration conf, String escapeChar) {
         return new SelectCols(
-                conf.getList(Key.COLUMN, String.class), conf.get(Key.ESCAPE_CHAR, String.class));
+                conf.getList(Key.COLUMN, String.class), StringUtils.defaultString(escapeChar, conf.get(Key.ESCAPE_CHAR, String.class)));
     }
 
     public static SelectCols createSelectCols(List<String> allColumns) {
@@ -36,8 +40,8 @@ public class SelectCols extends EscapeableEntity implements Iterable<String> {
 
     private SelectCols(List<String> columns, String escapeChar) {
         super(escapeChar);
-        this.columns = columns;
-        if (columns == null || columns.isEmpty()) {
+        this.columns = columns.stream().map((c) -> unescapeEntity(c)).collect(Collectors.toList());
+        if (this.columns == null || this.columns.isEmpty()) {
             throw new IllegalArgumentException("param colums can not be empty ");
         }
     }
@@ -118,4 +122,5 @@ public class SelectCols extends EscapeableEntity implements Iterable<String> {
     public boolean containsCol(String name) {
         return columns.contains(name);
     }
+
 }

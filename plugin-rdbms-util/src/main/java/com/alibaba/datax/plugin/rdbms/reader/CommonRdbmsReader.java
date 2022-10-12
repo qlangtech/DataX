@@ -18,6 +18,7 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -202,8 +203,13 @@ public class CommonRdbmsReader {
 
             Connection conn = DBUtil.getConnection(this.readerDataSourceFactoryGetter, jdbcUrl,
                     username, password);
-            Map<String, ColumnMetaData> tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
-                    .getTableMetadata(conn, table));
+            Map<String, ColumnMetaData> tabCols = null;
+            try {
+                tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
+                        .getTableMetadata(conn, table));
+            } catch (TableNotFoundException e) {
+                throw new RuntimeException(e);
+            }
             if (MapUtils.isEmpty(tabCols)) {
                 throw new IllegalStateException("table:" + table + " relevant tabCols can not be empty");
             }

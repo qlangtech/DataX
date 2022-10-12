@@ -10,13 +10,12 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
-import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
-import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
-import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
-import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.*;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.web.start.TisAppLaunch;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class CommonRdbmsWriter {
 
@@ -153,7 +153,7 @@ public class CommonRdbmsWriter {
                 // 已经由 prepare 进行了appendJDBCSuffix处理
                 String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
 
-                SelectTable table = SelectTable.createInTask( originalConfig);//.getString(Key.TABLE);
+                SelectTable table = SelectTable.createInTask(originalConfig);//.getString(Key.TABLE);
 
                 List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                         String.class);
@@ -209,7 +209,7 @@ public class CommonRdbmsWriter {
         protected String writeRecordSql;
         protected String writeMode;
         protected boolean emptyAsNull;
-        protected List<ColumnMetaData> resultSetMetaData;
+        protected List<Pair<ColumnMetaData, IStatementSetter>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
             this.dataBaseType = dataBaseType;
@@ -237,10 +237,6 @@ public class CommonRdbmsWriter {
             this.table = SelectTable.createInTask(writerSliceConfig);
 
 
-            this.columns = SelectCols.createSelectCols(writerSliceConfig);
-
-            this.columnNumber = this.columns.size();
-
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
@@ -253,6 +249,8 @@ public class CommonRdbmsWriter {
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 
             this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig);
+            this.columns = SelectCols.createSelectCols(writerSliceConfig, this.dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
+            this.columnNumber = this.columns.size();
         }
 
         public void prepare(Configuration writerSliceConfig) {
@@ -270,6 +268,175 @@ public class CommonRdbmsWriter {
             DBUtil.closeDBResources(null, null, connection);
         }
 
+
+        protected IStatementSetter parseColSetter(ColumnMetaData cm) {
+
+            switch (cm.getType().type) {
+                case Types.CHAR:
+                case Types.NCHAR:
+                case Types.CLOB:
+                case Types.NCLOB:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.NVARCHAR:
+                case Types.LONGNVARCHAR:
+//                    preparedStatement.setString(columnIndex + 1, column
+//                            .asString());
+                    return (stat, colIndex, column) -> {
+                        stat.setString(colIndex, column.asString());
+                    };
+
+                case Types.SMALLINT:
+                case Types.INTEGER:
+                    return (stat, colIndex, column) -> {
+                        // long l =   18446744073709551615l;
+                        stat.setLong(colIndex, column.asLong());
+                    };
+                case Types.BIGINT:
+                    return (stat, colIndex, column) -> {
+                        // long l =   18446744073709551615l;
+                        // column.asBigInteger();
+                        stat.setBigDecimal(colIndex, column.asBigDecimal());
+                    };
+                case Types.NUMERIC:
+                case Types.DECIMAL:
+                case Types.REAL:
+                    return (stat, colIndex, column) -> {
+
+                        // String strValue = column.asString();
+                        if (emptyAsNull && column.getRawData() == null) {
+                            stat.setNull(colIndex, cm.getType().type);
+                        } else {
+                            stat.setBigDecimal(colIndex, column.asBigDecimal());
+                        }
+                    };
+                case Types.FLOAT:
+                case Types.DOUBLE:
+                    return (stat, colIndex, column) -> {
+
+                        //  String strValue = column.asString();
+                        if (emptyAsNull && column.getRawData() == null) {
+                            stat.setNull(colIndex, cm.getType().type);
+                        } else {
+                            stat.setDouble(colIndex, column.asDouble());
+                        }
+                    };
+                //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
+                case Types.TINYINT:
+
+                    return (stat, colIndex, column) -> {
+//                        Long longValue = column.asLong();
+//                        if (null == longValue) {
+//                            stat.setString(colIndex, null);
+//                        } else {
+                        stat.setShort(colIndex, column.asLong().shortValue());
+                        //}
+                    };
+
+                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
+                case Types.DATE:
+
+                    return (stat, colIndex, column) -> {
+//                    if (typeName == null) {
+//                        typeName = cm.getType().typeName; //this.resultSetMetaData.getRight().get(columnIndex);
+//                    }
+                        java.util.Date utilDate;
+                        if (cm.getType().typeName.equalsIgnoreCase("year")) {
+//                        if (column.asBigInteger() == null) {
+//                            stat.setString(columnIndex + 1, null);
+//                        } else {
+                            stat.setInt(colIndex, column.asBigInteger().intValue());
+                            //}
+                        } else {
+                            java.sql.Date sqlDate = null;
+                            try {
+                                utilDate = column.asDate();
+                            } catch (DataXException e) {
+                                throw new SQLException(String.format(
+                                        "Date 类型转换错误：[%s]", column));
+                            }
+
+                            if (null != utilDate) {
+                                sqlDate = new java.sql.Date(utilDate.getTime());
+                            }
+                            stat.setDate(colIndex, sqlDate);
+                        }
+                    };
+                //  break;
+
+                case Types.TIME:
+                    return (stat, colIndex, column) -> {
+                        java.sql.Time sqlTime = null;
+                        java.util.Date utilDate;
+                        try {
+                            utilDate = column.asDate();
+                        } catch (DataXException e) {
+                            throw new SQLException(String.format(
+                                    "TIME 类型转换错误：[%s]", column));
+                        }
+
+                        if (null != utilDate) {
+                            sqlTime = new java.sql.Time(utilDate.getTime());
+                        }
+                        stat.setTime(colIndex, sqlTime);
+                    };
+
+                case Types.TIMESTAMP:
+                    return (stat, colIndex, column) -> {
+                        java.sql.Timestamp sqlTimestamp = null;
+                        java.util.Date utilDate;
+                        try {
+                            utilDate = column.asDate();
+                        } catch (DataXException e) {
+                            throw new SQLException(String.format(
+                                    "TIMESTAMP 类型转换错误：[%s]", column));
+                        }
+
+                        if (null != utilDate) {
+                            sqlTimestamp = new java.sql.Timestamp(
+                                    utilDate.getTime());
+                        }
+                        stat.setTimestamp(colIndex, sqlTimestamp);
+                    };
+
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.BLOB:
+                case Types.LONGVARBINARY:
+                    return (stat, colIndex, column) -> {
+                        stat.setBytes(colIndex, column
+                                .asBytes());
+                    };
+                case Types.BOOLEAN:
+                    return (stat, colIndex, column) -> {
+                        stat.setBoolean(colIndex, column.asBoolean());
+                    };
+                // warn: bit(1) -> Types.BIT 可使用setBoolean
+                // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
+                case Types.BIT:
+                    return (stat, colIndex, column) -> {
+                        if (this.dataBaseType == DataBaseType.MySql) {
+                            stat.setBoolean(colIndex, column.asBoolean());
+                        } else {
+                            stat.setString(colIndex, column.asString());
+                        }
+                    };
+
+                //break;
+                default:
+                    throw DataXException
+                            .asDataXException(
+                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                    String.format(
+                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
+                                            cm.getName(),
+                                            cm.getType().type,
+                                            cm.getType().typeName));
+            }
+
+        }
+
+
         public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
             this.taskPluginCollector = taskPluginCollector;
 
@@ -277,7 +444,9 @@ public class CommonRdbmsWriter {
 //            this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
 //                    this.table, StringUtils.join(this.columns, ","));
 
-            this.resultSetMetaData = DBUtil.getColumnMetaData(Optional.of(connection), this.dataSourceFactoryGetter, this.table, columns);
+            this.resultSetMetaData = DBUtil.getColumnMetaData(Optional.of(connection), this.dataSourceFactoryGetter, this.table, columns)
+                    .stream().map((c) -> Pair.of(c, parseColSetter(c))).collect(Collectors.toList());
+
 
             // 写数据库的SQL语句
             calcWriteRecordSql();
@@ -392,15 +561,36 @@ public class CommonRdbmsWriter {
             PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(true);
-                preparedStatement = connection
-                        .prepareStatement(this.writeRecordSql);
+                preparedStatement = connection.prepareStatement(this.writeRecordSql);
 
                 for (Record record : buffer) {
                     try {
-                        preparedStatement = fillPreparedStatement(
-                                preparedStatement, record);
+                        preparedStatement = fillPreparedStatement(preparedStatement, record);
                         preparedStatement.execute();
                     } catch (SQLException e) {
+
+                        if (TisAppLaunch.isTestMock()) {
+                            // 试图找到哪一列有问题
+                            final int allCols = this.columnNumber;
+                            for (int tryColNumer = allCols; tryColNumer > 0; tryColNumer--) {
+                                try {
+                                    preparedStatement = connection
+                                            .prepareStatement(this.writeRecordSql);
+                                    preparedStatement = fillPreparedStatement(
+                                            preparedStatement, record);
+                                    for (int startNullIndex = (tryColNumer); startNullIndex < allCols; startNullIndex++) {
+                                        preparedStatement.setNull(startNullIndex + 1, this.resultSetMetaData.get(startNullIndex).getLeft().getType().type);
+                                    }
+                                    preparedStatement.execute();
+                                    LOG.info("success columnNumber:" + columnNumber + "," + this.resultSetMetaData.get(columnNumber).getLeft());
+                                    break;
+                                } catch (Throwable ex) {
+                                    // ex.printStackTrace();
+                                } finally {
+                                    this.columnNumber--;
+                                }
+                            }
+                        }
                         LOG.debug(e.toString());
 
                         this.taskPluginCollector.collectDirtyRecord(record, e);
@@ -420,165 +610,174 @@ public class CommonRdbmsWriter {
         // 直接使用了两个类变量：columnNumber,resultSetMetaData
         protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
                 throws SQLException {
-            ColumnMetaData col = null;
+            Pair<ColumnMetaData, IStatementSetter> col = null;
+            // DataType type = null;
             for (int i = 0; i < this.columnNumber; i++) {
                 col = this.resultSetMetaData.get(i);
+                //  type = col.getType();
 //                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
 //                String typeName = this.resultSetMetaData.getRight().get(i);
-                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, col.getType().type, col.getType().typeName, record.getColumn(i));
+                preparedStatement = fillPreparedStatementColumnType(preparedStatement, col.getRight(), i, col.getKey(), record.getColumn(i));
             }
 
             return preparedStatement;
         }
 
-        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex,
-                                                                    int columnSqltype, Column column) throws SQLException {
-            return fillPreparedStatementColumnType(preparedStatement, columnIndex, columnSqltype, null, column);
-        }
+//        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, IStatementSetter col, ColumnMetaData cm,
+//                                                                    Column column) throws SQLException {
+//            return fillPreparedStatementColumnType(preparedStatement, col, cm, column);
+//        }
 
-        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex,
-                                                                    int columnSqltype, String typeName, Column column) throws SQLException {
+        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, IStatementSetter col, int columnIndex,
+                                                                    ColumnMetaData cm, Column column) throws SQLException {
 
-            ColumnMetaData cm = this.resultSetMetaData.get(columnIndex);
-
-            java.util.Date utilDate;
-            switch (columnSqltype) {
-                case Types.CHAR:
-                case Types.NCHAR:
-                case Types.CLOB:
-                case Types.NCLOB:
-                case Types.VARCHAR:
-                case Types.LONGVARCHAR:
-                case Types.NVARCHAR:
-                case Types.LONGNVARCHAR:
-                    preparedStatement.setString(columnIndex + 1, column
-                            .asString());
-                    break;
-
-                case Types.SMALLINT:
-                case Types.INTEGER:
-                case Types.BIGINT:
-                case Types.NUMERIC:
-                case Types.DECIMAL:
-                case Types.FLOAT:
-                case Types.REAL:
-                case Types.DOUBLE:
-                    String strValue = column.asString();
-                    if (emptyAsNull && "".equals(strValue)) {
-                        preparedStatement.setString(columnIndex + 1, null);
-                    } else {
-                        preparedStatement.setString(columnIndex + 1, strValue);
-                    }
-                    break;
-
-                //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
-                case Types.TINYINT:
-                    Long longValue = column.asLong();
-                    if (null == longValue) {
-                        preparedStatement.setString(columnIndex + 1, null);
-                    } else {
-                        preparedStatement.setString(columnIndex + 1, longValue.toString());
-                    }
-                    break;
-
-                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
-                case Types.DATE:
-                    if (typeName == null) {
-                        typeName = cm.getType().typeName; //this.resultSetMetaData.getRight().get(columnIndex);
-                    }
-
-                    if (typeName.equalsIgnoreCase("year")) {
-                        if (column.asBigInteger() == null) {
-                            preparedStatement.setString(columnIndex + 1, null);
-                        } else {
-                            preparedStatement.setInt(columnIndex + 1, column.asBigInteger().intValue());
-                        }
-                    } else {
-                        java.sql.Date sqlDate = null;
-                        try {
-                            utilDate = column.asDate();
-                        } catch (DataXException e) {
-                            throw new SQLException(String.format(
-                                    "Date 类型转换错误：[%s]", column));
-                        }
-
-                        if (null != utilDate) {
-                            sqlDate = new java.sql.Date(utilDate.getTime());
-                        }
-                        preparedStatement.setDate(columnIndex + 1, sqlDate);
-                    }
-                    break;
-
-                case Types.TIME:
-                    java.sql.Time sqlTime = null;
-                    try {
-                        utilDate = column.asDate();
-                    } catch (DataXException e) {
-                        throw new SQLException(String.format(
-                                "TIME 类型转换错误：[%s]", column));
-                    }
-
-                    if (null != utilDate) {
-                        sqlTime = new java.sql.Time(utilDate.getTime());
-                    }
-                    preparedStatement.setTime(columnIndex + 1, sqlTime);
-                    break;
-
-                case Types.TIMESTAMP:
-                    java.sql.Timestamp sqlTimestamp = null;
-                    try {
-                        utilDate = column.asDate();
-                    } catch (DataXException e) {
-                        throw new SQLException(String.format(
-                                "TIMESTAMP 类型转换错误：[%s]", column));
-                    }
-
-                    if (null != utilDate) {
-                        sqlTimestamp = new java.sql.Timestamp(
-                                utilDate.getTime());
-                    }
-                    preparedStatement.setTimestamp(columnIndex + 1, sqlTimestamp);
-                    break;
-
-                case Types.BINARY:
-                case Types.VARBINARY:
-                case Types.BLOB:
-                case Types.LONGVARBINARY:
-                    preparedStatement.setBytes(columnIndex + 1, column
-                            .asBytes());
-                    break;
-
-                case Types.BOOLEAN:
-                    preparedStatement.setString(columnIndex + 1, column.asString());
-                    break;
-
-                // warn: bit(1) -> Types.BIT 可使用setBoolean
-                // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
-                case Types.BIT:
-                    if (this.dataBaseType == DataBaseType.MySql) {
-                        preparedStatement.setBoolean(columnIndex + 1, column.asBoolean());
-                    } else {
-                        preparedStatement.setString(columnIndex + 1, column.asString());
-                    }
-                    break;
-                default:
-                    throw DataXException
-                            .asDataXException(
-                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
-                                    String.format(
-                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
-                                            cm.getName(),
-                                            cm.getType().type,
-                                            cm.getType().typeName));
+            if (column.getRawData() == null) {
+                preparedStatement.setNull(columnIndex + 1, cm.getType().type);
+            } else {
+                col.set(preparedStatement, columnIndex + 1, column);
             }
             return preparedStatement;
+
+//            ColumnMetaData cm = this.resultSetMetaData.get(columnIndex);
+//
+//            java.util.Date utilDate;
+//            switch (columnSqltype) {
+//                case Types.CHAR:
+//                case Types.NCHAR:
+//                case Types.CLOB:
+//                case Types.NCLOB:
+//                case Types.VARCHAR:
+//                case Types.LONGVARCHAR:
+//                case Types.NVARCHAR:
+//                case Types.LONGNVARCHAR:
+//                    preparedStatement.setString(columnIndex + 1, column
+//                            .asString());
+//                    break;
+//
+//                case Types.SMALLINT:
+//                case Types.INTEGER:
+//                case Types.BIGINT:
+//                case Types.NUMERIC:
+//                case Types.DECIMAL:
+//                case Types.FLOAT:
+//                case Types.REAL:
+//                case Types.DOUBLE:
+//                    String strValue = column.asString();
+//                    if (emptyAsNull && "".equals(strValue)) {
+//                        preparedStatement.setString(columnIndex + 1, null);
+//                    } else {
+//                        preparedStatement.setString(columnIndex + 1, strValue);
+//                    }
+//                    break;
+//
+//                //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
+//                case Types.TINYINT:
+//                    Long longValue = column.asLong();
+//                    if (null == longValue) {
+//                        preparedStatement.setString(columnIndex + 1, null);
+//                    } else {
+//                        preparedStatement.setString(columnIndex + 1, longValue.toString());
+//                    }
+//                    break;
+//
+//                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
+//                case Types.DATE:
+//                    if (typeName == null) {
+//                        typeName = cm.getType().typeName; //this.resultSetMetaData.getRight().get(columnIndex);
+//                    }
+//
+//                    if (typeName.equalsIgnoreCase("year")) {
+//                        if (column.asBigInteger() == null) {
+//                            preparedStatement.setString(columnIndex + 1, null);
+//                        } else {
+//                            preparedStatement.setInt(columnIndex + 1, column.asBigInteger().intValue());
+//                        }
+//                    } else {
+//                        java.sql.Date sqlDate = null;
+//                        try {
+//                            utilDate = column.asDate();
+//                        } catch (DataXException e) {
+//                            throw new SQLException(String.format(
+//                                    "Date 类型转换错误：[%s]", column));
+//                        }
+//
+//                        if (null != utilDate) {
+//                            sqlDate = new java.sql.Date(utilDate.getTime());
+//                        }
+//                        preparedStatement.setDate(columnIndex + 1, sqlDate);
+//                    }
+//                    break;
+//
+//                case Types.TIME:
+//                    java.sql.Time sqlTime = null;
+//                    try {
+//                        utilDate = column.asDate();
+//                    } catch (DataXException e) {
+//                        throw new SQLException(String.format(
+//                                "TIME 类型转换错误：[%s]", column));
+//                    }
+//
+//                    if (null != utilDate) {
+//                        sqlTime = new java.sql.Time(utilDate.getTime());
+//                    }
+//                    preparedStatement.setTime(columnIndex + 1, sqlTime);
+//                    break;
+//
+//                case Types.TIMESTAMP:
+//                    java.sql.Timestamp sqlTimestamp = null;
+//                    try {
+//                        utilDate = column.asDate();
+//                    } catch (DataXException e) {
+//                        throw new SQLException(String.format(
+//                                "TIMESTAMP 类型转换错误：[%s]", column));
+//                    }
+//
+//                    if (null != utilDate) {
+//                        sqlTimestamp = new java.sql.Timestamp(
+//                                utilDate.getTime());
+//                    }
+//                    preparedStatement.setTimestamp(columnIndex + 1, sqlTimestamp);
+//                    break;
+//
+//                case Types.BINARY:
+//                case Types.VARBINARY:
+//                case Types.BLOB:
+//                case Types.LONGVARBINARY:
+//                    preparedStatement.setBytes(columnIndex + 1, column
+//                            .asBytes());
+//                    break;
+//
+//                case Types.BOOLEAN:
+//                    preparedStatement.setString(columnIndex + 1, column.asString());
+//                    break;
+//
+//                // warn: bit(1) -> Types.BIT 可使用setBoolean
+//                // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
+//                case Types.BIT:
+//                    if (this.dataBaseType == DataBaseType.MySql) {
+//                        preparedStatement.setBoolean(columnIndex + 1, column.asBoolean());
+//                    } else {
+//                        preparedStatement.setString(columnIndex + 1, column.asString());
+//                    }
+//                    break;
+//                default:
+//                    throw DataXException
+//                            .asDataXException(
+//                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
+//                                    String.format(
+//                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
+//                                            cm.getName(),
+//                                            cm.getType().type,
+//                                            cm.getType().typeName));
+//            }
+//            return preparedStatement;
         }
 
         private void calcWriteRecordSql() {
             if (!VALUE_HOLDER.equals(calcValueHolder(""))) {
                 List<String> valueHolders = new ArrayList<String>(columnNumber);
                 for (int i = 0; i < columns.size(); i++) {
-                    String type = resultSetMetaData.get(i).getType().typeName;
+                    String type = resultSetMetaData.get(i).getLeft().getType().typeName;
                     valueHolders.add(calcValueHolder(type));
                 }
 

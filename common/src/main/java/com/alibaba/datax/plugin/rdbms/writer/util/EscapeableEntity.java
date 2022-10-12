@@ -30,4 +30,12 @@ public class EscapeableEntity {
             return val;
         }
     }
+
+    protected String unescapeEntity(String val) {
+        if (containEscapeChar) {
+            return StringUtils.remove(val, this.escapeChar);
+        } else {
+            return val;
+        }
+    }
 }

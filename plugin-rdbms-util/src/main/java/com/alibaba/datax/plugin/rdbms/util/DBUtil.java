@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.datax.impl.DataxWriter;
@@ -15,6 +16,7 @@ import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -522,8 +524,12 @@ public final class DBUtil {
     }
 
     private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, SelectTable tableName) {
-        List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
-        return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
+        try {
+            List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
+            return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, IDataSourceFactoryGetter conn, SelectTable tableName, String basicMsg) {
@@ -580,13 +586,24 @@ public final class DBUtil {
      */
     public static List<ColumnMetaData> getColumnMetaData(
             Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
-//        if (userConfiguredColumns.) {
-//            throw new IllegalArgumentException("param userConfiguredColumns can not be empty");
-//        }
-        List<ColumnMetaData> tabCols = connection.isPresent()
-                ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName.getUnescapeTabName())
-                : dsGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
-        return tabCols.stream().filter((c) -> userConfiguredColumns.containsCol(c.getName())).collect(Collectors.toList());
+
+        Map<String, ColumnMetaData> colMapper = null;
+        try {
+            List<ColumnMetaData> tabCols = connection.isPresent()
+                    ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName.getUnescapeTabName())
+                    : dsGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
+            colMapper = tabCols.stream().collect(Collectors.toMap((c) -> c.getName(), (c) -> c));
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<ColumnMetaData> result = Lists.newArrayList();
+        for (String col : userConfiguredColumns) {
+            result.add(Objects.requireNonNull(
+                    colMapper.get(col), "col:" + col + " relevant meta can not be null"));
+        }
+        return result;
+        // return tabCols.stream().filter((c) -> userConfiguredColumns.containsCol(c.getName())).collect(Collectors.toList());
         // return tabCols;
 //        Statement statement = null;
 //        ResultSet rs = null;
