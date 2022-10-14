@@ -7,7 +7,6 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
@@ -197,7 +196,7 @@ public class OdpsWriter extends Writer {
 
         private void dealColumn(Configuration originalConfig, List<String> allColumns) {
             //之前已经检查了userConfiguredColumns 一定不为空
-            SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
+            SelectCols userConfiguredColumns = SelectCols.createSelectCols(allColumns);
             if (userConfiguredColumns.isSelectAllCols()) {
                 userConfiguredColumns = SelectCols.createSelectCols(allColumns);
                 originalConfig.set(Key.COLUMN, allColumns);
@@ -206,7 +205,7 @@ public class OdpsWriter extends Writer {
                 userConfiguredColumns.makeSureNoValueDuplicate(false);
 
                 // 检查列是否存在，大小写不敏感
-              //  ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
+                //  ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
             }
 
             List<Integer> columnPositions = OdpsUtil.parsePosition(allColumns, userConfiguredColumns);

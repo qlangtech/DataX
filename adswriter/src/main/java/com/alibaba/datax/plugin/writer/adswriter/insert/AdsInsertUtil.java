@@ -120,7 +120,7 @@ public class AdsInsertUtil {
 
         // List<String> userConfiguredColumns = SelectCols.createSelectCols( originalConfig.getList(Key.COLUMN, String.class);
 
-        SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
+        SelectCols userConfiguredColumns = SelectCols.createSelectCols(tableColumns);
 //        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
 //            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
 //                    "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");

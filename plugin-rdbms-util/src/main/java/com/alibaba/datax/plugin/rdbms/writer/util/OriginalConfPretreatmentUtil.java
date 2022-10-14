@@ -35,7 +35,7 @@ public final class OriginalConfPretreatmentUtil {
         simplifyConf(originalConfig);
 
         dealColumnConf(dataSourceFactoryGetter, originalConfig);
-        dealWriteMode(originalConfig, dataBaseType);
+        dealWriteMode(originalConfig, dataBaseType, dataSourceFactoryGetter);
     }
 
     public static void doCheckBatchSize(Configuration originalConfig) {
@@ -95,7 +95,7 @@ public final class OriginalConfPretreatmentUtil {
 
     public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, SelectTable oneTable) {
         //SelectCols userConfiguredColumns =  SelectCols.createSelectCols( originalConfig.getList(Key.COLUMN, String.class) ,originalConfig.get(Key.ESCAPE_CHAR, String.class) );
-        SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig);
+        SelectCols userConfiguredColumns = SelectCols.createSelectCols(originalConfig, connectionFactory.getDSEntityEscape());
 //        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
 //            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
 //                    "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
@@ -151,8 +151,8 @@ public final class OriginalConfPretreatmentUtil {
         dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
     }
 
-    public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType) {
-        SelectCols columns = SelectCols.createSelectCols(originalConfig);//.getList(Key.COLUMN, String.class);
+    public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter) {
+        SelectCols columns = SelectCols.createSelectCols(originalConfig, dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());//.getList(Key.COLUMN, String.class);
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL, String.class));

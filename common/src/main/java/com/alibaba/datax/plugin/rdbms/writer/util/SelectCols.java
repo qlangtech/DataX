@@ -25,9 +25,9 @@ public class SelectCols extends EscapeableEntity implements Iterable<String> {
         return this.columns.iterator();
     }
 
-    public static SelectCols createSelectCols(Configuration conf) {
-        return createSelectCols(conf, null);
-    }
+//    public static SelectCols createSelectCols(Configuration conf) {
+//        return createSelectCols(conf, null);
+//    }
 
     public static SelectCols createSelectCols(Configuration conf, String escapeChar) {
         return new SelectCols(

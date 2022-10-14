@@ -22,6 +22,7 @@ public class SelectTable extends EscapeableEntity {
                 "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE)), conf);
     }
 
+
     public static SelectTable create(String table, Configuration conf) {
         return new SelectTable(
                 table, conf.getString(Key.ESCAPE_CHAR));

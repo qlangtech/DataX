@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
  **/
 public class DataType implements Serializable {
 
+    public static final String KEY_UNSIGNED = "UNSIGNED";
+
     public final int type;
     public final int columnSize;
     public final String typeName;
@@ -60,7 +62,14 @@ public class DataType implements Serializable {
      * is UNSIGNED
      */
     public boolean isUnsigned() {
-        return StringUtils.containsIgnoreCase(this.typeName, "UNSIGNED");
+        return StringUtils.containsIgnoreCase(this.typeName, KEY_UNSIGNED);
+    }
+
+    public String getUnsignedToken() {
+        if (this.isUnsigned()) {
+            return DataType.KEY_UNSIGNED;
+        }
+        return StringUtils.EMPTY;
     }
 
     public DataXReaderColType getCollapse() {

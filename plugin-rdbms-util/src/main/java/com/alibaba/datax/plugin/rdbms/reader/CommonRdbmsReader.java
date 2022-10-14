@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
+import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -206,7 +207,7 @@ public class CommonRdbmsReader {
             Map<String, ColumnMetaData> tabCols = null;
             try {
                 tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
-                        .getTableMetadata(conn, table));
+                        .getTableMetadata(conn, EntityName.parse(table)));
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }

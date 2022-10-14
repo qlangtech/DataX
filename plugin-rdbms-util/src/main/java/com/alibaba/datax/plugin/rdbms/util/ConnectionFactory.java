@@ -13,6 +13,10 @@ public interface ConnectionFactory {
 
     public IDataSourceFactoryGetter getConnecttionWithoutRetry();
 
+    public default String getDSEntityEscape() {
+        return getConnecttionWithoutRetry().getDataSourceFactory().getEscapeChar();
+    }
+
     public String getConnectionInfo();
 
 }

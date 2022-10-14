@@ -17,6 +17,7 @@ import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
+import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -525,7 +526,8 @@ public final class DBUtil {
 
     private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, SelectTable tableName) {
         try {
-            List<ColumnMetaData> tabMeta = dataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
+            List<ColumnMetaData> tabMeta = dataSourceFactoryGetter
+                    .getDataSourceFactory().getTableMetadata(EntityName.parse(tableName.getUnescapeTabName()));
             return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
@@ -589,9 +591,10 @@ public final class DBUtil {
 
         Map<String, ColumnMetaData> colMapper = null;
         try {
+            EntityName table = EntityName.parse(tableName.getUnescapeTabName());
             List<ColumnMetaData> tabCols = connection.isPresent()
-                    ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), tableName.getUnescapeTabName())
-                    : dsGetter.getDataSourceFactory().getTableMetadata(tableName.getUnescapeTabName());
+                    ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), table)
+                    : dsGetter.getDataSourceFactory().getTableMetadata(table);
             colMapper = tabCols.stream().collect(Collectors.toMap((c) -> c.getName(), (c) -> c));
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
