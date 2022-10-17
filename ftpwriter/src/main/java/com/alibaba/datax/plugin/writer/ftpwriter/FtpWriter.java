@@ -5,12 +5,9 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.plugin.ftp.common.FtpHelper;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
 import com.alibaba.datax.plugin.writer.ftpwriter.util.Constant;
-import com.alibaba.datax.plugin.writer.ftpwriter.util.IFtpHelper;
-import com.alibaba.datax.plugin.writer.ftpwriter.util.SftpHelperImpl;
-import com.alibaba.datax.plugin.writer.ftpwriter.util.StandardFtpHelperImpl;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -36,7 +33,7 @@ public class FtpWriter extends Writer {
         private String password;
         private int timeout;
 
-        private IFtpHelper ftpHelper = null;
+        private FtpHelper ftpHelper = null;
 
         @Override
         public void init() {
@@ -44,23 +41,23 @@ public class FtpWriter extends Writer {
             this.validateParameter();
             UnstructuredStorageWriterUtil
                     .validateParameter(this.writerSliceConfig);
-            try {
-                RetryUtil.executeWithRetry(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        ftpHelper.loginFtpServer(host, username, password,
-                                port, timeout);
-                        return null;
-                    }
-                }, 3, 4000, true);
-            } catch (Exception e) {
-                String message = String
-                        .format("与ftp服务器建立连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
-                                host, username, port, e.getMessage());
-                LOG.error(message);
-                throw DataXException.asDataXException(
-                        FtpWriterErrorCode.FAIL_LOGIN, message, e);
-            }
+//            try {
+//                RetryUtil.executeWithRetry(new Callable<Void>() {
+//                    @Override
+//                    public Void call() throws Exception {
+//                        ftpHelper.loginFtpServer(host, username, password,
+//                                port, timeout);
+//                        return null;
+//                    }
+//                }, 3, 4000, true);
+//            } catch (Exception e) {
+//                String message = String
+//                        .format("与ftp服务器建立连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
+//                                host, username, port, e.getMessage());
+//                LOG.error(message);
+//                throw DataXException.asDataXException(
+//                        FtpWriterErrorCode.FAIL_LOGIN, message, e);
+//            }
         }
 
         private void validateParameter() {
@@ -76,33 +73,36 @@ public class FtpWriter extends Writer {
                 throw DataXException.asDataXException(
                         FtpWriterErrorCode.ILLEGAL_VALUE, message);
             }
-
-            this.host = this.writerSliceConfig.getNecessaryValue(Key.HOST,
-                    FtpWriterErrorCode.REQUIRED_VALUE);
-            this.username = this.writerSliceConfig.getNecessaryValue(
-                    Key.USERNAME, FtpWriterErrorCode.REQUIRED_VALUE);
-            this.password = this.writerSliceConfig.getNecessaryValue(
-                    Key.PASSWORD, FtpWriterErrorCode.REQUIRED_VALUE);
-            this.timeout = this.writerSliceConfig.getInt(Key.TIMEOUT,
-                    Constant.DEFAULT_TIMEOUT);
-
-            this.protocol = this.writerSliceConfig.getNecessaryValue(
-                    Key.PROTOCOL, FtpWriterErrorCode.REQUIRED_VALUE);
-            if ("sftp".equalsIgnoreCase(this.protocol)) {
-                this.port = this.writerSliceConfig.getInt(Key.PORT,
-                        Constant.DEFAULT_SFTP_PORT);
-                this.ftpHelper = new SftpHelperImpl();
-            } else if ("ftp".equalsIgnoreCase(this.protocol)) {
-                this.port = this.writerSliceConfig.getInt(Key.PORT,
-                        Constant.DEFAULT_FTP_PORT);
-                this.ftpHelper = new StandardFtpHelperImpl();
-            } else {
-                throw DataXException.asDataXException(
-                        FtpWriterErrorCode.ILLEGAL_VALUE, String.format(
-                                "仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]",
-                                protocol));
-            }
+            this.port = this.writerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             this.writerSliceConfig.set(Key.PORT, this.port);
+            this.ftpHelper = FtpHelper.createFtpClient(writerSliceConfig);
+
+//            this.host = this.writerSliceConfig.getNecessaryValue(Key.HOST,
+//                    FtpWriterErrorCode.REQUIRED_VALUE);
+//            this.username = this.writerSliceConfig.getNecessaryValue(
+//                    Key.USERNAME, FtpWriterErrorCode.REQUIRED_VALUE);
+//            this.password = this.writerSliceConfig.getNecessaryValue(
+//                    Key.PASSWORD, FtpWriterErrorCode.REQUIRED_VALUE);
+//            this.timeout = this.writerSliceConfig.getInt(Key.TIMEOUT,
+//                    Constant.DEFAULT_TIMEOUT);
+//
+//            this.protocol = this.writerSliceConfig.getNecessaryValue(
+//                    Key.PROTOCOL, FtpWriterErrorCode.REQUIRED_VALUE);
+//            if ("sftp".equalsIgnoreCase(this.protocol)) {
+//                this.port = this.writerSliceConfig.getInt(Key.PORT,
+//                        Constant.DEFAULT_SFTP_PORT);
+//                this.ftpHelper = new SftpHelperImpl();
+//            } else if ("ftp".equalsIgnoreCase(this.protocol)) {
+//                this.port = this.writerSliceConfig.getInt(Key.PORT,
+//                        Constant.DEFAULT_FTP_PORT);
+//                this.ftpHelper = new StandardFtpHelperImpl();
+//            } else {
+//                throw DataXException.asDataXException(
+//                        FtpWriterErrorCode.ILLEGAL_VALUE, String.format(
+//                                "仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]",
+//                                protocol));
+//            }
+
         }
 
         @Override
@@ -116,8 +116,7 @@ public class FtpWriter extends Writer {
             String writeMode = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE);
 
-            Set<String> allFileExists = this.ftpHelper.getAllFilesInDir(path,
-                    fileName);
+            Set<String> allFileExists = this.ftpHelper.getAllFilesInDir(path, fileName);
             this.allFileExists = allFileExists;
 
             // truncate option handler
@@ -210,7 +209,7 @@ public class FtpWriter extends Writer {
         private String password;
         private int timeout;
 
-        private IFtpHelper ftpHelper = null;
+        private FtpHelper ftpHelper = null;
 
         @Override
         public void init() {
@@ -229,28 +228,29 @@ public class FtpWriter extends Writer {
                     Constant.DEFAULT_TIMEOUT);
             this.protocol = this.writerSliceConfig.getString(Key.PROTOCOL);
 
-            if ("sftp".equalsIgnoreCase(this.protocol)) {
-                this.ftpHelper = new SftpHelperImpl();
-            } else if ("ftp".equalsIgnoreCase(this.protocol)) {
-                this.ftpHelper = new StandardFtpHelperImpl();
-            }
-            try {
-                RetryUtil.executeWithRetry(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        ftpHelper.loginFtpServer(host, username, password,
-                                port, timeout);
-                        return null;
-                    }
-                }, 3, 4000, true);
-            } catch (Exception e) {
-                String message = String
-                        .format("与ftp服务器建立连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
-                                host, username, port, e.getMessage());
-                LOG.error(message);
-                throw DataXException.asDataXException(
-                        FtpWriterErrorCode.FAIL_LOGIN, message, e);
-            }
+            this.ftpHelper = FtpHelper.createFtpClient(writerSliceConfig);
+//            if ("sftp".equalsIgnoreCase(this.protocol)) {
+//                this.ftpHelper = new SftpHelperImpl();
+//            } else if ("ftp".equalsIgnoreCase(this.protocol)) {
+//                this.ftpHelper = new StandardFtpHelperImpl();
+//            }
+//            try {
+//                RetryUtil.executeWithRetry(new Callable<Void>() {
+//                    @Override
+//                    public Void call() throws Exception {
+//                        ftpHelper.loginFtpServer(host, username, password,
+//                                port, timeout);
+//                        return null;
+//                    }
+//                }, 3, 4000, true);
+//            } catch (Exception e) {
+//                String message = String
+//                        .format("与ftp服务器建立连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
+//                                host, username, port, e.getMessage());
+//                LOG.error(message);
+//                throw DataXException.asDataXException(
+//                        FtpWriterErrorCode.FAIL_LOGIN, message, e);
+//            }
         }
 
         @Override
