@@ -9,7 +9,6 @@ import com.alibaba.datax.plugin.unstructuredstorage.Compress;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.csvreader.CsvReader;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -230,7 +229,7 @@ public class UnstructuredStorageReaderUtil {
                                         TaskPluginCollector taskPluginCollector) {
         String encoding = readerSliceConfig.getString(Key.ENCODING,
                 Constant.DEFAULT_ENCODING);
-      //  Character fieldDelimiter = null;
+        //  Character fieldDelimiter = null;
 //        String delimiterInStr = readerSliceConfig
 //                .getString(Key.FIELD_DELIMITER);
 //        if (null != delimiterInStr && 1 != delimiterInStr.length()) {
@@ -259,9 +258,7 @@ public class UnstructuredStorageReaderUtil {
                 .getListColumnEntry(readerSliceConfig, Key.COLUMN);
 
 
-
-
-      // CsvReader csvReader = null;
+        // CsvReader csvReader = null;
 
         // every line logic
         try {
@@ -306,7 +303,7 @@ public class UnstructuredStorageReaderUtil {
                     UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
                     String.format("运行时异常 : %s", e.getMessage()), e);
         } finally {
-          //  csvReader.close();
+            //  csvReader.close();
             IOUtils.closeQuietly(reader);
         }
     }
@@ -359,10 +356,13 @@ public class UnstructuredStorageReaderUtil {
             recordSender.sendToWriter(record);
         } else {
             try {
+                Type type = null;
+                Integer columnIndex;
+                String columnConst;
                 for (ColumnEntry columnConfig : columnConfigs) {
-                    String columnType = columnConfig.getType();
-                    Integer columnIndex = columnConfig.getIndex();
-                    String columnConst = columnConfig.getValue();
+                    type = columnConfig.getCType();
+                    columnIndex = columnConfig.getIndex();
+                    columnConst = columnConfig.getValue();
 
                     String columnValue = null;
 
@@ -394,7 +394,7 @@ public class UnstructuredStorageReaderUtil {
                     } else {
                         columnValue = columnConst;
                     }
-                    Type type = Type.valueOf(columnType.toUpperCase());
+                    // Type type = Type.valueOf(columnType.toUpperCase());
                     // it's all ok if nullFormat is null
                     if (columnValue.equals(nullFormat)) {
                         columnValue = null;
@@ -403,6 +403,7 @@ public class UnstructuredStorageReaderUtil {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
                             break;
+                        case INT:
                         case LONG:
                             try {
                                 columnGenerated = new LongColumn(columnValue);
@@ -460,7 +461,7 @@ public class UnstructuredStorageReaderUtil {
                             break;
                         default:
                             String errorMessage = String.format(
-                                    "您配置的列类型暂不支持 : [%s]", columnType);
+                                    "您配置的列类型暂不支持 : [%s]", type);
                             LOG.error(errorMessage);
                             throw DataXException
                                     .asDataXException(
@@ -504,8 +505,8 @@ public class UnstructuredStorageReaderUtil {
         return result;
     }
 
-    private enum Type {
-        STRING, LONG, BOOLEAN, DOUBLE, DATE,
+    public enum Type {
+        STRING, LONG, INT, BOOLEAN, DOUBLE, DATE,
         ;
     }
 

@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.ftp.common.FtpHelper;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
 import com.alibaba.datax.plugin.writer.ftpwriter.util.Constant;
@@ -17,7 +16,6 @@ import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class FtpWriter extends Writer {
     public static class Job extends Writer.Job {
