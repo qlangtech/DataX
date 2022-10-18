@@ -98,7 +98,8 @@ public abstract class UnstructuredReader {
             this.reader = reader;
             this.fieldDelimiter = String.valueOf(fieldDelimiter.charValue());
             try {
-                this.header = skipHeader ? reader.readLine() : null;
+                // skipHeader: false 说明header中有内容需要进行读取
+                this.header = skipHeader ? null : reader.readLine();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

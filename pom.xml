@@ -276,7 +276,7 @@
                 <executions>
                     <execution>
                         <id>make-assembly</id>
-                        <phase>package</phase>
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>

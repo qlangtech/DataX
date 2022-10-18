@@ -552,15 +552,18 @@ public class UnstructuredStorageReaderUtil {
         String compress = readerConfiguration
                 .getUnnecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS, null, null);
         if (StringUtils.isNotBlank(compress)) {
-            compress = compress.toLowerCase().trim();
-            boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress) || "zip".equals(compress)
-                    || "lzo".equals(compress) || "lzo_deflate".equals(compress) || "hadoop-snappy".equals(compress)
-                    || "framing-snappy".equals(compress);
-            if (!compressTag) {
-                throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("仅支持 gzip, bzip2, zip, lzo, lzo_deflate, hadoop-snappy, framing-snappy " +
-                                "文件压缩格式, 不支持您配置的文件压缩格式: [%s]", compress));
-            }
+            compress = StringUtils.trim(compress.toLowerCase());
+
+            Compress.parse(compress);
+
+//            boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress) || "zip".equals(compress)
+//                    || "lzo".equals(compress) || "lzo_deflate".equals(compress) || "hadoop-snappy".equals(compress)
+//                    || "framing-snappy".equals(compress);
+//            if (!compressTag) {
+//                throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+//                        String.format("仅支持 gzip, bzip2, zip, lzo, lzo_deflate, hadoop-snappy, framing-snappy " +
+//                                "文件压缩格式, 不支持您配置的文件压缩格式: [%s]", compress));
+//            }
         } else {
             // 用户可能配置的是 compress:"",空字符串,需要将compress设置为null
             compress = null;

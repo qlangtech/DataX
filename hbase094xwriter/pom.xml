@@ -102,7 +102,7 @@
                 <executions>
                     <execution>
                         <id>dwzip</id>
-                        <phase>package</phase>
+                        <phase>none</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>

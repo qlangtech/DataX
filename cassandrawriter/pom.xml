@@ -39,7 +39,7 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.9</version>
 		</dependency>
-		
+
         <!-- for test -->
         <dependency>
             <groupId>junit</groupId>
@@ -112,7 +112,7 @@
                 <executions>
                     <execution>
                         <id>dwzip</id>
-                        <phase>package</phase>
+                        <phase>none</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
