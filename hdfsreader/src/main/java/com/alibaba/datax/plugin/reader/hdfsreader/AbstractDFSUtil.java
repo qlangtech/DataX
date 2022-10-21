@@ -464,7 +464,7 @@ public abstract class AbstractDFSUtil {
                 }
             } else {
                 for (ColumnEntry columnConfig : columnConfigs) {
-                    String columnType = columnConfig.getType();
+                    UnstructuredStorageReaderUtil.Type columnType = columnConfig.getCType();
                     Integer columnIndex = columnConfig.getIndex();
                     String columnConst = columnConfig.getValue();
 
@@ -476,12 +476,12 @@ public abstract class AbstractDFSUtil {
                     } else {
                         columnValue = columnConst;
                     }
-                    Type type = DFSUtil.Type.valueOf(columnType.toUpperCase());
+                   // Type type =  columnType;//DFSUtil.Type.valueOf(columnType.toUpperCase());
                     // it's all ok if nullFormat is null
                     if (StringUtils.equals(columnValue, nullFormat)) {
                         columnValue = null;
                     }
-                    switch (type) {
+                    switch (columnType) {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
                             break;
@@ -641,7 +641,7 @@ public abstract class AbstractDFSUtil {
         return sourceHDFSAllFilesList;
     }
 
-    enum Type {
-        STRING, LONG, BOOLEAN, DOUBLE, DATE,
-    }
+//    enum Type {
+//        STRING, LONG, BOOLEAN, DOUBLE, DATE,
+//    }
 }

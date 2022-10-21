@@ -5,7 +5,7 @@
 
     <groupId>com.alibaba.datax</groupId>
     <artifactId>datax-all</artifactId>
-    <version>3.6.0</version>
+    <version>3.6.0-alpha</version>
     <dependencies>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -46,7 +46,7 @@
     </properties>
 
     <modules>
-        <module>datax-config</module>
+<!--        <module>datax-config</module>-->
         <module>common</module>
         <module>core</module>
         <module>transformer</module>

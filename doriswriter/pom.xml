@@ -23,7 +23,7 @@ under the License.
     <parent>
         <groupId>com.alibaba.datax</groupId>
         <artifactId>datax-all</artifactId>
-        <version>3.6.0</version>
+        <version>3.6.0-alpha</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
