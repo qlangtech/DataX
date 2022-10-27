@@ -189,7 +189,7 @@ public class CommonRdbmsReader {
             if (StringUtils.isEmpty(table)) {
                 Matcher m = PATTERN_FROM_TABLE.matcher(querySql);
                 if (m.find()) {
-                    table = m.group(1);
+                    table = StringUtils.remove(m.group(1), readerDataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
                 } else {
                     throw new IllegalStateException("can not find table name from query sql:" + querySql);
                 }
