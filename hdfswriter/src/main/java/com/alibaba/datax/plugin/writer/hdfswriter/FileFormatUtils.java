@@ -8,6 +8,7 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.DataType;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.FileSystem;
@@ -43,10 +44,10 @@ public class FileFormatUtils {
     public static void orcFileStartWrite(
             FileSystem fileSystem, JobConf conf, RecordReceiver lineReceiver, Configuration config, String fileName,
             TaskPluginCollector taskPluginCollector) {
-        List<HdfsColMeta> colsMeta = HdfsColMeta.getColsMeta(config);
+        List<IColMetaGetter> colsMeta = HdfsColMeta.getColsMeta(config);
         // List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
         String compress = config.getString(Key.COMPRESS, null);
-        List<String> columnNames = colsMeta.stream().map((c) -> c.colName).collect(Collectors.toList());
+        List<String> columnNames = colsMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
         List<ObjectInspector> columnTypeInspectors = getColumnTypeInspectors(colsMeta);
         StructObjectInspector inspector = ObjectInspectorFactory
                 .getStandardStructObjectInspector(columnNames, columnTypeInspectors);
@@ -80,14 +81,14 @@ public class FileFormatUtils {
     }
 
     public static MutablePair<List<Object>, Boolean> transportOneRecord(
-            Record record, List<HdfsColMeta> columnsConfiguration,
+            Record record, List<IColMetaGetter> columnsConfiguration,
             TaskPluginCollector taskPluginCollector) {
 
         MutablePair<List<Object>, Boolean> transportResult = new MutablePair<List<Object>, Boolean>();
         transportResult.setRight(false);
         List<Object> recordList = Lists.newArrayList();
         int recordLength = record.getColumnNumber();
-        HdfsColMeta colMeta = null;
+        IColMetaGetter colMeta = null;
         if (0 != recordLength) {
             Column column;
             for (int i = 0; i < recordLength; i++) {
@@ -97,7 +98,7 @@ public class FileFormatUtils {
                 if (null != column.getRawData()) {
                     colMeta = columnsConfiguration.get(i);
                     String rowData = column.getRawData().toString();
-                    SupportHiveDataType columnType = DataType.convert2HiveType(colMeta.type);
+                    SupportHiveDataType columnType = DataType.convert2HiveType(colMeta.getType());
                     //根据writer端类型配置做类型转换
                     try {
                         switch (columnType) {
@@ -139,14 +140,14 @@ public class FileFormatUtils {
                                                 HdfsWriterErrorCode.ILLEGAL_VALUE,
                                                 String.format(
                                                         "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
-                                                        colMeta.colName,
-                                                        colMeta.type));
+                                                        colMeta.getName(),
+                                                        colMeta.getType()));
                         }
                     } catch (Exception e) {
                         // warn: 此处认为脏数据
                         String message = String.format(
                                 "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
-                                colMeta.type, column.getRawData().toString());
+                                colMeta.getType(), column.getRawData().toString());
                         taskPluginCollector.collectDirtyRecord(record, message);
                         transportResult.setRight(true);
                         break;
@@ -167,10 +168,10 @@ public class FileFormatUtils {
      * @param
      * @return
      */
-    public static List<ObjectInspector> getColumnTypeInspectors(List<HdfsColMeta> colsMeta) {
+    public static List<ObjectInspector> getColumnTypeInspectors(List<IColMetaGetter> colsMeta) {
         List<ObjectInspector> columnTypeInspectors = Lists.newArrayList();
-        for (HdfsColMeta eachColumnConf : colsMeta) {
-            SupportHiveDataType columnType = DataType.convert2HiveType(eachColumnConf.type);//SupportHiveDataType.valueOf(eachColumnConf.getString(Key.TYPE).toUpperCase());
+        for (IColMetaGetter eachColumnConf : colsMeta) {
+            SupportHiveDataType columnType = DataType.convert2HiveType(eachColumnConf.getType());//SupportHiveDataType.valueOf(eachColumnConf.getString(Key.TYPE).toUpperCase());
             ObjectInspector objectInspector = null;
             switch (columnType) {
                 case TINYINT:
@@ -211,8 +212,8 @@ public class FileFormatUtils {
                                     HdfsWriterErrorCode.ILLEGAL_VALUE,
                                     String.format(
                                             "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
-                                            eachColumnConf.colName,
-                                            eachColumnConf.type));
+                                            eachColumnConf.getName(),
+                                            eachColumnConf.getType()));
             }
 
             columnTypeInspectors.add(objectInspector);
@@ -232,7 +233,7 @@ public class FileFormatUtils {
                                    TaskPluginCollector taskPluginCollector) {
         char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER);
         //   List<Configuration> columns = config.getListConfiguration(Key.COLUMN);
-        List<HdfsColMeta> colsMeta = HdfsColMeta.getColsMeta(config);
+        List<IColMetaGetter> colsMeta = HdfsColMeta.getColsMeta(config);
         String compress = config.getString(Key.COMPRESS, null);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm");
@@ -271,7 +272,7 @@ public class FileFormatUtils {
 
     public static MutablePair<Text, Boolean> transportOneRecord(
             Record record, char fieldDelimiter
-            , List<HdfsColMeta> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
+            , List<IColMetaGetter> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
         MutablePair<List<Object>, Boolean> transportResultList
                 = transportOneRecord(record, columnsConfiguration, taskPluginCollector);
         //保存<转换后的数据,是否是脏数据>

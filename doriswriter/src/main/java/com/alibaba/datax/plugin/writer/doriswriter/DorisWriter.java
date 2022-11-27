@@ -25,103 +25,154 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
-import com.alibaba.datax.plugin.rdbms.writer.Constant;
-import com.alibaba.druid.sql.parser.ParserException;
-import com.google.common.base.Strings;
-import com.qlangtech.tis.offline.DataxUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
+/**
+ * doris data writer
+ */
 public class DorisWriter extends Writer {
-    public DorisWriter() {
-    }
 
-    public static class Task extends com.alibaba.datax.common.spi.Writer.Task {
-        private DorisWriterEmitter dorisWriterEmitter;
-        private Key keys;
-        private DorisCodec rowCodec;
-        private int batchNum = 0;
-        private String labelPrefix;
+    public static class Job extends Writer.Job {
 
-        public Task() {
-        }
+        private static final Logger LOG = LoggerFactory.getLogger(Job.class);
+        private Configuration originalConfig = null;
+        private Keys options;
+
+        private com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsGetter;
 
         @Override
         public void init() {
-            this.keys = new Key(super.getPluginJobConf());
-            if (Key.DEFAULT_FORMAT_CSV.equalsIgnoreCase(this.keys.getFormat())) {
-                this.rowCodec = new DorisCsvCodec(this.keys.getColumns(), this.keys.getColumnSeparator(), this.keys.getTimeZone());
-            } else {
-                this.rowCodec = new DorisJsonCodec(this.keys.getColumns(), this.keys.getTimeZone());
+            this.originalConfig = super.getPluginJobConf();
+            options = new Keys(super.getPluginJobConf());
+            options.doPretreatment();
+            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
+        }
+
+        @Override
+        public void preCheck() {
+            this.init();
+            DorisUtil.preCheckPrePareSQL(options);
+            DorisUtil.preCheckPostSQL(options);
+        }
+
+        @Override
+        public void prepare() {
+            String username = options.getUsername();
+            String password = options.getPassword();
+            String jdbcUrl = options.getJdbcUrl();
+            List<String> renderedPreSqls = DorisUtil.renderPreOrPostSqls(options.getPreSqlList(), options.getTable());
+            if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+
+                try (Connection conn = DBUtil.getConnection(this.dsGetter, jdbcUrl, username, password)) {
+                    LOG.info("prepare execute preSqls:[{}]. doris jdbc url:{}.", String.join(";", renderedPreSqls), jdbcUrl);
+                    DorisUtil.executeSqls(conn, renderedPreSqls);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+
+//                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+//                LOG.info("Begin to execute preSqls:[{}]. context info:{}.", String.join(";", renderedPreSqls), jdbcUrl);
+//                DorisUtil.executeSqls(conn, renderedPreSqls);
+//                DBUtil.closeDBResources(null, null, conn);
             }
-            this.labelPrefix = this.keys.getLabelPrefix() + UUID.randomUUID();
-            this.dorisWriterEmitter = new DorisWriterEmitter(keys);
+        }
+
+        @Override
+        public List<Configuration> split(int mandatoryNumber) {
+            List<Configuration> configurations = new ArrayList<>(mandatoryNumber);
+            for (int i = 0; i < mandatoryNumber; i++) {
+                configurations.add(originalConfig);
+            }
+            return configurations;
+        }
+
+        @Override
+        public void post() {
+            String username = options.getUsername();
+            String password = options.getPassword();
+            String jdbcUrl = options.getJdbcUrl();
+            List<String> renderedPostSqls = DorisUtil.renderPreOrPostSqls(options.getPostSqlList(), options.getTable());
+            if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+
+
+                try (Connection conn = DBUtil.getConnection(this.dsGetter, jdbcUrl, username, password)) {
+                    LOG.info("Start to execute preSqls:[{}]. context info:{}.", String.join(";", renderedPostSqls), jdbcUrl);
+                    DorisUtil.executeSqls(conn, renderedPostSqls);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+
+//                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+//                LOG.info("Start to execute preSqls:[{}]. context info:{}.", String.join(";", renderedPostSqls), jdbcUrl);
+//                DorisUtil.executeSqls(conn, renderedPostSqls);
+//                DBUtil.closeDBResources(null, null, conn);
+            }
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+    }
+
+    public static class Task extends Writer.Task {
+        private DorisWriterManager writerManager;
+        private Keys options;
+        private DorisCodec rowCodec;
+
+        @Override
+        public void init() {
+            options = new Keys(super.getPluginJobConf());
+            if (options.isWildcardColumn()) {
+                throw new UnsupportedOperationException("WildcardColumn not support");
+//                Connection conn = DBUtil.getConnection(DataBaseType.MySql, options.getJdbcUrl(), options.getUsername(), options.getPassword());
+//                List<String> columns = DorisUtil.getDorisTableColumns(conn, options.getDatabase(), options.getTable());
+//                options.setInfoCchemaColumns(columns);
+            }
+            writerManager = new DorisWriterManager(options);
+            rowCodec = DorisCodecFactory.createCodec(options);
         }
 
         @Override
         public void prepare() {
         }
 
-        @Override
         public void startWrite(RecordReceiver recordReceiver) {
-            String lineDelimiter = this.keys.getLineDelimiter();
-            DorisFlushBatch flushBatch = new DorisFlushBatch(lineDelimiter, this.keys.getFormat());
-            long batchCount = 0;
-            long batchByteSize = 0L;
-            Record record;
-            // loop to get record from datax
-            while ((record = recordReceiver.getFromReader()) != null) {
-                // check column size
-                if (record.getColumnNumber() != this.keys.getColumns().size()) {
-                    throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                            String.format("config writer column info error. because the column number of reader is :%s" +
-                                            "and the column number of writer is:%s. please check you datax job config json.",
-                                    record.getColumnNumber(), this.keys.getColumns().size()));
+            try {
+                Record record;
+                while ((record = recordReceiver.getFromReader()) != null) {
+                    if (record.getColumnNumber() != options.getColumns().size()) {
+                        throw DataXException
+                                .asDataXException(
+                                        DBUtilErrorCode.CONF_ERROR,
+                                        String.format(
+                                                "There is an error in the column configuration information. " +
+                                                        "This is because you have configured a task where the number of fields to be read from the source:%s " +
+                                                        "is not equal to the number of fields to be written to the destination table:%s. " +
+                                                        "Please check your configuration and make changes.",
+                                                record.getColumnNumber(),
+                                                options.getColumns().size()));
+                    }
+                    writerManager.writeRecord(rowCodec.codec(record));
                 }
-                // codec record
-                final String recordStr = this.rowCodec.serialize(record);
-
-                // put into buffer
-                flushBatch.putData(recordStr);
-                batchCount += 1;
-                batchByteSize += recordStr.length();
-                // trigger buffer
-                if (batchCount >= this.keys.getBatchRows() || batchByteSize >= this.keys.getBatchByteSize()) {
-                    // generate doris stream load label
-                    flush(flushBatch);
-                    // clear buffer
-                    batchCount = 0;
-                    batchByteSize = 0L;
-                    flushBatch = new DorisFlushBatch(lineDelimiter, this.keys.getFormat());
-                }
-            } // end of while
-
-            if (flushBatch.getSize() > 0) {
-                flush(flushBatch);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
             }
-        }
-
-        private void flush(DorisFlushBatch flushBatch) {
-            flushBatch.setLabel(getStreamLoadLabel());
-            dorisWriterEmitter.emit(flushBatch);
-        }
-
-        private String getStreamLoadLabel() {
-            return labelPrefix + "_" + (batchNum++);
         }
 
         @Override
         public void post() {
-
+            try {
+                writerManager.close();
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            }
         }
 
         @Override
@@ -132,143 +183,5 @@ public class DorisWriter extends Writer {
         public boolean supportFailOver() {
             return false;
         }
-    }
-
-    public static class Job extends com.alibaba.datax.common.spi.Writer.Job {
-        private static final Logger LOG = LoggerFactory.getLogger(DorisWriter.Job.class);
-        private Configuration originalConfig = null;
-        private Key keys;
-        private com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsGetter;
-
-        public Job() {
-        }
-
-        @Override
-        public void init() {
-            this.originalConfig = super.getPluginJobConf();
-            this.keys = new Key(super.getPluginJobConf());
-            this.keys.doPretreatment();
-
-            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
-        }
-
-        @Override
-        public void preCheck() {
-            this.init();
-            this.preCheckPrePareSQL(this.keys);
-            this.preCheckPostSQL(this.keys);
-        }
-
-        @Override
-        public void prepare() {
-            String username = this.keys.getUsername();
-            String password = this.keys.getPassword();
-            String jdbcUrl = this.keys.getJdbcUrl();
-            List<String> renderedPreSqls = this.renderPreOrPostSqls(this.keys.getPreSqlList(), this.keys.getTable());
-            if (!renderedPreSqls.isEmpty()) {
-                try (Connection conn = DBUtil.getConnection(this.dsGetter, jdbcUrl, username, password)) {
-                    LOG.info("prepare execute preSqls:[{}]. doris jdbc url:{}.", String.join(";", renderedPreSqls), jdbcUrl);
-                    this.executeSqls(conn, renderedPreSqls);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-                // DBUtil.closeDBResources(null, null, conn);
-            }
-        }
-
-        @Override
-        public List<Configuration> split(int mandatoryNumber) {
-            List<Configuration> configurations = new ArrayList<>(mandatoryNumber);
-
-            for (int i = 0; i < mandatoryNumber; ++i) {
-                configurations.add(this.originalConfig);
-            }
-
-            return configurations;
-        }
-
-        @Override
-        public void post() {
-            String username = this.keys.getUsername();
-            String password = this.keys.getPassword();
-            String jdbcUrl = this.keys.getJdbcUrl();
-            List<String> renderedPostSqls = this.renderPreOrPostSqls(this.keys.getPostSqlList(), this.keys.getTable());
-            if (!renderedPostSqls.isEmpty()) {
-                try (Connection conn = DBUtil.getConnection(this.dsGetter, jdbcUrl, username, password)) {
-                    LOG.info("prepare execute postSqls:[{}]. doris jdbc url为:{}.", String.join(";", renderedPostSqls), jdbcUrl);
-                    this.executeSqls(conn, renderedPostSqls);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-                //  DBUtil.closeDBResources(null, null, conn);
-            }
-
-        }
-
-        @Override
-        public void destroy() {
-        }
-
-        private List<String> renderPreOrPostSqls(final List<String> preOrPostSqls, final String tableName) {
-            if (null == preOrPostSqls) {
-                return Collections.emptyList();
-            }
-            final List<String> renderedSqls = new ArrayList<>();
-            for (final String sql : preOrPostSqls) {
-                if (!Strings.isNullOrEmpty(sql)) {
-                    renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
-                }
-            }
-            return renderedSqls;
-        }
-
-        private void executeSqls(final Connection conn, final List<String> sqls) {
-            Statement stmt = null;
-            String currentSql = null;
-            try {
-                stmt = conn.createStatement();
-                for (String s : sqls) {
-                    final String sql = currentSql = s;
-                    DBUtil.executeSqlWithoutResultSet(stmt, sql);
-                }
-            } catch (Exception e) {
-                throw RdbmsException.asQueryException(DataBaseType.MySql, e, currentSql, null, null);
-            } finally {
-                DBUtil.closeDBResources(null, stmt, null);
-            }
-        }
-
-        private void preCheckPrePareSQL(final Key keys) {
-            final String table = keys.getTable();
-            final List<String> preSqls = keys.getPreSqlList();
-            final List<String> renderedPreSqls = renderPreOrPostSqls(preSqls, table);
-            if (!renderedPreSqls.isEmpty()) {
-                LOG.info("prepare check preSqls:[{}].", String.join(";", renderedPreSqls));
-                for (final String sql : renderedPreSqls) {
-                    try {
-                        DBUtil.sqlValid(sql, DataBaseType.MySql);
-                    } catch (ParserException e) {
-                        throw RdbmsException.asPreSQLParserException(DataBaseType.MySql, e, sql);
-                    }
-                }
-            }
-        }
-
-        private void preCheckPostSQL(final Key keys) {
-            final String table = keys.getTable();
-            final List<String> postSqls = keys.getPostSqlList();
-            final List<String> renderedPostSqls = renderPreOrPostSqls(postSqls, table);
-            if (!renderedPostSqls.isEmpty()) {
-                LOG.info("prepare check postSqls:[{}].", String.join(";", renderedPostSqls));
-                for (final String sql : renderedPostSqls) {
-                    try {
-                        DBUtil.sqlValid(sql, DataBaseType.MySql);
-                    } catch (ParserException e) {
-                        throw RdbmsException.asPostSQLParserException(DataBaseType.MySql, e, sql);
-                    }
-                }
-            }
-        }
-
     }
 }

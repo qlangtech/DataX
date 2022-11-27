@@ -13,6 +13,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL = "core.container.taskGroup.channel";
 
+	public static final String DATAX_NAME = "core.container.job.content[0].dataxName";
+
 	public static final String DATAX_CORE_CONTAINER_MODEL = "core.container.model";
 
 	public static final String DATAX_CORE_CONTAINER_JOB_ID = "core.container.job.id";
@@ -136,7 +138,7 @@ public class CoreConstant {
     public static final String LAST_PRIVATEKEY = "last.privateKey";
 
 	public static final String LAST_SERVICE_USERNAME = "last.service.username";
-    
+
 	public static final String LAST_SERVICE_PASSWORD = "last.service.password";
 
     public static final String CURRENT_KEYVERSION = "current.keyVersion";
@@ -146,7 +148,7 @@ public class CoreConstant {
     public static final String CURRENT_PRIVATEKEY = "current.privateKey";
 
 	public static final String CURRENT_SERVICE_USERNAME = "current.service.username";
-    
+
 	public static final String CURRENT_SERVICE_PASSWORD = "current.service.password";
 
 	// ----------------------------- 环境变量 ---------------------------------

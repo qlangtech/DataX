@@ -149,6 +149,13 @@
             </dependency>
 
             <dependency>
+                <groupId>com.qlangtech.tis</groupId>
+                <artifactId>tis-builder-api</artifactId>
+                <version>${tis.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3-version}</version>
