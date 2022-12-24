@@ -180,6 +180,7 @@ public class DorisStreamLoadObserver {
             httpPut.setHeader("two_phase_commit", "false");
             httpPut.setHeader("Authorization", getBasicAuthHeader(options.getUsername(), options.getPassword()));
             httpPut.setHeader("format", options.getStreamLoadFormat().getToken());
+            httpPut.setHeader("strip_outer_array", "true");
             httpPut.setEntity(new ByteArrayEntity(data));
             httpPut.setConfig(RequestConfig.custom().setRedirectsEnabled(true).build());
             try (CloseableHttpResponse resp = httpclient.execute(httpPut)) {
