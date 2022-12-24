@@ -12,6 +12,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.*;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
+import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.web.start.TisAppLaunch;
 import org.apache.commons.lang3.StringUtils;
@@ -437,7 +438,7 @@ public class CommonRdbmsWriter {
         }
 
 
-        public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
+        public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, DataSourceMeta.JDBCConnection connection) {
             this.taskPluginCollector = taskPluginCollector;
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
@@ -487,7 +488,7 @@ public class CommonRdbmsWriter {
             } finally {
                 writeBuffer.clear();
                 bufferBytes = 0;
-                DBUtil.closeDBResources(null, null, connection);
+                DBUtil.closeDBResources(null, null, connection.getConnection());
             }
         }
 
@@ -499,7 +500,7 @@ public class CommonRdbmsWriter {
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     this.dataBaseType, BASIC_MESSAGE);
-            startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
+            startWriteWithConnection(recordReceiver, taskPluginCollector, new DataSourceMeta.JDBCConnection( connection,this.jdbcUrl));
         }
 
 
@@ -527,8 +528,9 @@ public class CommonRdbmsWriter {
         private static final int MAX_BATCH_INSERT_COUNT = 30;
         int batchInsertFaildCount = 0;
 
-        protected void doBatchInsert(Connection connection, List<Record> buffer)
+        protected void doBatchInsert(DataSourceMeta.JDBCConnection conn, List<Record> buffer)
                 throws SQLException {
+            Connection connection = conn.getConnection();
             PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(false);

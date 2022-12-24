@@ -15,6 +15,7 @@ import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
+import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
@@ -517,12 +518,12 @@ public final class DBUtil {
         closeDBResources(null, stmt, conn);
     }
 
-    public static List<String> getTableColumns(DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter,
-                                               String jdbcUrl, String user, String pass, SelectTable tableName) {
-        return getTableColums(dataSourceFactoryGetter, tableName);
+//    public static List<String> getTableColumns(DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter,
+//                                               String jdbcUrl, String user, String pass, SelectTable tableName) {
+//        return getTableColums(dataSourceFactoryGetter, tableName);
 //        Connection conn = getConnection(dataSourceFactoryGetter, jdbcUrl, user, pass);
 //        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:" + jdbcUrl);
-    }
+//    }
 
     private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, SelectTable tableName) {
         try {
@@ -587,13 +588,13 @@ public final class DBUtil {
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
     public static List<ColumnMetaData> getColumnMetaData(
-            Optional<Connection> connection, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
+            Optional<DataSourceMeta.JDBCConnection> connection, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
 
         Map<String, ColumnMetaData> colMapper = null;
         try {
             EntityName table = EntityName.parse(tableName.getUnescapeTabName());
             List<ColumnMetaData> tabCols = connection.isPresent()
-                    ? dsGetter.getDataSourceFactory().getTableMetadata(connection.get(), table)
+                    ? dsGetter.getDataSourceFactory().getTableMetadata((connection.get()), table)
                     : dsGetter.getDataSourceFactory().getTableMetadata(table);
             colMapper = tabCols.stream().collect(Collectors.toMap((c) -> c.getName(), (c) -> c));
         } catch (TableNotFoundException e) {

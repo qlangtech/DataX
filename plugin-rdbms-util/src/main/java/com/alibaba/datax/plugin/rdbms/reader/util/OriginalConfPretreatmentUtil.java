@@ -9,7 +9,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
-import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
+import com.qlangtech.tis.datax.DataXJobInfo;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -105,8 +105,10 @@ public final class OriginalConfPretreatmentUtil {
 
             if (isTableMode) {
                 // table 方式
+                ;
                 // 对每一个connection 上配置的table 项进行解析(已对表名称进行了 ` 处理的)
-                List<String> tables = connConf.getList(Key.TABLE, String.class);
+                List<String> tables = DataXJobInfo.getExecTables(connConf.getList(Key.TABLE, String.class)
+                        ,dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
 
                 List<String> expandedTables = TableExpandUtil.expandTableConf(
                         DATABASE_TYPE, tables);
@@ -155,17 +157,17 @@ public final class OriginalConfPretreatmentUtil {
                     String username = originalConfig.getString(Key.USERNAME);
                     String password = originalConfig.getString(Key.PASSWORD);
 
-                    SelectTable tableName = SelectTable.create(originalConfig);
+                    //  SelectTable tableName = SelectTable.create(originalConfig);
 //                    String tableName = originalConfig.getString(String.format(
 //                            "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
-                    List<String> allColumns = DBUtil.getTableColumns(
-                            DATABASE_TYPE, dataSourceFactoryGetter, jdbcUrl, username, password,
-                            tableName);
-                    LOG.info("table:[{}] has columns:[{}].",
-                            tableName, StringUtils.join(allColumns, ","));
+//                    List<String> allColumns = DBUtil.getTableColumns(
+//                            DATABASE_TYPE, dataSourceFactoryGetter, jdbcUrl, username, password,
+//                            tableName);
+//                    LOG.info("table:[{}] has columns:[{}].",
+//                            tableName, StringUtils.join(allColumns, ","));
                     // warn:注意mysql表名区分大小写
-                    allColumns = ListUtil.valueToLowerCase(allColumns);
+                    //  allColumns = ListUtil.valueToLowerCase(allColumns);
                     List<String> quotedColumns = new ArrayList<String>();
 
                     for (String column : userConfiguredColumns) {
@@ -193,10 +195,10 @@ public final class OriginalConfPretreatmentUtil {
                     originalConfig.set(Key.COLUMN,
                             StringUtils.join(quotedColumns, ","));
                     if (StringUtils.isNotBlank(splitPk)) {
-                        if (!allColumns.contains(splitPk.toLowerCase())) {
-                            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                                    String.format("您的配置文件中的列配置信息有误. 因为根据您的配置，您读取的数据库表:%s 中没有主键名为:%s. 请检查您的配置并作出修改.", tableName, splitPk));
-                        }
+//                        if (!allColumns.contains(splitPk.toLowerCase())) {
+//                            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+//                                    String.format("您的配置文件中的列配置信息有误. 因为根据您的配置，您读取的数据库表:%s 中没有主键名为:%s. 请检查您的配置并作出修改.", tableName, splitPk));
+//                        }
                     }
 
                 }

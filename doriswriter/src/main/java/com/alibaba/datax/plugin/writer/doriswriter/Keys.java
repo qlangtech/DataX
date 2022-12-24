@@ -19,7 +19,16 @@ public class Keys implements Serializable {
     private static final String LOAD_PROPS_FORMAT = "format";
 
     public enum StreamLoadFormat {
-        CSV, JSON;
+        CSV("csv"), JSON("json");
+        private final String token;
+
+        private StreamLoadFormat(String token) {
+            this.token = token;
+        }
+
+        public String getToken() {
+            return this.token;
+        }
     }
 
     public static final String LOAD_PROPS_LINE_DELIMITER = "line_delimiter";

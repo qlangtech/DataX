@@ -17,6 +17,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
+import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
@@ -207,7 +208,7 @@ public class CommonRdbmsReader {
             Map<String, ColumnMetaData> tabCols = null;
             try {
                 tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
-                        .getTableMetadata(conn, EntityName.parse(table)));
+                        .getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), EntityName.parse(table, true)));
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -217,8 +218,7 @@ public class CommonRdbmsReader {
             List<ColumnMetaData> cols = Lists.newArrayList();
 
             // session config .etc related
-            DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
-                    this.dataBaseType, basicMsg);
+            DBUtil.dealWithSessionConfig(conn, readerSliceConfig, this.dataBaseType, basicMsg);
 
             int columnNumber = 0;
             ResultSet rs = null;
