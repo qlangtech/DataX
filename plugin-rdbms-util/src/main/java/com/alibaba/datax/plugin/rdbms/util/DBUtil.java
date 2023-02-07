@@ -11,7 +11,6 @@ import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.qlangtech.tis.TIS;
-import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.KeyedPluginStore;
@@ -872,23 +871,16 @@ public final class DBUtil {
 
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config) {
         return getDataSourceFactoryGetter(config, (res) -> {
-            if (res.resType == KeyedPluginStore.StoreResourceType.DataApp) {
-                return DataxReader.load(null, res.resourceName);
-            } else {
-                return new IDataSourceFactoryGetter() {
-                    @Override
-                    public DataSourceFactory getDataSourceFactory() {
-                        return TIS.getDataBasePlugin(new PostedDSProp(res.dbFactoryId));
-                    }
-                    @Override
-                    public Integer getRowFetchSize() {
-                        return 2000;
-                    }
-                };
-            }
-
-//            KeyedPluginStore<DataxReader> pluginStore = DataxReader.getPluginStore(null, dataXName);
-//            return pluginStore.getPlugin();
+            return new IDataSourceFactoryGetter() {
+                @Override
+                public DataSourceFactory getDataSourceFactory() {
+                    return TIS.getDataBasePlugin(new PostedDSProp(res.dbFactoryId));
+                }
+                @Override
+                public Integer getRowFetchSize() {
+                    return 2000;
+                }
+            };
         });
     }
 
