@@ -107,8 +107,8 @@ public final class OriginalConfPretreatmentUtil {
                 // table 方式
                 ;
                 // 对每一个connection 上配置的table 项进行解析(已对表名称进行了 ` 处理的)
-                List<String> tables = DataXJobInfo.getExecTables(connConf.getList(Key.TABLE, String.class)
-                        ,dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
+                List<String> tables = getExecTables(connConf.getList(Key.TABLE, String.class)
+                        , dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
 
                 List<String> expandedTables = TableExpandUtil.expandTableConf(
                         DATABASE_TYPE, tables);
@@ -129,6 +129,32 @@ public final class OriginalConfPretreatmentUtil {
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
+    }
+
+    /**
+     * 全部可执行的表列表枚举
+     *
+     * @param allTabs 全部可执行的表
+     * @return 需要执行的表的列表
+     */
+    private static List<String> getExecTables(final List<String> allTabs, String escapeChar) {
+        return allTabs;
+//        Map<String, String> allAcceptedTabs =
+//                allTabs.stream().collect(Collectors.toMap((tab) -> StringUtils.remove(tab, escapeChar), (tab) -> tab));
+//        List<String> execTables = new ArrayList<>();
+//        DataXJobInfo jobInfo = getCurrent();
+//        Optional<String[]> targetTableNames = jobInfo.getTargetTableNames();
+//        String[] filterTabs = null;
+//        if (!targetTableNames.isPresent() || (filterTabs = targetTableNames.get()).length < 1) {
+//            throw new IllegalStateException(jobInfo.jobFileName + " relevant targetTableNames can not be empty");
+//        }
+//        String t = null;
+//        for (String tab : filterTabs) {
+//            if ((t = allAcceptedTabs.get(tab)) != null) {
+//                execTables.add(t);
+//            }
+//        }
+//        return execTables;
     }
 
     private static void dealColumnConf(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration originalConfig) {

@@ -10,14 +10,12 @@ import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.qlangtech.tis.TIS;
 import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.datax.impl.DataxWriter;
-import com.qlangtech.tis.extension.Describable;
 import com.qlangtech.tis.offline.DataxUtils;
-import com.qlangtech.tis.plugin.ds.ColumnMetaData;
-import com.qlangtech.tis.plugin.ds.DataSourceMeta;
-import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
-import com.qlangtech.tis.plugin.ds.TableNotFoundException;
+import com.qlangtech.tis.plugin.KeyedPluginStore;
+import com.qlangtech.tis.plugin.ds.*;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -867,29 +865,46 @@ public final class DBUtil {
     }
 
     public static IDataSourceFactoryGetter getWriterDataSourceFactoryGetter(Configuration config) {
-        return getDataSourceFactoryGetter(config, (dataXName) -> {
-            return DataxWriter.load(null, dataXName);
-//            KeyedPluginStore<DataxWriter> pluginStore = DataxWriter.getPluginStore(null, dataXName);
-//            return pluginStore.getPlugin();
+        return getDataSourceFactoryGetter(config, (res) -> {
+            return DataxWriter.load(null, res.resType, res.resourceName, true);
         });
     }
 
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config) {
-        return getDataSourceFactoryGetter(config, (dataXName) -> {
-            return DataxReader.load(null, dataXName);
+        return getDataSourceFactoryGetter(config, (res) -> {
+            if (res.resType == KeyedPluginStore.StoreResourceType.DataApp) {
+                return DataxReader.load(null, res.resourceName);
+            } else {
+                return new IDataSourceFactoryGetter() {
+                    @Override
+                    public DataSourceFactory getDataSourceFactory() {
+                        return TIS.getDataBasePlugin(new PostedDSProp(res.dbFactoryId));
+                    }
+                    @Override
+                    public Integer getRowFetchSize() {
+                        return 2000;
+                    }
+                };
+            }
+
 //            KeyedPluginStore<DataxReader> pluginStore = DataxReader.getPluginStore(null, dataXName);
 //            return pluginStore.getPlugin();
         });
     }
 
-    private static IDataSourceFactoryGetter getDataSourceFactoryGetter(Configuration
-                                                                               originalConfig, Function<String, Describable> callable) {
+    private static IDataSourceFactoryGetter getDataSourceFactoryGetter(
+            Configuration originalConfig, Function<ResourceName, Object> callable) {
         String dataXName = originalConfig.getString(DataxUtils.DATAX_NAME);
+        KeyedPluginStore.StoreResourceType resType = KeyedPluginStore.StoreResourceType.parse(
+                originalConfig.getString(KeyedPluginStore.StoreResourceType.KEY_STORE_RESOURCE_TYPE));
+
+        final DBIdentity dbFactoryId = DBIdentity.parseId(originalConfig.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
+
         if (StringUtils.isEmpty(dataXName)) {
             throw new IllegalArgumentException("param dataXName:" + dataXName + "can not be null");
         }
         try {
-            Describable dataxPlugin = callable.apply(dataXName);// DataxWriter.getPluginStore(null, dataXName);
+            Object dataxPlugin = callable.apply(new ResourceName(dataXName, resType, dbFactoryId));
             Objects.requireNonNull(dataxPlugin, "dataXName:" + dataXName + " relevant instance can not be null");
             if (!(dataxPlugin instanceof IDataSourceFactoryGetter)) {
                 throw new IllegalStateException("dataxWriter:" + dataxPlugin.getClass() + " mus be type of " + IDataSourceFactoryGetter.class);
@@ -897,6 +912,18 @@ public final class DBUtil {
             return (IDataSourceFactoryGetter) dataxPlugin;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static final class ResourceName {
+        private final String resourceName;
+        private final KeyedPluginStore.StoreResourceType resType;
+        private final DBIdentity dbFactoryId;
+
+        public ResourceName(String resourceName, KeyedPluginStore.StoreResourceType resType, DBIdentity dbFactoryId) {
+            this.resourceName = resourceName;
+            this.resType = resType;
+            this.dbFactoryId = dbFactoryId;
         }
     }
 }
