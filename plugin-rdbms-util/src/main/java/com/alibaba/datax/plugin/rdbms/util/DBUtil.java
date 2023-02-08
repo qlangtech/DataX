@@ -14,6 +14,7 @@ import com.qlangtech.tis.TIS;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.KeyedPluginStore;
+import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.plugin.ds.*;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.lang3.StringUtils;
@@ -887,8 +888,8 @@ public final class DBUtil {
     private static IDataSourceFactoryGetter getDataSourceFactoryGetter(
             Configuration originalConfig, Function<ResourceName, Object> callable) {
         String dataXName = originalConfig.getString(DataxUtils.DATAX_NAME);
-        KeyedPluginStore.StoreResourceType resType = KeyedPluginStore.StoreResourceType.parse(
-                originalConfig.getString(KeyedPluginStore.StoreResourceType.KEY_STORE_RESOURCE_TYPE));
+        StoreResourceType resType = StoreResourceType.parse(
+                originalConfig.getString(StoreResourceType.KEY_STORE_RESOURCE_TYPE));
 
         final DBIdentity dbFactoryId = DBIdentity.parseId(originalConfig.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
 
@@ -909,10 +910,10 @@ public final class DBUtil {
 
     private static final class ResourceName {
         private final String resourceName;
-        private final KeyedPluginStore.StoreResourceType resType;
+        private final StoreResourceType resType;
         private final DBIdentity dbFactoryId;
 
-        public ResourceName(String resourceName, KeyedPluginStore.StoreResourceType resType, DBIdentity dbFactoryId) {
+        public ResourceName(String resourceName, StoreResourceType resType, DBIdentity dbFactoryId) {
             this.resourceName = resourceName;
             this.resType = resType;
             this.dbFactoryId = dbFactoryId;
