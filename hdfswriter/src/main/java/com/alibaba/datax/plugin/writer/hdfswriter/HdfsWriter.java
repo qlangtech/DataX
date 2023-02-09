@@ -11,7 +11,9 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -396,11 +398,11 @@ public class HdfsWriter extends Writer {
             LOG.info(String.format("write to file : [%s]", this.fileName));
             if (fileType.equalsIgnoreCase("TEXT")) {
                 //写TEXT FILE
-                FileFormatUtils.textFileStartWrite(hdfsHelper, lineReceiver, this.writerSliceConfig, this.fileName,
+                startTextWrite(hdfsHelper, lineReceiver, this.writerSliceConfig, this.fileName,
                         this.getTaskPluginCollector());
             } else if (fileType.equalsIgnoreCase("ORC")) {
                 //写ORC FILE
-                FileFormatUtils.orcFileStartWrite(hdfsHelper.fileSystem, hdfsHelper.conf, lineReceiver, this.writerSliceConfig, this.fileName,
+                orcFileStartWrite(hdfsHelper.fileSystem, hdfsHelper.conf, lineReceiver, this.writerSliceConfig, this.fileName,
                         this.getTaskPluginCollector());
             } else if (fileType.equalsIgnoreCase("CSV")) {
                 this.csvFileStartWrite(lineReceiver
@@ -414,6 +416,13 @@ public class HdfsWriter extends Writer {
 
             LOG.info("end do write");
         }
+
+        protected abstract void orcFileStartWrite(
+                FileSystem fileSystem, JobConf conf, RecordReceiver lineReceiver, Configuration config, String fileName,
+                TaskPluginCollector taskPluginCollector);
+
+        protected abstract void startTextWrite(HdfsHelper fsHelper, RecordReceiver lineReceiver, Configuration config, String fileName,
+                                      TaskPluginCollector taskPluginCollector);
 
         protected abstract void avroFileStartWrite(
                 RecordReceiver lineReceiver, Configuration writerSliceConfig, String fileName, TaskPluginCollector taskPluginCollector);
