@@ -331,7 +331,7 @@ public class MongoDBWriter extends Writer {
 //            }
 
             try {
-                IDataSourceFactoryGetter dsGetter = DBUtil.getWriterDataSourceFactoryGetter(this.writerSliceConfig);
+                IDataSourceFactoryGetter dsGetter = DBUtil.getWriterDataSourceFactoryGetter(this.writerSliceConfig, this.containerContext);
                 DataSourceFactory dataSourceFactory = dsGetter.getDataSourceFactory();
 
                 this.mongoClient = dataSourceFactory.unwrap(MongoClient.class);

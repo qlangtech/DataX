@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.adswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
@@ -167,13 +168,13 @@ public class AdsUtil {
 
     private static IDataSourceFactoryGetter dataSourceFactoryGetter;
 
-    public static Connection getAdsConnect(Configuration conf) {
+    public static Connection getAdsConnect(Configuration conf, IJobContainerContext containerContext) {
         String userName = conf.getString(Key.USERNAME);
         String passWord = conf.getString(Key.PASSWORD);
         String jdbcUrl = AdsUtil.prepareJdbcUrl(conf);
 
         if (dataSourceFactoryGetter == null) {
-            dataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(conf);
+            dataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(conf, containerContext);
         }
         Connection connection = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, userName, passWord);
         return connection;

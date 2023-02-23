@@ -77,6 +77,12 @@ public class BytesColumn extends Column {
 	}
 
 	@Override
+	public Date asDate(String dateFormat) {
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Date .");
+	}
+
+	@Override
 	public Boolean asBoolean() {
 		throw DataXException.asDataXException(
 				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Boolean .");

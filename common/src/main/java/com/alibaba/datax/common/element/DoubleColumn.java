@@ -24,7 +24,7 @@ public class DoubleColumn extends Column {
 
 	/**
 	 * Double无法表示准确的小数数据，我们不推荐使用该方法保存Double数据，建议使用String作为构造入参
-	 * 
+	 *
 	 * */
 	public DoubleColumn(final Double data) {
 		this(data == null ? (String) null
@@ -33,7 +33,7 @@ public class DoubleColumn extends Column {
 
 	/**
 	 * Float无法表示准确的小数数据，我们不推荐使用该方法保存Float数据，建议使用String作为构造入参
-	 * 
+	 *
 	 * */
 	public DoubleColumn(final Float data) {
 		this(data == null ? (String) null
@@ -129,6 +129,12 @@ public class DoubleColumn extends Column {
 
 	@Override
 	public Date asDate() {
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Date类型 .");
+	}
+
+	@Override
+	public Date asDate(String dateFormat) {
 		throw DataXException.asDataXException(
 				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Date类型 .");
 	}

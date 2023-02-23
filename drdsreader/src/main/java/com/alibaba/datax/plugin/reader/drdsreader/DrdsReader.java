@@ -34,7 +34,7 @@ public class DrdsReader extends Reader {
             this.validateConfiguration();
 
             this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-                    DATABASE_TYPE);
+                    DATABASE_TYPE, this.containerContext);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
@@ -117,19 +117,19 @@ public class DrdsReader extends Reader {
         private Configuration readerSliceConfig;
         private CommonRdbmsReader.Task commonRdbmsReaderTask;
 
+
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
             this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(
-                    DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
+                    DATABASE_TYPE, this.containerContext ,super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
         }
 
+
         @Override
         public void startRead(RecordSender recordSender) {
-          //  int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
-
             this.commonRdbmsReaderTask.startRead(this.readerSliceConfig,
                     recordSender, super.getTaskPluginCollector());
         }

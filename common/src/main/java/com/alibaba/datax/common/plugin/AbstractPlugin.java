@@ -2,51 +2,61 @@ package com.alibaba.datax.common.plugin;
 
 import com.alibaba.datax.common.base.BaseObject;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 
 public abstract class AbstractPlugin extends BaseObject implements Pluginable {
-	//作业的config
+    //作业的config
     private Configuration pluginJobConf;
 
     //插件本身的plugin
-	private Configuration pluginConf;
+    private Configuration pluginConf;
 
     // by qiangsi.lq。 修改为对端的作业configuration
     private Configuration peerPluginJobConf;
 
     private String peerPluginName;
 
-    @Override
-	public String getPluginName() {
-		assert null != this.pluginConf;
-		return this.pluginConf.getString("name");
-	}
+    protected IJobContainerContext containerContext;
+
 
     @Override
-	public String getDeveloper() {
-		assert null != this.pluginConf;
-		return this.pluginConf.getString("developer");
-	}
+    public final void setContainerContext(IJobContainerContext containerContext) {
+        this.containerContext = containerContext;
+    }
+
 
     @Override
-	public String getDescription() {
-		assert null != this.pluginConf;
-		return this.pluginConf.getString("description");
-	}
+    public String getPluginName() {
+        assert null != this.pluginConf;
+        return this.pluginConf.getString("name");
+    }
 
     @Override
-	public Configuration getPluginJobConf() {
-		return pluginJobConf;
-	}
+    public String getDeveloper() {
+        assert null != this.pluginConf;
+        return this.pluginConf.getString("developer");
+    }
 
     @Override
-	public void setPluginJobConf(Configuration pluginJobConf) {
-		this.pluginJobConf = pluginJobConf;
-	}
+    public String getDescription() {
+        assert null != this.pluginConf;
+        return this.pluginConf.getString("description");
+    }
 
     @Override
-	public void setPluginConf(Configuration pluginConf) {
-		this.pluginConf = pluginConf;
-	}
+    public Configuration getPluginJobConf() {
+        return pluginJobConf;
+    }
+
+    @Override
+    public void setPluginJobConf(Configuration pluginJobConf) {
+        this.pluginJobConf = pluginJobConf;
+    }
+
+    @Override
+    public void setPluginConf(Configuration pluginConf) {
+        this.pluginConf = pluginConf;
+    }
 
     @Override
     public Configuration getPeerPluginJobConf() {
@@ -71,17 +81,17 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
     public void preCheck() {
     }
 
-	public void prepare() {
-	}
+    public void prepare() {
+    }
 
-	public void post() {
-	}
+    public void post() {
+    }
 
-    public void preHandler(Configuration jobConfiguration){
+    public void preHandler(Configuration jobConfiguration) {
 
     }
 
-    public void postHandler(Configuration jobConfiguration){
+    public void postHandler(Configuration jobConfiguration) {
 
     }
 }

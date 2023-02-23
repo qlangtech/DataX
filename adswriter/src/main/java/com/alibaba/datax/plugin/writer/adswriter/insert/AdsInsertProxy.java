@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
@@ -14,21 +15,14 @@ import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.mysql.jdbc.JDBC4PreparedStatement;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
@@ -65,10 +59,12 @@ public class AdsInsertProxy implements AdsProxy {
     private String partitionColumn;
     private int partitionColumnIndex = -1;
     private int partitionCount;
+    private IJobContainerContext containerContext;
 
-    public AdsInsertProxy(String table, List<String> columns, Configuration configuration, TaskPluginCollector taskPluginCollector, TableInfo tableInfo) {
+    public AdsInsertProxy(String table, List<String> columns, Configuration configuration, TaskPluginCollector taskPluginCollector, TableInfo tableInfo, IJobContainerContext containerContext) {
         this.table = table;
         this.columns = columns;
+        this.containerContext = containerContext;
         this.configuration = configuration;
         this.taskPluginCollector = taskPluginCollector;
         this.emptyAsNull = configuration.getBool(Key.EMPTY_AS_NULL, false);
@@ -308,7 +304,7 @@ public class AdsInsertProxy implements AdsProxy {
             while (null != eachException && maxIter < AdsInsertProxy.MAX_EXCEPTION_CAUSE_ITER) {
                 if (this.isRetryable(eachException)) {
                     LOG.warn("doBatchRecordDml meet a retry exception: " + e.getMessage());
-                    this.currentConnection = AdsUtil.getAdsConnect(this.configuration);
+                    this.currentConnection = AdsUtil.getAdsConnect(this.configuration, containerContext);
                     throw eachException;
                 } else {
                     try {
@@ -375,7 +371,7 @@ public class AdsInsertProxy implements AdsProxy {
             while (null != eachException && maxIter < AdsInsertProxy.MAX_EXCEPTION_CAUSE_ITER) {
                 if (this.isRetryable(eachException)) {
                     LOG.warn("doOneDml meet a retry exception: " + e.getMessage());
-                    this.currentConnection = AdsUtil.getAdsConnect(this.configuration);
+                    this.currentConnection = AdsUtil.getAdsConnect(this.configuration, this.containerContext);
                     throw eachException;
                 } else {
                     try {

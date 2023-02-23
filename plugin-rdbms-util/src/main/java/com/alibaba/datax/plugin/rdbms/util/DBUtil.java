@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.rdbms.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
@@ -13,7 +14,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.qlangtech.tis.TIS;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.offline.DataxUtils;
-import com.qlangtech.tis.plugin.KeyedPluginStore;
 import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.plugin.ds.*;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
@@ -864,19 +864,20 @@ public final class DBUtil {
         }
     }
 
-    public static IDataSourceFactoryGetter getWriterDataSourceFactoryGetter(Configuration config) {
-        return getDataSourceFactoryGetter(config, (res) -> {
-            return DataxWriter.load(null, res.resType, res.resourceName, true);
+    public static IDataSourceFactoryGetter getWriterDataSourceFactoryGetter(Configuration originalConfig, IJobContainerContext containerContext) {
+        return getDataSourceFactoryGetter(originalConfig, containerContext, (res) -> {
+            return DataxWriter.load(null, res.resType, res.getDataXName(), true);
         });
     }
 
-    public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config) {
-        return getDataSourceFactoryGetter(config, (res) -> {
+    public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config, IJobContainerContext containerContext) {
+        return getDataSourceFactoryGetter(config, containerContext, (res) -> {
             return new IDataSourceFactoryGetter() {
                 @Override
                 public DataSourceFactory getDataSourceFactory() {
                     return TIS.getDataBasePlugin(new PostedDSProp(res.dbFactoryId));
                 }
+
                 @Override
                 public Integer getRowFetchSize() {
                     return 2000;
@@ -886,8 +887,10 @@ public final class DBUtil {
     }
 
     private static IDataSourceFactoryGetter getDataSourceFactoryGetter(
-            Configuration originalConfig, Function<ResourceName, Object> callable) {
-        String dataXName = originalConfig.getString(DataxUtils.DATAX_NAME);
+            Configuration originalConfig, IJobContainerContext containerContext, Function<DataXResourceName, Object> callable) {
+
+
+        String dataXName = containerContext.getTISDataXName(); // originalConfig.getString(DataxUtils.DATAX_NAME);
         StoreResourceType resType = StoreResourceType.parse(
                 originalConfig.getString(StoreResourceType.KEY_STORE_RESOURCE_TYPE));
 
@@ -897,7 +900,7 @@ public final class DBUtil {
             throw new IllegalArgumentException("param dataXName:" + dataXName + "can not be null");
         }
         try {
-            Object dataxPlugin = callable.apply(new ResourceName(dataXName, resType, dbFactoryId));
+            Object dataxPlugin = callable.apply(new DataXResourceName(() -> dataXName, resType, dbFactoryId));
             Objects.requireNonNull(dataxPlugin, "dataXName:" + dataXName + " relevant instance can not be null");
             if (!(dataxPlugin instanceof IDataSourceFactoryGetter)) {
                 throw new IllegalStateException("dataxWriter:" + dataxPlugin.getClass() + " mus be type of " + IDataSourceFactoryGetter.class);
@@ -908,15 +911,4 @@ public final class DBUtil {
         }
     }
 
-    private static final class ResourceName {
-        private final String resourceName;
-        private final StoreResourceType resType;
-        private final DBIdentity dbFactoryId;
-
-        public ResourceName(String resourceName, StoreResourceType resType, DBIdentity dbFactoryId) {
-            this.resourceName = resourceName;
-            this.resType = resType;
-            this.dbFactoryId = dbFactoryId;
-        }
-    }
 }

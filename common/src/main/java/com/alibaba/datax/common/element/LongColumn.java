@@ -12,10 +12,10 @@ public class LongColumn extends Column {
 
 	/**
 	 * 从整形字符串表示转为LongColumn，支持Java科学计数法
-	 * 
+	 *
 	 * NOTE: <br>
 	 * 如果data为浮点类型的字符串表示，数据将会失真，请使用DoubleColumn对接浮点字符串
-	 * 
+	 *
 	 * */
 	public LongColumn(final String data) {
 		super(null, Column.Type.LONG, 0);
@@ -124,6 +124,11 @@ public class LongColumn extends Column {
 			return null;
 		}
 		return new Date(this.asLong());
+	}
+
+	@Override
+	public Date asDate(String dateFormat) {
+		return this.asDate();
 	}
 
 	@Override

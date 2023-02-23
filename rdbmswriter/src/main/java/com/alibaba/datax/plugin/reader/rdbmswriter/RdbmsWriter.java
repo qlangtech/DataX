@@ -14,10 +14,12 @@ import java.util.List;
 
 public class RdbmsWriter extends Writer {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.RDBMS;
+
     static {
-    	//加载插件下面配置的驱动类
+        //加载插件下面配置的驱动类
         DBUtil.loadDriverClass("writer", "rdbms");
     }
+
     public static class Job extends Writer.Job {
         private Configuration originalConfig = null;
         private CommonRdbmsWriter.Job commonRdbmsWriterMaster;
@@ -37,8 +39,7 @@ public class RdbmsWriter extends Writer {
                                         writeMode));
             }
 
-            this.commonRdbmsWriterMaster = new SubCommonRdbmsWriter.Job(
-                    DATABASE_TYPE);
+            this.commonRdbmsWriterMaster = new SubCommonRdbmsWriter.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
 
@@ -72,8 +73,7 @@ public class RdbmsWriter extends Writer {
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterSlave = new SubCommonRdbmsWriter.Task(
-                    DATABASE_TYPE);
+            this.commonRdbmsWriterSlave = new SubCommonRdbmsWriter.Task(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsWriterSlave.init(this.writerSliceConfig);
         }
 

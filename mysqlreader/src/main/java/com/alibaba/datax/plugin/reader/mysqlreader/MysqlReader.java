@@ -35,7 +35,7 @@ public class MysqlReader extends Reader {
                 this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             }
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE, containerContext);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
@@ -71,14 +71,14 @@ public class MysqlReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
+            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE, containerContext, super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
-          //  int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
+            //  int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender,
                     super.getTaskPluginCollector());
@@ -93,6 +93,7 @@ public class MysqlReader extends Reader {
         public void destroy() {
             this.commonRdbmsReaderTask.destroy(this.readerSliceConfig);
         }
+
 
     }
 

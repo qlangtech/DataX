@@ -151,6 +151,16 @@ public class StringColumn extends Column {
 	}
 
 	@Override
+	public Date asDate(String dateFormat) {
+		try {
+			return ColumnCast.string2Date(this, dateFormat);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[\"%s\"]不能转为Date .", this.asString()));
+		}
+	}
+
+	@Override
 	public byte[] asBytes() {
 		try {
 			return ColumnCast.string2Bytes(this);

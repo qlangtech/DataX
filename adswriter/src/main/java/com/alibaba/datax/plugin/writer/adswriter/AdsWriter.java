@@ -198,7 +198,7 @@ public class AdsWriter extends Writer {
                 if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
                     // 说明有 preSql 配置，则此处删除掉
                     this.originalConfig.remove(Key.PRE_SQL);
-                    Connection preConn = AdsUtil.getAdsConnect(this.originalConfig);
+                    Connection preConn = AdsUtil.getAdsConnect(this.originalConfig, this.containerContext);
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"),
                             this.originalConfig.getString(Key.ADS_URL));
@@ -238,7 +238,7 @@ public class AdsWriter extends Writer {
                 if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
                     // 说明有 preSql 配置，则此处删除掉
                     this.originalConfig.remove(Key.POST_SQL);
-                    Connection postConn = AdsUtil.getAdsConnect(this.originalConfig);
+                    Connection postConn = AdsUtil.getAdsConnect(this.originalConfig, this.containerContext);
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPostSqls, ";"),
@@ -372,13 +372,13 @@ public class AdsWriter extends Writer {
             } else {
                 // insert 模式
                 List<String> columns = writerSliceConfig.getList(Key.COLUMN, String.class);
-                Connection connection = AdsUtil.getAdsConnect(this.writerSliceConfig);
+                Connection connection = AdsUtil.getAdsConnect(this.writerSliceConfig, this.containerContext);
                 TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();
 
                 if (StringUtils.equalsIgnoreCase(this.writeProxy, "adbClient")) {
                     this.proxy = new AdsClientProxy(table, columns, writerSliceConfig, taskPluginCollector, this.tableInfo);
                 } else {
-                    this.proxy = new AdsInsertProxy(schema + "." + table, columns, writerSliceConfig, taskPluginCollector, this.tableInfo);
+                    this.proxy = new AdsInsertProxy(schema + "." + table, columns, writerSliceConfig, taskPluginCollector, this.tableInfo, this.containerContext);
                 }
                 proxy.startWriteWithConnection(recordReceiver, connection, columnNumber);
             }

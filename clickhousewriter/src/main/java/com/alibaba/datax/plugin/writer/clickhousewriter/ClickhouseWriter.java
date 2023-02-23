@@ -30,7 +30,7 @@ public class ClickhouseWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE,this.containerContext);
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
 
@@ -64,7 +64,7 @@ public class ClickhouseWriter extends Writer {
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
 
-            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(DATABASE_TYPE) {
+            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(DATABASE_TYPE,this.containerContext) {
 
 //                @Override
 //                protected PreparedStatement fillPreparedStatementColumnType(

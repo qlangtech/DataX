@@ -4,6 +4,7 @@ import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClient;
 import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClientException;
 import com.alibaba.cloud.analyticdb.adb4pgclient.DatabaseConfig;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
@@ -35,6 +36,7 @@ public class Adb4pgUtil {
             throw new Adb4pgClientException(Adb4pgClientException.CONFIG_ERROR, "Check config exception: " + e.getMessage(), null);
         }
     }
+
     public static DatabaseConfig convertConfiguration(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.USERNAME, COLUMN_SPLIT_ERROR);
         originalConfig.getNecessaryValue(Key.PASSWORD, COLUMN_SPLIT_ERROR);
@@ -80,11 +82,11 @@ public class Adb4pgUtil {
         return res;
     }
 
-    public static Connection getAdbpgConnect(Configuration conf) {
+    public static Connection getAdbpgConnect(Configuration conf, IJobContainerContext containerContext) {
         String userName = conf.getString(Key.USERNAME);
         String passWord = conf.getString(Key.PASSWORD);
 
-        com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(conf);
+        com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(conf, containerContext);
 
         return DBUtil.getConnection(dsFactoryGetter, generateJdbcUrl(conf), userName, passWord);
 
@@ -99,7 +101,7 @@ public class Adb4pgUtil {
 
     }
 
-    public static void prepare(Configuration originalConfig) {
+    public static void prepare(Configuration originalConfig, IJobContainerContext containerContext) {
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                 String.class);
 
@@ -113,17 +115,17 @@ public class Adb4pgUtil {
 
         originalConfig.remove(Key.PRE_SQL);
 
-        Connection conn = getAdbpgConnect(originalConfig);
+        Connection conn = getAdbpgConnect(originalConfig, containerContext);
         WriterUtil.executeSqls(conn, renderedPreSqls, generateJdbcUrl(originalConfig), DATABASE_TYPE);
         DBUtil.closeDBResources(null, null, conn);
 
 
     }
 
-    public static void post(Configuration configuration) {
+    public static void post(Configuration configuration, IJobContainerContext containerContext) {
         List<String> postSqls = configuration.getList(Key.POST_SQL,
                 String.class);
-        SelectTable tableName = SelectTable.createInTask( configuration);//.getString(Key.TABLE);
+        SelectTable tableName = SelectTable.createInTask(configuration);//.getString(Key.TABLE);
         List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
                 postSqls, tableName);
 
@@ -133,7 +135,7 @@ public class Adb4pgUtil {
 
         configuration.remove(Key.POST_SQL);
 
-        Connection conn = getAdbpgConnect(configuration);
+        Connection conn = getAdbpgConnect(configuration, containerContext);
 
         WriterUtil.executeSqls(conn, renderedPostSqls, generateJdbcUrl(configuration), DATABASE_TYPE);
         DBUtil.closeDBResources(null, null, conn);

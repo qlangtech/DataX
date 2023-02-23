@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
@@ -52,14 +53,16 @@ public class CommonRdbmsReader {
     public static class Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
         public IDataSourceFactoryGetter dataSourceFactoryGetter;
+        private final IJobContainerContext containerContext;
 
-        public Job(DataBaseType dataBaseType) {
+        public Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
+            this.containerContext = containerContext;
         }
 
         public void init(Configuration originalConfig) {
-            this.dataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(originalConfig);
+            this.dataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(originalConfig, this.containerContext);
             OriginalConfPretreatmentUtil.doPretreatment(this.dataSourceFactoryGetter, originalConfig);
 
             LOG.debug("After job init(), job config now is:[\n{}\n]",
@@ -138,24 +141,26 @@ public class CommonRdbmsReader {
         private String jdbcUrl;
         private String mandatoryEncoding;
         private static final Pattern PATTERN_FROM_TABLE = Pattern.compile("[fF][rR][oO][mM]\\s+(\\S+)");
+        private final IJobContainerContext containerContext;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private String basicMsg;
 
-        public Task(DataBaseType dataBaseType) {
-            this(dataBaseType, -1, -1);
+        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext) {
+            this(dataBaseType, containerContext, -1, -1);
         }
 
-        public Task(DataBaseType dataBaseType, int taskGropuId, int taskId) {
+        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext, int taskGropuId, int taskId) {
             this.dataBaseType = dataBaseType;
             this.taskGroupId = taskGropuId;
             this.taskId = taskId;
+            this.containerContext = containerContext;
         }
 
         public void init(Configuration readerSliceConfig) {
 
             /* for database connection */
-            this.readerDataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(readerSliceConfig);
+            this.readerDataSourceFactoryGetter = DBUtil.getReaderDataSourceFactoryGetter(readerSliceConfig, this.containerContext);
             this.username = readerSliceConfig.getString(Key.USERNAME);
             this.password = readerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);

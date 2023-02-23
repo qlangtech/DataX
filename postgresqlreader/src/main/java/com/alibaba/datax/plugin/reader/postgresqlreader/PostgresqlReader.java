@@ -28,7 +28,7 @@ public class PostgresqlReader extends Reader {
 //            }
 //            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE);
+            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
 
@@ -57,7 +57,8 @@ public class PostgresqlReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Task(DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
+            this.commonRdbmsReaderSlave
+                    = new CommonRdbmsReader.Task(DATABASE_TYPE, containerContext, super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
         }
 

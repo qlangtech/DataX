@@ -33,7 +33,7 @@ public class DrdsWriter extends Writer {
             }
 
             this.originalConfig.set(Key.WRITE_MODE, writeMode);
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,this.containerContext);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
@@ -68,7 +68,7 @@ public class DrdsWriter extends Writer {
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE);
+            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE,this.containerContext);
             this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 

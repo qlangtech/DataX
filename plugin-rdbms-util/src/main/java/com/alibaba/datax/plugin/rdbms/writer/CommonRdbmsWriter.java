@@ -6,6 +6,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
@@ -34,17 +35,19 @@ public class CommonRdbmsWriter {
     public static class Job {
         private DataBaseType dataBaseType;
         private IDataSourceFactoryGetter dataSourceFactoryGetter;
+        private final IJobContainerContext containerContext;
 
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        public Job(DataBaseType dataBaseType) {
+        public Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             this.dataBaseType = dataBaseType;
+            this.containerContext = containerContext;
             OriginalConfPretreatmentUtil.DATABASE_TYPE = this.dataBaseType;
         }
 
         public void init(Configuration originalConfig) {
-            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
+            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig, this.containerContext);
             OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataSourceFactoryGetter, this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
@@ -211,9 +214,11 @@ public class CommonRdbmsWriter {
         protected String writeMode;
         protected boolean emptyAsNull;
         protected List<Pair<ColumnMetaData, IStatementSetter>> resultSetMetaData;
+        private final IJobContainerContext containerContext;
 
-        public Task(DataBaseType dataBaseType) {
+        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             this.dataBaseType = dataBaseType;
+            this.containerContext = containerContext;
         }
 
         public void init(Configuration writerSliceConfig) {
@@ -249,7 +254,7 @@ public class CommonRdbmsWriter {
             this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 
-            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig);
+            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
             this.columns = SelectCols.createSelectCols(writerSliceConfig, this.dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
             this.columnNumber = this.columns.size();
         }
@@ -500,7 +505,7 @@ public class CommonRdbmsWriter {
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     this.dataBaseType, BASIC_MESSAGE);
-            startWriteWithConnection(recordReceiver, taskPluginCollector, new DataSourceMeta.JDBCConnection( connection,this.jdbcUrl));
+            startWriteWithConnection(recordReceiver, taskPluginCollector, new DataSourceMeta.JDBCConnection(connection, this.jdbcUrl));
         }
 
 

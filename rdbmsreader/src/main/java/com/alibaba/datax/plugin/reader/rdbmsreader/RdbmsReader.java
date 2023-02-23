@@ -1,22 +1,22 @@
 package com.alibaba.datax.plugin.reader.rdbmsreader;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 import java.util.List;
 
 public class RdbmsReader extends Reader {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.RDBMS;
+
     static {
-    	//加载插件下面配置的驱动类
+        //加载插件下面配置的驱动类
         DBUtil.loadDriverClass("reader", "rdbms");
     }
+
     public static class Job extends Reader.Job {
 
         private Configuration originalConfig;
@@ -40,8 +40,7 @@ public class RdbmsReader extends Reader {
 //                    com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
 //                    fetchSize);
 
-            this.commonRdbmsReaderMaster = new SubCommonRdbmsReader.Job(
-                    DATABASE_TYPE);
+            this.commonRdbmsReaderMaster = new SubCommonRdbmsReader.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
 
@@ -71,8 +70,7 @@ public class RdbmsReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new SubCommonRdbmsReader.Task(
-                    DATABASE_TYPE);
+            this.commonRdbmsReaderSlave = new SubCommonRdbmsReader.Task(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
         }
 

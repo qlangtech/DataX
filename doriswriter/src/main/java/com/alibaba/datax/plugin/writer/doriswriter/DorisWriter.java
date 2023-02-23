@@ -51,7 +51,7 @@ public class DorisWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             options = new Keys(super.getPluginJobConf());
             options.doPretreatment();
-            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
+            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig,this.containerContext);
         }
 
         @Override

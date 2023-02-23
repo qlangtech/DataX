@@ -19,7 +19,7 @@ public class MysqlWriter extends Writer {
         private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         @Override
-        public void preCheck(){
+        public void preCheck() {
             this.init();
             this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
         }
@@ -27,7 +27,7 @@ public class MysqlWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
@@ -64,7 +64,7 @@ public class MysqlWriter extends Writer {
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE);
+            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE, containerContext);
             this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 
@@ -90,7 +90,7 @@ public class MysqlWriter extends Writer {
         }
 
         @Override
-        public boolean supportFailOver(){
+        public boolean supportFailOver() {
             String writeMode = writerSliceConfig.getString(Key.WRITE_MODE);
             return "replace".equalsIgnoreCase(writeMode);
         }

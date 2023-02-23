@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.rdbmsreader;
 
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
@@ -12,8 +13,8 @@ public class SubCommonRdbmsReader extends CommonRdbmsReader {
     }
 
     public static class Job extends CommonRdbmsReader.Job {
-        public Job(DataBaseType dataBaseType) {
-            super(dataBaseType);
+        public Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
+            super(dataBaseType, containerContext);
         }
     }
 
@@ -22,8 +23,8 @@ public class SubCommonRdbmsReader extends CommonRdbmsReader {
         private static final Logger LOG = LoggerFactory.getLogger(Task.class);
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
-        public Task(DataBaseType dataBaseType) {
-            super(dataBaseType);
+        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext) {
+            super(dataBaseType, containerContext);
         }
 
 

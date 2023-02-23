@@ -1,17 +1,18 @@
 package com.alibaba.datax.common.plugin;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 
 public interface Pluginable {
-	String getDeveloper();
+    String getDeveloper();
 
     String getDescription();
 
     void setPluginConf(Configuration pluginConf);
 
-	void init();
+    void init();
 
-	void destroy();
+    void destroy();
 
     String getPluginName();
 
@@ -20,6 +21,8 @@ public interface Pluginable {
     Configuration getPeerPluginJobConf();
 
     public String getPeerPluginName();
+
+    void setContainerContext(IJobContainerContext containerContext);
 
     void setPluginJobConf(Configuration jobConf);
 

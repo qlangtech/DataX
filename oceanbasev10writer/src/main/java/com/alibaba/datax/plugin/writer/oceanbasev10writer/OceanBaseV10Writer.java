@@ -27,7 +27,7 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
  * 2016-04-07
  * <p>
  * 专门针对OceanBase1.0的Writer
- * 
+ *
  * @author biliang.wbl
  *
  */
@@ -38,13 +38,13 @@ public class OceanBaseV10Writer extends Writer {
 	 * Job 中的方法仅执行一次，Task 中方法会由框架启动多个 Task 线程并行执行。
 	 * <p/>
 	 * 整个 Writer 执行流程是：
-	 * 
+	 *
 	 * <pre>
 	 * Job类init-->prepare-->split
-	 * 
+	 *
 	 *                          Task类init-->prepare-->startWrite-->post-->destroy
 	 *                          Task类init-->prepare-->startWrite-->post-->destroy
-	 * 
+	 *
 	 *                                                                            Job类post-->destroy
 	 * </pre>
 	 */
@@ -61,7 +61,7 @@ public class OceanBaseV10Writer extends Writer {
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();
 			checkCompatibleMode(originalConfig);
-			this.commonJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+			this.commonJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,this.);
 			this.commonJob.init(this.originalConfig);
 		}
 
@@ -166,7 +166,7 @@ public class OceanBaseV10Writer extends Writer {
 			}
 			originalConfig.remove(Key.POST_SQL);
 		}
-		
+
 		/**
 		 * 注意：此方法仅执行一次。 最佳实践：通常配合 Job 中的 post() 方法一起完成 Job 的资源释放。
 		 */

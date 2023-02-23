@@ -33,7 +33,7 @@ public class StarRocksWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             options = new StarRocksWriterOptions(super.getPluginJobConf());
             options.doPretreatment();
-            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig);
+            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig, this.containerContext);
         }
 
         @Override
@@ -95,7 +95,7 @@ public class StarRocksWriter extends Writer {
         @Override
         public void init() {
             options = new StarRocksWriterOptions(super.getPluginJobConf());
-            IDataSourceFactoryGetter dsGetter = DBUtil.getWriterDataSourceFactoryGetter(super.getPluginJobConf());
+            IDataSourceFactoryGetter dsGetter = DBUtil.getWriterDataSourceFactoryGetter(super.getPluginJobConf(), this.containerContext);
             if (options.isWildcardColumn()) {
                 Connection conn = DBUtil.getConnection(dsGetter, options.getJdbcUrl(), options.getUsername(), options.getPassword());
                 List<String> columns = StarRocksWriterUtil.getStarRocksColumns(conn, options.getDatabase(), options.getTable());

@@ -91,6 +91,11 @@ public class DateColumn extends Column {
 	}
 
 	@Override
+	public Date asDate(String dateFormat) {
+		return asDate();
+	}
+
+	@Override
 	public byte[] asBytes() {
 		throw DataXException.asDataXException(
 				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Bytes .");

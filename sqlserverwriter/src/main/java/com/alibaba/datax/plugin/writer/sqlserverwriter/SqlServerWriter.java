@@ -33,7 +33,7 @@ public class SqlServerWriter extends Writer {
                                         writeMode));
             }
 
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
@@ -68,7 +68,7 @@ public class SqlServerWriter extends Writer {
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
             this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(
-                    DATABASE_TYPE);
+                    DATABASE_TYPE, containerContext);
             this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 
