@@ -2,6 +2,7 @@ package com.alibaba.datax.core.job.scheduler.processinner;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
@@ -15,9 +16,12 @@ import java.util.concurrent.Executors;
 public abstract class ProcessInnerScheduler extends AbstractScheduler {
 
     private ExecutorService taskGroupContainerExecutorService;
+    private final IJobContainerContext containerContext;
 
-    public ProcessInnerScheduler(AbstractContainerCommunicator containerCommunicator) {
+    public ProcessInnerScheduler(IJobContainerContext containerContext
+            , AbstractContainerCommunicator containerCommunicator) {
         super(containerCommunicator);
+        this.containerContext = containerContext;
     }
 
     @Override
@@ -52,7 +56,7 @@ public abstract class ProcessInnerScheduler extends AbstractScheduler {
 
     private TaskGroupContainerRunner newTaskGroupContainerRunner(
             Configuration configuration) {
-        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(configuration);
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.containerContext, configuration);
 
         return new TaskGroupContainerRunner(taskGroupContainer);
     }

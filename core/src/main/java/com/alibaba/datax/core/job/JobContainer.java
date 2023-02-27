@@ -28,6 +28,7 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
+import com.qlangtech.tis.datax.TimeFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -89,6 +90,11 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
     @Override
     public int getTaskSerializeNum() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getFormatTime(TimeFormat format) {
         throw new UnsupportedOperationException();
     }
 
@@ -561,7 +567,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
         AbstractContainerCommunicator containerCommunicator = createContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
-        return new StandAloneScheduler(containerCommunicator);
+        return new StandAloneScheduler(this,containerCommunicator);
     }
 
     protected StandAloneJobContainerCommunicator createContainerCommunicator(Configuration configuration) {

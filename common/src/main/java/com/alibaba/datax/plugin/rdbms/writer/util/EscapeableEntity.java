@@ -1,22 +1,22 @@
 package com.alibaba.datax.plugin.rdbms.writer.util;
 
-import org.apache.commons.lang3.StringUtils;
+import com.qlangtech.tis.plugin.ds.IDBReservedKeys;
 
 /**
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2022-10-03 10:38
  **/
 public class EscapeableEntity {
-    protected final String escapeChar;
+    protected final IDBReservedKeys escapeChar;
     protected final boolean containEscapeChar;
 
-    public EscapeableEntity(String escapeChar) {
+    public EscapeableEntity(IDBReservedKeys escapeChar) {
         this.escapeChar = escapeChar;
-        this.containEscapeChar = StringUtils.isNotEmpty(escapeChar);
+        this.containEscapeChar = escapeChar.getEscapeChar().isPresent();
     }
 
     public String getEscapeChar() {
-        return escapeChar;
+        return escapeChar.getEscapeChar().get();
     }
 
     public boolean isContainEscapeChar() {
@@ -24,18 +24,15 @@ public class EscapeableEntity {
     }
 
     protected String escapeEntity(String val) {
-        if (containEscapeChar) {
-            return escapeChar + val + escapeChar;
-        } else {
-            return val;
-        }
+        return escapeChar.getEscapedEntity(val);
     }
 
     protected String unescapeEntity(String val) {
-        if (containEscapeChar) {
-            return StringUtils.remove(val, this.escapeChar);
-        } else {
-            return val;
-        }
+//        if (containEscapeChar) {
+//            return StringUtils.remove(val, this.escapeChar);
+//        } else {
+//            return val;
+//        }
+        return escapeChar.removeEscapeChar(val);
     }
 }

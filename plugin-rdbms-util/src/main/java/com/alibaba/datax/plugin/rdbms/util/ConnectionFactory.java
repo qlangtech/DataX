@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.qlangtech.tis.plugin.ds.IDBReservedKeys;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 
 import java.sql.Connection;
@@ -13,8 +14,8 @@ public interface ConnectionFactory {
 
     public IDataSourceFactoryGetter getConnecttionWithoutRetry();
 
-    public default String getDSEntityEscape() {
-        return getConnecttionWithoutRetry().getDataSourceFactory().getEscapeChar();
+    public default IDBReservedKeys getDSEntityEscape() {
+        return getConnecttionWithoutRetry().getDataSourceFactory();
     }
 
     public String getConnectionInfo();

@@ -249,18 +249,19 @@ public class OdpsUtil {
                                               final String partition, final String uploadId) {
 
         if(StringUtils.isBlank(partition)) {
-            try {
-                return RetryUtil.executeWithRetry(new Callable<TableTunnel.UploadSession>() {
-                    @Override
-                    public TableTunnel.UploadSession call() throws Exception {
-                        return tunnel.getUploadSession(projectName, tableName, uploadId);
-                    }
-                }, MAX_RETRY_TIME, 1000L, true);
-
-            } catch (Exception e) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL,
-                        MESSAGE_SOURCE.message("odpsutil.11"), e);
-            }
+            throw new UnsupportedOperationException("partition can not be blank");
+//            try {
+//                return RetryUtil.executeWithRetry(new Callable<TableTunnel.UploadSession>() {
+//                    @Override
+//                    public TableTunnel.UploadSession call() throws Exception {
+//                        return tunnel.getUploadSession(projectName, tableName, uploadId);
+//                    }
+//                }, MAX_RETRY_TIME, 1000L, true);
+//
+//            } catch (Exception e) {
+//                throw DataXException.asDataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL,
+//                        MESSAGE_SOURCE.message("odpsutil.11"), e);
+//            }
         } else {
             final PartitionSpec partitionSpec = new PartitionSpec(partition);
             try {

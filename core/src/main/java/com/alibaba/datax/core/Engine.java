@@ -7,7 +7,6 @@ import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.JobContainer;
-import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.ConfigurationValidate;
 import com.alibaba.datax.core.util.ExceptionTracker;
@@ -60,13 +59,14 @@ public class Engine {
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 
         } else {
-            container = new TaskGroupContainer(allConf);
-            instanceId = allConf.getLong(
-                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-            taskGroupId = allConf.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            channelNumber = allConf.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
+            throw new UnsupportedOperationException("isJob:" + isJob);
+//            container = new TaskGroupContainer(allConf);
+//            instanceId = allConf.getLong(
+//                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+//            taskGroupId = allConf.getInt(
+//                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+//            channelNumber = allConf.getInt(
+//                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
         }
 
         //缺省打开perfTrace

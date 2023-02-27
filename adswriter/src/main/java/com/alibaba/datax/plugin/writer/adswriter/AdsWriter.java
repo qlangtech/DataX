@@ -231,7 +231,7 @@ public class AdsWriter extends Writer {
                 this.odpsWriterJobProxy.post();
             } else {
                 // 实时表模式非分库分表
-                SelectTable adsTable = SelectTable.createInTask(this.originalConfig);// this.originalConfig.getString(Key.ADS_TABLE);
+                SelectTable adsTable = SelectTable.createInTask(this.originalConfig);
                 List<String> postSqls = this.originalConfig.getList(
                         Key.POST_SQL, String.class);
                 List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, adsTable);

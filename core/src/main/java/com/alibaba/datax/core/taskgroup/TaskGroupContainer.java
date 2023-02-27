@@ -10,6 +10,7 @@ import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.StandaloneTGContainerCommunicator;
@@ -62,10 +63,11 @@ public class TaskGroupContainer extends AbstractContainer {
     private String taskCollectorClass;
 
     private TaskMonitor taskMonitor = TaskMonitor.getInstance();
+    private final IJobContainerContext containerContext;
 
-    public TaskGroupContainer(Configuration configuration) {
+    public TaskGroupContainer(IJobContainerContext containerContext, Configuration configuration) {
         super(configuration);
-
+        this.containerContext = Objects.requireNonNull(containerContext, "containerContext can not be null");
         initCommunicator(configuration);
 
         this.jobId = this.configuration.getLong(
@@ -489,8 +491,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
             switch (pluginType) {
                 case READER:
-                    newRunner = LoadUtil.loadPluginRunner(pluginType,
-                            this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
+                    newRunner = LoadUtil.loadPluginRunner(pluginType, TaskGroupContainer.this.containerContext, this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
                     newRunner.setJobConf(this.taskConfig.getConfiguration(
                             CoreConstant.JOB_READER_PARAMETER));
 
@@ -515,8 +516,7 @@ public class TaskGroupContainer extends AbstractContainer {
                     newRunner.setTaskPluginCollector(pluginCollector);
                     break;
                 case WRITER:
-                    newRunner = LoadUtil.loadPluginRunner(pluginType,
-                            this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
+                    newRunner = LoadUtil.loadPluginRunner(pluginType, TaskGroupContainer.this.containerContext, this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
                     newRunner.setJobConf(this.taskConfig
                             .getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
 
@@ -524,8 +524,7 @@ public class TaskGroupContainer extends AbstractContainer {
                             taskCollectorClass, AbstractTaskPluginCollector.class,
                             configuration, this.taskCommunication,
                             PluginType.WRITER);
-                    ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(
-                            this.channel, pluginCollector));
+                    ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(this.channel, pluginCollector));
                     /**
                      * 设置taskPlugin的collector，用来处理脏数据和job/task通信
                      */

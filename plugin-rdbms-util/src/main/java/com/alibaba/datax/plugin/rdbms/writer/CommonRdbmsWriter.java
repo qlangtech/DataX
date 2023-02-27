@@ -65,8 +65,8 @@ public class CommonRdbmsWriter {
 
         public void prePostSqlValid(Configuration originalConfig, DataBaseType dataBaseType) {
             /*检查PreSql跟PostSql语句*/
-            WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
-            WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
+            WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType, this.dataSourceFactoryGetter.getDBReservedKeys());
+            WriterUtil.preCheckPostSQL(originalConfig, dataBaseType, this.dataSourceFactoryGetter.getDBReservedKeys());
         }
 
         public void privilegeValid(Configuration originalConfig, DataBaseType dataBaseType) {
@@ -111,7 +111,7 @@ public class CommonRdbmsWriter {
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 originalConfig.set(Key.JDBC_URL, jdbcUrl);
 
-                SelectTable table = SelectTable.create(originalConfig);
+                SelectTable table = SelectTable.create(originalConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
                 // String table = connConf.getList(Key.TABLE, String.class).get(0);
                 originalConfig.set(Key.TABLE, table.getUnescapeTabName());
@@ -143,7 +143,8 @@ public class CommonRdbmsWriter {
 
         public List<Configuration> split(Configuration originalConfig,
                                          int mandatoryNumber) {
-            return WriterUtil.doSplit(originalConfig, mandatoryNumber);
+
+            return WriterUtil.doSplit(originalConfig, mandatoryNumber, this.dataSourceFactoryGetter.getDBReservedKeys());
         }
 
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
@@ -157,7 +158,8 @@ public class CommonRdbmsWriter {
                 // 已经由 prepare 进行了appendJDBCSuffix处理
                 String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
 
-                SelectTable table = SelectTable.createInTask(originalConfig);//.getString(Key.TABLE);
+                SelectTable table = SelectTable.createInTask(
+                        originalConfig, this.dataSourceFactoryGetter.getDBReservedKeys());//.getString(Key.TABLE);
 
                 List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                         String.class);
@@ -240,7 +242,7 @@ public class CommonRdbmsWriter {
                 LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
             }
 
-            this.table = SelectTable.createInTask(writerSliceConfig);
+            this.table = SelectTable.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
 
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
@@ -255,7 +257,7 @@ public class CommonRdbmsWriter {
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 
             this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
-            this.columns = SelectCols.createSelectCols(writerSliceConfig, this.dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
+            this.columns = SelectCols.createSelectCols(writerSliceConfig, this.dataSourceFactoryGetter.getDataSourceFactory());
             this.columnNumber = this.columns.size();
         }
 

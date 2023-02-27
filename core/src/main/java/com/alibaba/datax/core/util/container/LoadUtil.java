@@ -6,12 +6,12 @@ import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.plugin.AbstractPlugin;
 import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.core.taskgroup.runner.AbstractRunner;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -59,7 +59,7 @@ public class LoadUtil {
 //        jarLoaderCenter.put(pluginKey, classLoader);
 //    }
 
-    public static void cleanJarLoaderCenter(){
+    public static void cleanJarLoaderCenter() {
         jarLoaderCenter.clear();
     }
 
@@ -136,14 +136,18 @@ public class LoadUtil {
      * @param pluginName
      * @return
      */
-    public static AbstractTaskPlugin loadTaskPlugin(PluginType pluginType,
+    public static AbstractTaskPlugin loadTaskPlugin(PluginType pluginType, IJobContainerContext containerContext,
                                                     String pluginName) {
+        if (containerContext == null) {
+            throw new IllegalArgumentException("param containerContext can not be null");
+        }
         Class<? extends AbstractPlugin> clazz = LoadUtil.loadPluginClass(
                 pluginType, pluginName, ContainerType.Task);
 
         try {
             AbstractTaskPlugin taskPlugin = (AbstractTaskPlugin) clazz
                     .newInstance();
+            taskPlugin.setContainerContext(containerContext);
             taskPlugin.setPluginConf(getPluginConf(pluginType, pluginName));
             return taskPlugin;
         } catch (Exception e) {
@@ -160,9 +164,8 @@ public class LoadUtil {
      * @param pluginName
      * @return
      */
-    public static AbstractRunner loadPluginRunner(PluginType pluginType, String pluginName) {
-        AbstractTaskPlugin taskPlugin = LoadUtil.loadTaskPlugin(pluginType,
-                pluginName);
+    public static AbstractRunner loadPluginRunner(PluginType pluginType, IJobContainerContext containerContext, String pluginName) {
+        AbstractTaskPlugin taskPlugin = LoadUtil.loadTaskPlugin(pluginType, containerContext, pluginName);
 
         switch (pluginType) {
             case READER:

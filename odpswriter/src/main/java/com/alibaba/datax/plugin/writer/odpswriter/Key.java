@@ -19,6 +19,8 @@ public final class Key {
 
     public final static String PARTITION = "partition";
 
+    public final static String PARTITION_TIME_FORMAT = "partitionTimeFormat";
+
     public final static String COLUMN = "column";
 
     public final static String TRUNCATE = "truncate";

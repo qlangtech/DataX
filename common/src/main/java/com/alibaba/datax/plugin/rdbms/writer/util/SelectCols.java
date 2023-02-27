@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.qlangtech.tis.plugin.ds.IDBReservedKeys;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -29,16 +30,16 @@ public class SelectCols extends EscapeableEntity implements Iterable<String> {
 //        return createSelectCols(conf, null);
 //    }
 
-    public static SelectCols createSelectCols(Configuration conf, String escapeChar) {
+    public static SelectCols createSelectCols(Configuration conf, IDBReservedKeys escapeChar) {
         return new SelectCols(
-                conf.getList(Key.COLUMN, String.class), StringUtils.defaultString(escapeChar, conf.get(Key.ESCAPE_CHAR, String.class)));
+                conf.getList(Key.COLUMN, String.class), escapeChar);
     }
 
     public static SelectCols createSelectCols(List<String> allColumns) {
         return new SelectCols(allColumns, null);
     }
 
-    private SelectCols(List<String> columns, String escapeChar) {
+    private SelectCols(List<String> columns, IDBReservedKeys escapeChar) {
         super(escapeChar);
         this.columns = columns.stream().map((c) -> unescapeEntity(c)).collect(Collectors.toList());
         if (this.columns == null || this.columns.isEmpty()) {

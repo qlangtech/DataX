@@ -11,14 +11,17 @@ import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.plugin.writer.odpswriter.model.PartitionInfo;
 import com.alibaba.datax.plugin.writer.odpswriter.model.UserDefinedFunction;
-import com.alibaba.datax.plugin.writer.odpswriter.util.*;
-
+import com.alibaba.datax.plugin.writer.odpswriter.util.CustomPartitionUtils;
+import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
+import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.Table;
 import com.aliyun.odps.TableSchema;
 import com.aliyun.odps.tunnel.TableTunnel;
+import com.qlangtech.tis.datax.TimeFormat;
+import com.qlangtech.tis.fullbuild.indexbuild.IDumpTable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,7 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -99,7 +105,6 @@ public class OdpsWriter extends Writer {
             OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
 
-
             this.projectName = this.originalConfig.getString(Key.PROJECT);
             this.tableName = this.originalConfig.getString(Key.TABLE);
             this.tunnelServer = this.originalConfig.getString(Key.TUNNEL_SERVER, null);
@@ -120,8 +125,12 @@ public class OdpsWriter extends Writer {
 
             // 如果不是动态分区写入，则检查分区配置，动态分区写入不用检查
             if (!this.supportDynamicPartition) {
-                this.partition = OdpsUtil.formatPartition(this.originalConfig
-                        .getString(Key.PARTITION, ""), true);
+
+                this.partition = IDumpTable.PARTITION_PT + "=" + this.containerContext.getFormatTime(TimeFormat.parse(this.originalConfig.getString(Key.PARTITION_TIME_FORMAT)))
+                        + "," + IDumpTable.PARTITION_PMOD + "=" + this.containerContext.getTaskSerializeNum();
+
+//            OdpsUtil.formatPartition(this.originalConfig
+//                        .getString(Key.PARTITION, ""), true);
                 this.originalConfig.set(Key.PARTITION, this.partition);
             }
 
@@ -155,7 +164,7 @@ public class OdpsWriter extends Writer {
 
         private void dealAK() {
             this.accountType = this.originalConfig.getString(Key.ACCOUNT_TYPE,
-                Constant.DEFAULT_ACCOUNT_TYPE);
+                    Constant.DEFAULT_ACCOUNT_TYPE);
 
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
@@ -187,16 +196,16 @@ public class OdpsWriter extends Writer {
             List<String> configCols = this.originalConfig.getList(Key.COLUMN, String.class);
             LOG.info("partition columns:{}", partitionCols);
             LOG.info("config columns:{}", configCols);
-            LOG.info("support dynamic partition:{}",this.originalConfig.getBool(Key.SUPPORT_DYNAMIC_PARTITION));
-            LOG.info("partition format type:{}",this.originalConfig.getString("partitionFormatType"));
+            LOG.info("support dynamic partition:{}", this.originalConfig.getBool(Key.SUPPORT_DYNAMIC_PARTITION));
+            LOG.info("partition format type:{}", this.originalConfig.getString("partitionFormatType"));
             if (this.originalConfig.getKeys().contains(Key.SUPPORT_DYNAMIC_PARTITION)) {
                 this.supportDynamicPartition = this.originalConfig.getBool(Key.SUPPORT_DYNAMIC_PARTITION);
                 if (supportDynamicPartition) {
                     // 自定义分区
-                    if("custom".equalsIgnoreCase(originalConfig.getString("partitionFormatType"))){
-                        List<PartitionInfo> partitions = getListWithJson(originalConfig,"customPartitionColumns",PartitionInfo.class);
+                    if ("custom".equalsIgnoreCase(originalConfig.getString("partitionFormatType"))) {
+                        List<PartitionInfo> partitions = getListWithJson(originalConfig, "customPartitionColumns", PartitionInfo.class);
                         // 自定义分区配置必须与实际分区列完全一致
-                        if (!ListUtil.checkIfAllSameValue(partitions.stream().map(item->item.getName()).collect(Collectors.toList()), partitionCols)) {
+                        if (!ListUtil.checkIfAllSameValue(partitions.stream().map(item -> item.getName()).collect(Collectors.toList()), partitionCols)) {
                             throw DataXException.asDataXException("custom partition config is not same as real partition info.");
                         }
                     } else {
@@ -397,7 +406,7 @@ public class OdpsWriter extends Writer {
                 LOG.info(String.format("Exectue odpswriter postSql successfully! cost time: %s ms.", (endTime - beginTime)));
             }
 
-            LOG.info("truncated record count: {}", globalTotalTruncatedRecordNumber.intValue() );
+            LOG.info("truncated record count: {}", globalTotalTruncatedRecordNumber.intValue());
         }
 
         @Override
@@ -512,10 +521,10 @@ public class OdpsWriter extends Writer {
                     JSONArray dateTransFormJsonArray = JSONArray.parseArray(dateTransListStr);
                     for (Object dateTransFormJson : dateTransFormJsonArray) {
                         DateTransForm dateTransForm = new DateTransForm(
-                                ((JSONObject)dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_NAME),
-                                ((JSONObject)dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_SRC_COL_DATEFORMAT),
-                                ((JSONObject)dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_DATEFORMAT));
-                        this.dateTransFormMap.put(((JSONObject)dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_NAME), dateTransForm);
+                                ((JSONObject) dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_NAME),
+                                ((JSONObject) dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_SRC_COL_DATEFORMAT),
+                                ((JSONObject) dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_DATEFORMAT));
+                        this.dateTransFormMap.put(((JSONObject) dateTransFormJson).getString(Key.PARTITION_COL_MAPPING_NAME), dateTransForm);
                     }
                 }
             }
@@ -527,7 +536,7 @@ public class OdpsWriter extends Writer {
             maxOdpsFieldLength = this.sliceConfig.getInt(Key.MAX_ODPS_FIELD_LENGTH, Constant.DEFAULT_FIELD_MAX_SIZE);
 
             this.dynamicPartitionMemUsageFlushIntervalInMinute = this.sliceConfig.getInt(Key.DYNAMIC_PARTITION_MEM_USAGE_FLUSH_INTERVAL_IN_MINUTE,
-                1);
+                    1);
             if (IS_DEBUG) {
                 LOG.debug("After init in task, sliceConfig now is:[\n{}\n].", this.sliceConfig);
             }
@@ -539,7 +548,7 @@ public class OdpsWriter extends Writer {
             this.odps = OdpsUtil.initOdpsProject(this.sliceConfig);
             this.tableTunnel = new TableTunnel(this.odps);
 
-            if (! supportDynamicPartition ) {
+            if (!supportDynamicPartition) {
                 if (StringUtils.isNoneBlank(tunnelServer)) {
                     tableTunnel.setEndpoint(tunnelServer);
                 }
@@ -610,13 +619,13 @@ public class OdpsWriter extends Writer {
 
                         String partitionFormatType = sliceConfig.getString("partitionFormatType");
                         String partition;
-                        if("custom".equalsIgnoreCase(partitionFormatType)){
-                            List<PartitionInfo> partitions = getListWithJson(sliceConfig,"customPartitionColumns",PartitionInfo.class);
-                            List<UserDefinedFunction> functions = getListWithJson(sliceConfig,"customPartitionFunctions",UserDefinedFunction.class);
+                        if ("custom".equalsIgnoreCase(partitionFormatType)) {
+                            List<PartitionInfo> partitions = getListWithJson(sliceConfig, "customPartitionColumns", PartitionInfo.class);
+                            List<UserDefinedFunction> functions = getListWithJson(sliceConfig, "customPartitionFunctions", UserDefinedFunction.class);
 
-                            partition = CustomPartitionUtils.generate(dataXRecord,functions,
-                                    partitions,sliceConfig.getList(Key.COLUMN, String.class));
-                        }else{
+                            partition = CustomPartitionUtils.generate(dataXRecord, functions,
+                                    partitions, sliceConfig.getList(Key.COLUMN, String.class));
+                        } else {
                             partition = OdpsUtil.getPartColValFromDataXRecord(dataXRecord, columnPositions,
                                     this.sliceConfig.getList(Key.COLUMN, String.class),
                                     this.dateTransFormMap);
@@ -643,9 +652,9 @@ public class OdpsWriter extends Writer {
                                         OdpsUtil.dealTruncate(this.odps, this.table, partition, truncate);
                                         partitionsDealedTruncate.add(partition);
                                     }
-                                /*
-                                 * 判断分区是否创建过多，如果创建过多，则报错
-                                 */
+                                    /*
+                                     * 判断分区是否创建过多，如果创建过多，则报错
+                                     */
                                     if (partitionCnt.addAndGet(1) > maxPartitionCnt) {
                                         throw new DataXException("Create too many partitions. Please make sure you config the right partition column");
                                     }
@@ -675,7 +684,7 @@ public class OdpsWriter extends Writer {
                                 }
 
                                 Long idleTime = System.currentTimeMillis() - oneIdleProxy.getLastActiveTime();
-                                if (idleTime > Constant.PROXY_MAX_IDLE_TIME_MS || oneIdleProxy.getCurrentTotalBytes() > (this.blockSizeInMB*1014*1024 / 2)) {
+                                if (idleTime > Constant.PROXY_MAX_IDLE_TIME_MS || oneIdleProxy.getCurrentTotalBytes() > (this.blockSizeInMB * 1014 * 1024 / 2)) {
                                     // 如果空闲一定时间，先把数据写出
                                     LOG.info("{} partition has no data last {} seconds, so release its uploadSession", onePartition, Constant.PROXY_MAX_IDLE_TIME_MS / 1000);
                                     currentWriteBlocks = partitionUploadSessionHashMap.get(onePartition).getRight();
@@ -724,8 +733,7 @@ public class OdpsWriter extends Writer {
                         blockCloseUsedTime += proxy.writeRemainingRecord(currentWriteBlocks);
                         blockClose.end(blockCloseUsedTime);
                     }
-                }
-                else {
+                } else {
                     blockCloseUsedTime += proxy.writeRemainingRecord(blocks);
                     blockClose.end(blockCloseUsedTime);
                 }
@@ -744,7 +752,7 @@ public class OdpsWriter extends Writer {
             }
 
             MemoryUsage memoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-            boolean isMemUsageExceed = (double)memoryUsage.getUsed() / memoryUsage.getMax() > 0.8f;
+            boolean isMemUsageExceed = (double) memoryUsage.getUsed() / memoryUsage.getMax() > 0.8f;
             return isMemUsageExceed;
         }
 
@@ -753,8 +761,8 @@ public class OdpsWriter extends Writer {
             synchronized (lock) {
                 if (failoverState == 0) {
                     failoverState = 2;
-                    if (! supportDynamicPartition) {
-                        if (! this.consistencyCommit) {
+                    if (!supportDynamicPartition) {
+                        if (!this.consistencyCommit) {
                             LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
                                     StringUtils.join(blocks, ","));
                             OdpsUtil.masterCompleteBlocks(this.managerUpload, blocks.toArray(new Long[0]));

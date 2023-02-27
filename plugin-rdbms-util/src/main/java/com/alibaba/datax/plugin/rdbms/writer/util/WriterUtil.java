@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.druid.sql.parser.ParserException;
+import com.qlangtech.tis.plugin.ds.IDBReservedKeys;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,7 @@ public final class WriterUtil {
 
     //TODO 切分报错
     public static List<Configuration> doSplit(Configuration simplifiedConf,
-                                              int adviceNumber) {
+                                              int adviceNumber, IDBReservedKeys reservedKeys) {
 
         List<Configuration> splitResultConfigs = new ArrayList<Configuration>();
 
@@ -64,7 +65,7 @@ public final class WriterUtil {
             List<String> tables = connConf.getList(Key.TABLE, String.class);
             for (String table : tables) {
 
-                selTable = SelectTable.create(table, simplifiedConf);
+                selTable = SelectTable.create(table, reservedKeys);
 
                 Configuration tempSlice = sliceConfig.clone();
                 tempSlice.set(Key.TABLE, table);
@@ -148,12 +149,12 @@ public final class WriterUtil {
         return writeDataSqlTemplate;
     }
 
-    public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type) {
+    public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type, IDBReservedKeys escapeChar) {
 //        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
 //        Configuration connConf = Configuration.from(conns.get(0).toString());
 //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
-        SelectTable selTab = SelectTable.create(originalConfig);
+        SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
                 String.class);
@@ -173,12 +174,12 @@ public final class WriterUtil {
         }
     }
 
-    public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type) {
+    public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type, IDBReservedKeys escapeChar) {
 //        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
 //        Configuration connConf = Configuration.from(conns.get(0).toString());
 //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
-        SelectTable selTab = SelectTable.create(originalConfig);
+        SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
         List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                 String.class);

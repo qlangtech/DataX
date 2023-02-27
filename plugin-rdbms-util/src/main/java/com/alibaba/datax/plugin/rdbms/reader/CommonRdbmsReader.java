@@ -58,7 +58,7 @@ public class CommonRdbmsReader {
         public Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
-            this.containerContext = containerContext;
+            this.containerContext = Objects.requireNonNull(containerContext, "containerContext can not be null");
         }
 
         public void init(Configuration originalConfig) {
@@ -154,7 +154,7 @@ public class CommonRdbmsReader {
             this.dataBaseType = dataBaseType;
             this.taskGroupId = taskGropuId;
             this.taskId = taskId;
-            this.containerContext = containerContext;
+            this.containerContext = Objects.requireNonNull(containerContext, "containerContext can not be null");
         }
 
         public void init(Configuration readerSliceConfig) {
@@ -195,7 +195,8 @@ public class CommonRdbmsReader {
             if (StringUtils.isEmpty(table)) {
                 Matcher m = PATTERN_FROM_TABLE.matcher(querySql);
                 if (m.find()) {
-                    table = StringUtils.remove(m.group(1), readerDataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
+                    table = readerDataSourceFactoryGetter.getDataSourceFactory().removeEscapeChar(m.group(1));
+                    // table = StringUtils.remove(m.group(1), readerDataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
                 } else {
                     throw new IllegalStateException("can not find table name from query sql:" + querySql);
                 }

@@ -143,7 +143,7 @@ public final class OriginalConfPretreatmentUtil {
 
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
-        SelectTable oneTable = SelectTable.create(originalConfig);
+        SelectTable oneTable = SelectTable.create(originalConfig,dataSourceFactoryGetter.getDBReservedKeys());
 //        .getString(String.format(
 //                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
@@ -152,7 +152,7 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType, IDataSourceFactoryGetter dataSourceFactoryGetter) {
-        SelectCols columns = SelectCols.createSelectCols(originalConfig, dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());//.getList(Key.COLUMN, String.class);
+        SelectCols columns = SelectCols.createSelectCols(originalConfig, dataSourceFactoryGetter.getDataSourceFactory());
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL, String.class));

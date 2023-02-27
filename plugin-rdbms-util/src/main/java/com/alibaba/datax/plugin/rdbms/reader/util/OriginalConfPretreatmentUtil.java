@@ -108,7 +108,8 @@ public final class OriginalConfPretreatmentUtil {
                 ;
                 // 对每一个connection 上配置的table 项进行解析(已对表名称进行了 ` 处理的)
                 List<String> tables = getExecTables(connConf.getList(Key.TABLE, String.class)
-                        , dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar());
+                        ,  null//dataSourceFactoryGetter.getDataSourceFactory().getEscapeChar()
+                        );
 
                 List<String> expandedTables = TableExpandUtil.expandTableConf(
                         DATABASE_TYPE, tables);
