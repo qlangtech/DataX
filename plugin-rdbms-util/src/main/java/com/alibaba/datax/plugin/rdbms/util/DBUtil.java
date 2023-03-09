@@ -872,10 +872,11 @@ public final class DBUtil {
 
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config, IJobContainerContext containerContext) {
         return getDataSourceFactoryGetter(config, containerContext, (res) -> {
+            final DBIdentity dbFactoryId = DBIdentity.parseId(config.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
             return new IDataSourceFactoryGetter() {
                 @Override
                 public DataSourceFactory getDataSourceFactory() {
-                    return TIS.getDataBasePlugin(new PostedDSProp(res.dbFactoryId));
+                    return TIS.getDataBasePlugin(new PostedDSProp(dbFactoryId));
                 }
 
                 @Override
@@ -893,14 +894,11 @@ public final class DBUtil {
         String dataXName = containerContext.getTISDataXName(); // originalConfig.getString(DataxUtils.DATAX_NAME);
         StoreResourceType resType = StoreResourceType.parse(
                 originalConfig.getString(StoreResourceType.KEY_STORE_RESOURCE_TYPE));
-
-        final DBIdentity dbFactoryId = DBIdentity.parseId(originalConfig.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
-
         if (StringUtils.isEmpty(dataXName)) {
             throw new IllegalArgumentException("param dataXName:" + dataXName + "can not be null");
         }
         try {
-            Object dataxPlugin = callable.apply(new DataXResourceName(() -> dataXName, resType, dbFactoryId));
+            Object dataxPlugin = callable.apply(new DataXResourceName(() -> dataXName, resType));
             Objects.requireNonNull(dataxPlugin, "dataXName:" + dataXName + " relevant instance can not be null");
             if (!(dataxPlugin instanceof IDataSourceFactoryGetter)) {
                 throw new IllegalStateException("dataxWriter:" + dataxPlugin.getClass() + " mus be type of " + IDataSourceFactoryGetter.class);

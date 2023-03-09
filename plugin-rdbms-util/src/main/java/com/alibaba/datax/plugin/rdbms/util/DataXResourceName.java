@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.rdbms.util;
 
 import com.qlangtech.tis.datax.IDataXNameAware;
 import com.qlangtech.tis.plugin.StoreResourceType;
-import com.qlangtech.tis.plugin.ds.DBIdentity;
 
 /**
  * @author: 百岁（baisui@qlangtech.com）
@@ -11,12 +10,12 @@ import com.qlangtech.tis.plugin.ds.DBIdentity;
 public class DataXResourceName {
     private final IDataXNameAware name;
     public final StoreResourceType resType;
-    public final DBIdentity dbFactoryId;
+    // public final DBIdentity dbFactoryId;
 
-    public DataXResourceName(IDataXNameAware name, StoreResourceType resType, DBIdentity dbFactoryId) {
+    public DataXResourceName(IDataXNameAware name, StoreResourceType resType) {
         this.name = name;
         this.resType = resType;
-        this.dbFactoryId = dbFactoryId;
+        //  this.dbFactoryId = dbFactoryId;
     }
 
     public String getDataXName() {
