@@ -241,7 +241,7 @@ public class CommonRdbmsWriter {
                 this.jdbcUrl = ss[2];
                 LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
             }
-
+            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
             this.table = SelectTable.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
 
@@ -256,7 +256,7 @@ public class CommonRdbmsWriter {
             this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]", this.jdbcUrl, this.table);
 
-            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
+
             this.columns = SelectCols.createSelectCols(writerSliceConfig, this.dataSourceFactoryGetter.getDataSourceFactory());
             this.columnNumber = this.columns.size();
         }
