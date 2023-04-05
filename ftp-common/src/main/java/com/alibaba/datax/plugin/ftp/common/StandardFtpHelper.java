@@ -31,14 +31,15 @@ public class StandardFtpHelper extends FtpHelper {
                                String connectMode) {
         ftpClient = new FTPClient();
         try {
+            ftpClient.setConnectTimeout(timeout);
+            ftpClient.setDataTimeout(timeout);
             // 连接
             ftpClient.connect(host, port);
             // 登录
             ftpClient.login(username, password);
             // 不需要写死ftp server的OS TYPE,FTPClient getSystemType()方法会自动识别
             // ftpClient.configure(new FTPClientConfig(FTPClientConfig.SYST_UNIX));
-            ftpClient.setConnectTimeout(timeout);
-            ftpClient.setDataTimeout(timeout);
+
             if ("PASV".equalsIgnoreCase(connectMode)) {
                 ftpClient.enterRemotePassiveMode();
                 ftpClient.enterLocalPassiveMode();

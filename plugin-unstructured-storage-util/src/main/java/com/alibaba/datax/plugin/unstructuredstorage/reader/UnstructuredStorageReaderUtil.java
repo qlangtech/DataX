@@ -575,10 +575,17 @@ public class UnstructuredStorageReaderUtil {
     public static void validateFieldDelimiter(Configuration readerConfiguration) {
         //fieldDelimiter check
         String delimiterInStr = readerConfiguration.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER, null);
+        String fileFormat = readerConfiguration.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_FORMAT);
+
+
         if (null == delimiterInStr) {
-            throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.REQUIRED_VALUE,
-                    String.format("您提供配置文件有误，[%s]是必填参数.",
-                            com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER));
+            if (com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
+
+                throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.REQUIRED_VALUE,
+                        String.format("您提供配置文件有误，[%s]是必填参数.",
+                                com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER));
+            }
+
         } else if (1 != delimiterInStr.length()) {
             // warn: if have, length must be one
             throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
