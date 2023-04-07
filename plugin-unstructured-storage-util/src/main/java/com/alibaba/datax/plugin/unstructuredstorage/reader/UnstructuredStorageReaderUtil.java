@@ -409,8 +409,8 @@ public class UnstructuredStorageReaderUtil {
                                 columnGenerated = new LongColumn(columnValue);
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "LONG"));
+                                        "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
+                                        "LONG", columnIndex));
                             }
                             break;
                         case DOUBLE:
@@ -418,8 +418,8 @@ public class UnstructuredStorageReaderUtil {
                                 columnGenerated = new DoubleColumn(columnValue);
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "DOUBLE"));
+                                        "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
+                                        "DOUBLE", columnIndex));
                             }
                             break;
                         case BOOLEAN:
@@ -427,8 +427,8 @@ public class UnstructuredStorageReaderUtil {
                                 columnGenerated = new BoolColumn(columnValue);
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "BOOLEAN"));
+                                        "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
+                                        "BOOLEAN", columnIndex));
                             }
 
                             break;
@@ -455,13 +455,13 @@ public class UnstructuredStorageReaderUtil {
                                 }
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "DATE"));
+                                        "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
+                                        "DATE", columnIndex));
                             }
                             break;
                         default:
                             String errorMessage = String.format(
-                                    "您配置的列类型暂不支持 : [%s]", type);
+                                    "您配置的列类型暂不支持 : [%s],cindex:%s", type, columnValue);
                             LOG.error(errorMessage);
                             throw DataXException
                                     .asDataXException(

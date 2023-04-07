@@ -105,12 +105,18 @@ public class FtpWriter extends Writer {
 
         @Override
         public void prepare() {
-            String path = this.writerSliceConfig.getString(Key.PATH);
+
             // warn: 这里用户需要配一个目录
-            this.ftpHelper.mkDirRecursive(path);
+
 
             String fileName = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_NAME);
+
+            String path = createTargetPath(fileName);
+            // 可能重新定义了，覆盖掉，Task中就可以拿到了
+            this.writerSliceConfig.set(Key.PATH, path);
+
+            this.ftpHelper.mkDirRecursive(path);
             String writeMode = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE);
 
@@ -166,6 +172,10 @@ public class FtpWriter extends Writer {
             }
         }
 
+        protected String createTargetPath(String tableName) {
+            return this.writerSliceConfig.getString(Key.PATH);
+        }
+
         @Override
         public void post() {
 
@@ -197,7 +207,7 @@ public class FtpWriter extends Writer {
         private Configuration writerSliceConfig;
 
         private String path;
-        private String fileName;
+        protected String fileName;
         private String suffix;
 
         private String protocol;
@@ -212,9 +222,10 @@ public class FtpWriter extends Writer {
         @Override
         public void init() {
             this.writerSliceConfig = this.getPluginJobConf();
-            this.path = this.writerSliceConfig.getString(Key.PATH);
+
             this.fileName = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_NAME);
+            this.path = this.writerSliceConfig.getString(Key.PATH);
             this.suffix = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.SUFFIX);
 
@@ -250,6 +261,7 @@ public class FtpWriter extends Writer {
 //                        FtpWriterErrorCode.FAIL_LOGIN, message, e);
 //            }
         }
+
 
         @Override
         public void prepare() {

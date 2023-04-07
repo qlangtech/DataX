@@ -362,7 +362,7 @@ public class SftpHelper extends FtpHelper {
     }
 
     @Override
-    public OutputStream getOutputStream(String filePath) {
+    public OutputStream getOutputStream(String filePath, boolean append) {
         try {
             this.printWorkingDirectory();
             String parentDir = filePath.substring(0,
@@ -370,7 +370,7 @@ public class SftpHelper extends FtpHelper {
             this.channelSftp.cd(parentDir);
             this.printWorkingDirectory();
             OutputStream writeOutputStream = this.channelSftp.put(filePath,
-                    ChannelSftp.APPEND);
+                    append ? ChannelSftp.APPEND : ChannelSftp.OVERWRITE);
             String message = String.format(
                     "打开FTP文件[%s]获取写出流时出错,请确认文件%s有权限创建，有权限写出等", filePath,
                     filePath);

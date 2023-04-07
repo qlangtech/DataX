@@ -15,9 +15,7 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
@@ -225,7 +223,15 @@ public class StandardFtpHelper extends FtpHelper {
     @Override
     public InputStream getInputStream(String filePath) {
         try {
-            return ftpClient.retrieveFileStream(new String(filePath.getBytes(), FTP.DEFAULT_CONTROL_ENCODING));
+            return new FilterInputStream(ftpClient.retrieveFileStream(new String(filePath.getBytes(), FTP.DEFAULT_CONTROL_ENCODING))) {
+                @Override
+                public void close() throws IOException {
+                    super.close();
+                    if (!ftpClient.completePendingCommand()) {
+                        throw new IOException("completePendingCommand faild");
+                    }
+                }
+            };
         } catch (IOException e) {
             String message = String.format("读取文件 : [%s] 时出错,请确认文件：[%s]存在且配置的用户有权限读取", filePath, filePath);
             LOG.error(message);
@@ -348,15 +354,15 @@ public class StandardFtpHelper extends FtpHelper {
     }
 
     @Override
-    public OutputStream getOutputStream(String filePath) {
+    public OutputStream getOutputStream(String filePath, boolean append) {
         try {
             this.printWorkingDirectory();
             String parentDir = filePath.substring(0,
                     StringUtils.lastIndexOf(filePath, IOUtils.DIR_SEPARATOR));
             this.ftpClient.changeWorkingDirectory(parentDir);
             this.printWorkingDirectory();
-            OutputStream writeOutputStream = this.ftpClient
-                    .appendFileStream(filePath);
+            OutputStream writeOutputStream = append ? this.ftpClient
+                    .appendFileStream(filePath) : this.ftpClient.storeFileStream(filePath);
             String message = String.format(
                     "打开FTP文件[%s]获取写出流时出错,请确认文件%s有权限创建，有权限写出等", filePath,
                     filePath);
@@ -365,7 +371,15 @@ public class StandardFtpHelper extends FtpHelper {
                         FtpWriterErrorCode.OPEN_FILE_ERROR, message);
             }
 
-            return writeOutputStream;
+            return new FilterOutputStream(writeOutputStream) {
+                @Override
+                public void close() throws IOException {
+                    super.close();
+                    if (!ftpClient.completePendingCommand()) {
+                        throw new IOException("completePendingCommand faild");
+                    }
+                }
+            };
         } catch (IOException e) {
             String message = String.format(
                     "写出文件 : [%s] 时出错,请确认文件:[%s]存在且配置的用户有权限写, errorMessage:%s",

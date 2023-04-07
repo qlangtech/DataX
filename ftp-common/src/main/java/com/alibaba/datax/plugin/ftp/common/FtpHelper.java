@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class FtpHelper implements AutoCloseable {
-
+    public static final String KEY_META_FILE = "meta.json";
     public static FtpHelper createFtpClient(Configuration cfg) {
         String host = cfg.getString(Key.HOST);
         String protocol = cfg.getString(Key.PROTOCOL);
@@ -154,5 +154,9 @@ public abstract class FtpHelper implements AutoCloseable {
     public abstract void deleteFiles(Set<String> filesToDelete);
 
 
-    public abstract OutputStream getOutputStream(String filePath);
+    public final OutputStream getOutputStream(String filePath) {
+        return this.getOutputStream(filePath, true);
+    }
+
+    public abstract OutputStream getOutputStream(String filePath, boolean append);
 }
