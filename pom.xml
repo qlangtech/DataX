@@ -46,7 +46,7 @@
     </properties>
 
     <modules>
-<!--        <module>datax-config</module>-->
+        <!--        <module>datax-config</module>-->
         <module>common</module>
         <module>core</module>
         <module>transformer</module>
@@ -93,7 +93,7 @@
         <module>kingbaseeswriter</module>
         <module>osswriter</module>
         <module>mongodbwriter</module>
-<!--        <module>adswriter</module>-->
+        <!--        <module>adswriter</module>-->
         <module>ocswriter</module>
         <module>rdbmswriter</module>
         <module>hbase11xwriter</module>
@@ -102,7 +102,7 @@
         <module>hbase11xsqlreader</module>
         <module>elasticsearchwriter</module>
         <module>tsdbwriter</module>
-<!--        <module>adbpgwriter</module>-->
+        <!--        <module>adbpgwriter</module>-->
         <module>gdbwriter</module>
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>
@@ -299,4 +299,13 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>github</id>
+            <properties>
+                <releasesRepository>https://maven.pkg.github.com/qlangtech</releasesRepository>
+                <snapshotRepository>https://maven.pkg.github.com/qlangtech</snapshotRepository>
+            </properties>
+        </profile>
+    </profiles>
 </project>
