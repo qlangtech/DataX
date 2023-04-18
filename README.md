@@ -1,3 +1,5 @@
+[![Maven Package](https://github.com/qlangtech/DataX/actions/workflows/maven-publish.yml/badge.svg)](https://github.com/qlangtech/DataX/actions/workflows/maven-publish.yml)
+
 ![Datax-logo](https://github.com/alibaba/DataX/blob/master/images/DataX-logo.jpg)
 
 
