@@ -452,7 +452,7 @@ public class CommonRdbmsWriter {
 //            this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
 //                    this.table, StringUtils.join(this.columns, ","));
 
-            this.resultSetMetaData = DBUtil.getColumnMetaData(Optional.of(connection), this.dataSourceFactoryGetter, this.table, columns)
+            this.resultSetMetaData = DBUtil.getColumnMetaData(Optional.of(connection), true, this.dataSourceFactoryGetter, this.table, columns)
                     .stream().map((c) -> Pair.of(c, parseColSetter(c))).collect(Collectors.toList());
 
 

@@ -523,18 +523,18 @@ public final class DBUtil {
 //        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:" + jdbcUrl);
 //    }
 
-    private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, SelectTable tableName) {
+    private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, boolean inSink, SelectTable tableName) {
         try {
             List<ColumnMetaData> tabMeta = dataSourceFactoryGetter
-                    .getDataSourceFactory().getTableMetadata(EntityName.parse(tableName.getUnescapeTabName()));
+                    .getDataSourceFactory().getTableMetadata(inSink, EntityName.parse(tableName.getUnescapeTabName()));
             return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, IDataSourceFactoryGetter conn, SelectTable tableName, String basicMsg) {
-        return getTableColums(conn, tableName);
+    public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, boolean inSink, IDataSourceFactoryGetter conn, SelectTable tableName, String basicMsg) {
+        return getTableColums(conn, inSink, tableName);
 //        List<String> columns = new ArrayList<String>();
 //        Statement statement = null;
 //        ResultSet rs = null;
@@ -578,22 +578,22 @@ public final class DBUtil {
 //        //}
 //    }
     public static List<ColumnMetaData> getColumnMetaData(
-            IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
-        return getColumnMetaData(Optional.empty(), dsGetter, tableName, userConfiguredColumns);
+            IDataSourceFactoryGetter dsGetter, boolean inSink, SelectTable tableName, SelectCols userConfiguredColumns) {
+        return getColumnMetaData(Optional.empty(), inSink, dsGetter, tableName, userConfiguredColumns);
     }
 
     /**
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
     public static List<ColumnMetaData> getColumnMetaData(
-            Optional<DataSourceMeta.JDBCConnection> connection, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
+            Optional<DataSourceMeta.JDBCConnection> connection, boolean inSink, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
 
         Map<String, ColumnMetaData> colMapper = null;
         try {
             EntityName table = EntityName.parse(tableName.getUnescapeTabName());
             List<ColumnMetaData> tabCols = connection.isPresent()
-                    ? dsGetter.getDataSourceFactory().getTableMetadata((connection.get()), table)
-                    : dsGetter.getDataSourceFactory().getTableMetadata(table);
+                    ? dsGetter.getDataSourceFactory().getTableMetadata((connection.get()), inSink, table)
+                    : dsGetter.getDataSourceFactory().getTableMetadata(inSink, table);
             colMapper = tabCols.stream().collect(Collectors.toMap((c) -> c.getName(), (c) -> c));
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);

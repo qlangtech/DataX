@@ -103,9 +103,9 @@ public final class OriginalConfPretreatmentUtil {
         boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
         List<String> allColumns;
         if (isPreCheck) {
-            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, true, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
         } else {
-            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+            allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE, true, connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
         }
 
         LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -126,7 +126,7 @@ public final class OriginalConfPretreatmentUtil {
 
             // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
             String cfgCols = StringUtils.join(userConfiguredColumns, ",");
-            List<ColumnMetaData> cols = DBUtil.getColumnMetaData(connectionFactory.getConnecttionWithoutRetry(), oneTable, userConfiguredColumns);
+            List<ColumnMetaData> cols = DBUtil.getColumnMetaData(connectionFactory.getConnecttionWithoutRetry(), true, oneTable, userConfiguredColumns);
 
             if (cols.size() != userConfiguredColumns.size()) {
                 List<String> existCols = cols.stream().map((c) -> c.getName()).collect(Collectors.toList());
@@ -143,7 +143,7 @@ public final class OriginalConfPretreatmentUtil {
 
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
-        SelectTable oneTable = SelectTable.create(originalConfig,dataSourceFactoryGetter.getDBReservedKeys());
+        SelectTable oneTable = SelectTable.create(originalConfig, dataSourceFactoryGetter.getDBReservedKeys());
 //        .getString(String.format(
 //                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 

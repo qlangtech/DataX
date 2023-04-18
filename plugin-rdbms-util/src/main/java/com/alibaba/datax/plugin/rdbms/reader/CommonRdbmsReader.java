@@ -214,7 +214,7 @@ public class CommonRdbmsReader {
             Map<String, ColumnMetaData> tabCols = null;
             try {
                 tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory()
-                        .getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), EntityName.parse(table, true)));
+                        .getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), false, EntityName.parse(table, true)));
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
