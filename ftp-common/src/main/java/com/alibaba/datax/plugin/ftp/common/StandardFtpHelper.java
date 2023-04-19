@@ -19,6 +19,7 @@ import java.io.*;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StandardFtpHelper extends FtpHelper {
     private static final Logger LOG = LoggerFactory.getLogger(StandardFtpHelper.class);
@@ -223,12 +224,16 @@ public class StandardFtpHelper extends FtpHelper {
     @Override
     public InputStream getInputStream(String filePath) {
         try {
+            AtomicBoolean closed = new AtomicBoolean(false);
             return new FilterInputStream(ftpClient.retrieveFileStream(new String(filePath.getBytes(), FTP.DEFAULT_CONTROL_ENCODING))) {
                 @Override
                 public void close() throws IOException {
                     super.close();
-                    if (!ftpClient.completePendingCommand()) {
-                        throw new IOException("completePendingCommand faild");
+                    // 只能被关闭一次
+                    if (closed.compareAndSet(false, true)) {
+                        if (!ftpClient.completePendingCommand()) {
+                            throw new IOException("completePendingCommand faild");
+                        }
                     }
                 }
             };
@@ -370,13 +375,16 @@ public class StandardFtpHelper extends FtpHelper {
                 throw DataXException.asDataXException(
                         FtpWriterErrorCode.OPEN_FILE_ERROR, message);
             }
-
+            AtomicBoolean closed = new AtomicBoolean(false);
             return new FilterOutputStream(writeOutputStream) {
                 @Override
                 public void close() throws IOException {
                     super.close();
-                    if (!ftpClient.completePendingCommand()) {
-                        throw new IOException("completePendingCommand faild");
+                    // 只能被关闭一次
+                    if (closed.compareAndSet(false, true)) {
+                        if (!ftpClient.completePendingCommand()) {
+                            throw new IOException("completePendingCommand faild");
+                        }
                     }
                 }
             };
