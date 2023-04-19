@@ -95,6 +95,7 @@ public class HdfsWriter extends Writer {
                     eachColumnConf.getNecessaryValue(HdfsColMeta.KEY_TYPE, HdfsWriterErrorCode.COLUMN_REQUIRED_VALUE);
                 }
             }
+
             //writeMode check
             this.writeMode = this.writerSliceConfig.getNecessaryValue(Key.WRITE_MODE, HdfsWriterErrorCode.REQUIRED_VALUE);
             writeMode = writeMode.toLowerCase().trim();
@@ -105,7 +106,7 @@ public class HdfsWriter extends Writer {
                                 writeMode));
             }
             this.writerSliceConfig.set(Key.WRITE_MODE, writeMode);
-
+            final String compressNone = "NONE";
             //compress check
             this.compress = this.writerSliceConfig.getString(Key.COMPRESS, null);
             if (fileType.equalsIgnoreCase("TEXT")) {
@@ -122,7 +123,7 @@ public class HdfsWriter extends Writer {
                 }
 
 
-                Set<String> textSupportedCompress = Sets.newHashSet("GZIP", "BZIP2");
+                Set<String> textSupportedCompress = Sets.newHashSet("GZIP", "BZIP2", compressNone);
                 //用户可能配置的是compress:"",空字符串,需要将compress设置为null
                 if (StringUtils.isBlank(compress)) {
                     this.writerSliceConfig.set(Key.COMPRESS, null);
@@ -137,7 +138,7 @@ public class HdfsWriter extends Writer {
             } else if (fileType.equalsIgnoreCase("ORC")) {
                 Set<String> orcSupportedCompress = Sets.newHashSet("NONE", "SNAPPY");
                 if (null == compress) {
-                    this.writerSliceConfig.set(Key.COMPRESS, "NONE");
+                    this.writerSliceConfig.set(Key.COMPRESS, compressNone);
                 } else {
                     compress = compress.toUpperCase().trim();
                     if (!orcSupportedCompress.contains(compress)) {
@@ -422,7 +423,7 @@ public class HdfsWriter extends Writer {
                 TaskPluginCollector taskPluginCollector);
 
         protected abstract void startTextWrite(HdfsHelper fsHelper, RecordReceiver lineReceiver, Configuration config, String fileName,
-                                      TaskPluginCollector taskPluginCollector);
+                                               TaskPluginCollector taskPluginCollector);
 
         protected abstract void avroFileStartWrite(
                 RecordReceiver lineReceiver, Configuration writerSliceConfig, String fileName, TaskPluginCollector taskPluginCollector);
