@@ -136,7 +136,7 @@ public class HdfsWriter extends Writer {
                     }
                 }
             } else if (fileType.equalsIgnoreCase("ORC")) {
-                Set<String> orcSupportedCompress = Sets.newHashSet("NONE", "SNAPPY");
+                Set<String> orcSupportedCompress = Sets.newHashSet("NONE", "SNAPPY", compressNone);
                 if (null == compress) {
                     this.writerSliceConfig.set(Key.COMPRESS, compressNone);
                 } else {
