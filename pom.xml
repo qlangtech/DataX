@@ -43,11 +43,17 @@
         <mysql.driver.version>5.1.47</mysql.driver.version>
 
         <hadoop.version>2.7.3</hadoop.version>
+
+
+        <scala.version>2.11.12</scala.version>
+        <scala.binary.version>2.11</scala.binary.version>
+
     </properties>
 
     <modules>
         <!--        <module>datax-config</module>-->
         <module>common</module>
+        <module>common-scala</module>
         <module>core</module>
         <module>transformer</module>
         <module>ftp-common</module>
