@@ -14,8 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.alibaba.datax</groupId>
-            <artifactId>datax-common</artifactId>
-            <version>${datax-project-version}</version>
+            <artifactId>datax-common-scala-${scala.binary.version}</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba.datax</groupId>

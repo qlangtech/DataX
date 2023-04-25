@@ -52,7 +52,7 @@
 
     <modules>
         <!--        <module>datax-config</module>-->
-        <module>common</module>
+<!--        <module>common</module>-->
         <module>common-scala</module>
         <module>core</module>
         <module>transformer</module>
@@ -127,6 +127,19 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>com.alibaba.datax</groupId>
+                <artifactId>datax-common-scala-${scala.binary.version}</artifactId>
+                <version>${datax-project-version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>slf4j-log4j12</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-hdfs</artifactId>
