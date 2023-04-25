@@ -324,8 +324,8 @@ public class CommonRdbmsReader {
 
                         case Types.NUMERIC:
                         case Types.DECIMAL:
-                            record.addColumn(new DoubleColumn(rs.getBigDecimal(i)));
-                            break;
+//                            record.addColumn(new DoubleColumn(rs.getBigDecimal(i)));
+//                            break;
 
                         case Types.FLOAT:
                         case Types.REAL:
