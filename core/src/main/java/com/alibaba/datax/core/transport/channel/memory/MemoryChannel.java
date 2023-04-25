@@ -1,7 +1,8 @@
 package com.alibaba.datax.core.transport.channel.memory;
 
-import com.alibaba.datax.common.element.Record;
+
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;

@@ -16,7 +16,8 @@
 
 package com.alibaba.datax.common.plugin;
 
-import com.alibaba.datax.common.element.Record;
+
+import com.alibaba.datax.common.scala.element.Record;
 
 public interface RecordSender {
 

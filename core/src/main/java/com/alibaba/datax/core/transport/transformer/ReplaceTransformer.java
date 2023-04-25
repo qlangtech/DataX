@@ -1,9 +1,10 @@
 package com.alibaba.datax.core.transport.transformer;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.Record;
+import com.alibaba.datax.common.scala.element.StringColumn;
 import com.alibaba.datax.transformer.Transformer;
 
 import java.util.Arrays;

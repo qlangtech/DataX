@@ -21,20 +21,20 @@ public final class ColumnCast {
         BytesCast.init(configuration);
     }
 
-    public static Date string2Date(final StringColumn column)
-            throws ParseException {
-        return StringCast.asDate(column);
-    }
-
-    public static Date string2Date(final StringColumn column, String dateFormat)
-            throws ParseException {
-        return StringCast.asDate(column, dateFormat);
-    }
-
-    public static byte[] string2Bytes(final StringColumn column)
-            throws UnsupportedEncodingException {
-        return StringCast.asBytes(column);
-    }
+//    public static Date string2Date(final StringColumn column)
+//            throws ParseException {
+//        return StringCast.asDate(column);
+//    }
+//
+//    public static Date string2Date(final StringColumn column, String dateFormat)
+//            throws ParseException {
+//        return StringCast.asDate(column, dateFormat);
+//    }
+//
+//    public static byte[] string2Bytes(final StringColumn column)
+//            throws UnsupportedEncodingException {
+//        return StringCast.asBytes(column);
+//    }
 
     public static String date2String(final DateColumn column) {
         return DateCast.asString(column);
@@ -92,56 +92,58 @@ class StringCast {
                 StringCast.encoding);
     }
 
-    static Date asDate(final StringColumn column) throws ParseException {
-        if (null == column.asString()) {
-            return null;
-        }
-
-        try {
-            return StringCast.datetimeFormatter.parse(column.asString());
-        } catch (ParseException ignored) {
-        }
-
-        try {
-            return StringCast.dateFormatter.parse(column.asString());
-        } catch (ParseException ignored) {
-        }
-
-        ParseException e;
-        try {
-            return StringCast.timeFormatter.parse(column.asString());
-        } catch (ParseException ignored) {
-            e = ignored;
-        }
-
-        for (String format : StringCast.extraFormats) {
-            try {
-                return FastDateFormat.getInstance(format, StringCast.timeZoner).parse(column.asString());
-            } catch (ParseException ignored) {
-                e = ignored;
-            }
-        }
-        throw e;
-    }
-
-    static Date asDate(final StringColumn column, String dateFormat) throws ParseException {
-        ParseException e;
-        try {
-            return FastDateFormat.getInstance(dateFormat, StringCast.timeZoner).parse(column.asString());
-        } catch (ParseException ignored) {
-            e = ignored;
-        }
-        throw e;
-    }
-
-    static byte[] asBytes(final StringColumn column)
-            throws UnsupportedEncodingException {
-        if (null == column.asString()) {
-            return null;
-        }
-
-        return column.asString().getBytes(StringCast.encoding);
-    }
+//    static Date asDate(final StringColumn column) throws ParseException {
+//        if (null == column.asString()) {
+//            return null;
+//        }
+//
+//
+//        try {
+//            return StringCast.datetimeFormatter.parse(column.asString());
+//        } catch (ParseException e) {
+//
+//        }
+//
+//
+//        try {
+//            return StringCast.dateFormatter.parse(column.asString());
+//        } catch (ParseException e) {
+//
+//        }
+//
+//
+//        ParseException e;
+//        try {
+//            return StringCast.timeFormatter.parse(column.asString());
+//        } catch (ParseException ignored) {
+//            e = ignored;
+//        }
+//
+//        for (String format : StringCast.extraFormats) {
+//            return FastDateFormat.getInstance(format, StringCast.timeZoner).parse(column.asString());
+//        }
+//
+//        throw new IllegalStateException();
+//    }
+//
+//    static Date asDate(final StringColumn column, String dateFormat) throws ParseException {
+//        ParseException e;
+//        try {
+//            return FastDateFormat.getInstance(dateFormat, StringCast.timeZoner).parse(column.asString());
+//        } catch (ParseException ignored) {
+//            e = ignored;
+//        }
+//        throw e;
+//    }
+//
+//    static byte[] asBytes(final StringColumn column)
+//            throws UnsupportedEncodingException {
+//        if (null == column.asString()) {
+//            return null;
+//        }
+//
+//        return column.asString().getBytes(StringCast.encoding);
+//    }
 }
 
 /**

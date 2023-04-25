@@ -1,7 +1,8 @@
 package com.alibaba.datax.core.transport.transformer;
 
-import com.alibaba.datax.common.element.Record;
+//import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.transformer.Transformer;
 import groovy.lang.GroovyClassLoader;
 import org.apache.commons.lang3.StringUtils;

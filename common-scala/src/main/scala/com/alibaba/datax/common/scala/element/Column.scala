@@ -1,14 +1,17 @@
-package com.alibaba.datax.common.element.scala
+package com.alibaba.datax.common.scala.element
+
 import java.math.{BigDecimal, BigInteger}
 import java.util.Date
 
 /**
  *
  */
-trait TypedCol extends Any{
-  def asLong: Long
+trait Column extends Any {
+  def isNull: Boolean
 
-  def asDouble: Double
+  def asLong: java.lang.Long
+
+  def asDouble: java.lang.Double
 
   def asString: String
 
@@ -18,9 +21,12 @@ trait TypedCol extends Any{
 
   def asBytes: Array[Byte]
 
-  def asBoolean: Boolean
+  def asBoolean: java.lang.Boolean
 
   def asBigDecimal: BigDecimal
 
   def asBigInteger: BigInteger
+
+  def getByteSize: java.lang.Integer
+
 }

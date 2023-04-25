@@ -1,7 +1,8 @@
 package com.alibaba.datax.core.statistics.plugin.task;
 
 import com.alibaba.datax.common.constant.PluginType;
-import com.alibaba.datax.common.element.Record;
+//import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 

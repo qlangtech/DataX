@@ -1,6 +1,8 @@
 package com.alibaba.datax.core.transport.transformer;
 
-import com.alibaba.datax.common.element.Record;
+//import com.alibaba.datax.common.element.Record;
+
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.transformer.ComplexTransformer;
 import com.alibaba.datax.transformer.Transformer;
 

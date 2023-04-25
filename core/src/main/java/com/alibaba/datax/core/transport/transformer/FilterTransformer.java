@@ -1,7 +1,11 @@
 package com.alibaba.datax.core.transport.transformer;
 
+
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.Record;
+import com.alibaba.datax.common.scala.element.StringColumn;
 import com.alibaba.datax.transformer.Transformer;
 import org.apache.commons.lang3.StringUtils;
 
@@ -72,7 +76,7 @@ public class FilterTransformer extends Transformer {
     private Record doGreat(Record record, String value, Column column, boolean hasEqual) {
 
         //如果字段为空，直接不参与比较。即空也属于无穷小
-        if(column.getRawData() == null){
+        if(column.isNull()){
             return record;
         }
         if (column instanceof DoubleColumn) {
@@ -132,7 +136,7 @@ public class FilterTransformer extends Transformer {
     private Record doLess(Record record, String value, Column column, boolean hasEqual) {
 
         //如果字段为空，直接不参与比较。即空也属于无穷大
-        if(column.getRawData() == null){
+        if(column.isNull()){
             return record;
         }
 
@@ -203,7 +207,7 @@ public class FilterTransformer extends Transformer {
     private Record doEqual(Record record, String value, Column column) {
 
         //如果字段为空，只比较目标字段为"null"，否则null字段均不过滤
-        if(column.getRawData() == null){
+        if(column.isNull()){
             if(value.equalsIgnoreCase("null")){
                 return null;
             }else {
@@ -253,7 +257,7 @@ public class FilterTransformer extends Transformer {
     private Record doNotEqual(Record record, String value, Column column) {
 
         //如果字段为空，只比较目标字段为"null", 否则null字段均过滤。
-        if(column.getRawData() == null){
+        if(column.isNull()){
             if(value.equalsIgnoreCase("null")){
                 return record;
             }else {

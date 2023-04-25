@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.transport.channel;
 
-import com.alibaba.datax.common.element.Record;
+
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;

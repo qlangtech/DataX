@@ -1,8 +1,9 @@
 package com.alibaba.datax.core.transport.exchanger;
 
-import com.alibaba.datax.common.element.Record;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.transport.transformer.TransformerErrorCode;

@@ -1,6 +1,8 @@
 package com.alibaba.datax.transformer;
 
-import com.alibaba.datax.common.element.Record;
+
+
+import com.alibaba.datax.common.scala.element.Record;
 
 import java.util.Map;
 
