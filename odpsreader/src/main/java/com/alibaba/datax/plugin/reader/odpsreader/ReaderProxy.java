@@ -3,6 +3,10 @@ package com.alibaba.datax.plugin.reader.odpsreader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
@@ -180,12 +184,12 @@ public class ReaderProxy {
 
     /**
      * TODO warn: odpsRecord 的 String 可能获取出来的是 binary
-     * 
+     *
      * warn: there is no dirty data in reader plugin, so do not handle dirty
      * data with TaskPluginCollector
-     * 
+     *
      * warn: odps only support BIGINT && String partition column actually
-     * 
+     *
      * @param odpsRecord
      *            every line record of odps table
      * @param dataXRecord
@@ -223,7 +227,7 @@ public class ReaderProxy {
         case DATETIME: {
             if (isPartitionColumn) {
                 try {
-                    dataXRecord.addColumn(new DateColumn(ColumnCast
+                    dataXRecord.addColumn(new TimeColumn(ColumnCast
                             .string2Date(new StringColumn(columnNameValue))));
                 } catch (ParseException e) {
                     LOG.error(String.format("", this.partition));
@@ -235,7 +239,7 @@ public class ReaderProxy {
                             OdpsReaderErrorCode.READ_DATA_FAIL, errMessage, e);
                 }
             } else {
-                dataXRecord.addColumn(new DateColumn(odpsRecord
+                dataXRecord.addColumn(new TimeColumn(odpsRecord
                         .getDatetime(columnNameValue)));
             }
 

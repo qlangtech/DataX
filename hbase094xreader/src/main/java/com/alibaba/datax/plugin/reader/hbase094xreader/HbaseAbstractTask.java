@@ -2,6 +2,10 @@ package com.alibaba.datax.plugin.reader.hbase094xreader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.hbase.client.HTable;
@@ -116,7 +120,7 @@ public abstract class HbaseAbstractTask {
                 break;
             case DATE:
                 String dateValue = Bytes.toStringBinary(byteArray);
-                column = new DateColumn(ArrayUtils.isEmpty(byteArray) ? null : DateUtils.parseDate(dateValue, new String[]{dateformat}));
+                column = new TimeColumn(ArrayUtils.isEmpty(byteArray) ? null : DateUtils.parseDate(dateValue, new String[]{dateformat}));
                 break;
             default:
                 throw DataXException.asDataXException(Hbase094xReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
@@ -143,7 +147,7 @@ public abstract class HbaseAbstractTask {
                 column = new StringColumn(constantValue);
                 break;
             case DATE:
-                column = new DateColumn(DateUtils.parseDate(constantValue, new String[]{dateformat}));
+                column = new TimeColumn(DateUtils.parseDate(constantValue, new String[]{dateformat}));
                 break;
             default:
                 throw DataXException.asDataXException(Hbase094xReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 常量列不支持您配置的列类型:" + columnType);

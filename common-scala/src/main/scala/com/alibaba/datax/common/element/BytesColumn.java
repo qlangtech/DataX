@@ -36,14 +36,14 @@ public class BytesColumn extends Column {
 		if (null == this.getRawData()) {
 			return null;
 		}
-
-		try {
-			return ColumnCast.bytes2String(this);
-		} catch (Exception e) {
-			throw DataXException.asDataXException(
-					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Bytes[%s]不能转为String .", this.toString()));
-		}
+throw new UnsupportedOperationException();
+//		try {
+//			return ColumnCast.bytes2String(this);
+//		} catch (Exception e) {
+//			throw DataXException.asDataXException(
+//					CommonErrorCode.CONVERT_NOT_SUPPORT,
+//					String.format("Bytes[%s]不能转为String .", this.toString()));
+//		}
 	}
 
 	@Override

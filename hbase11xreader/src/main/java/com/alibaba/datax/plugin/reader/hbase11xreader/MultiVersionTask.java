@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.hbase11xreader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.Cell;

@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.reader.tsdbreader.conn;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.plugin.reader.tsdbreader.Constant;
 import com.alibaba.datax.plugin.reader.tsdbreader.util.HttpUtils;
 import com.alibaba.fastjson.JSON;

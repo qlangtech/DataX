@@ -3,6 +3,11 @@ package com.alibaba.datax.plugin.reader.streamreader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.BytesColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.fastjson.JSONObject;
@@ -66,7 +71,7 @@ public class StreamReader extends Reader {
                     throw DataXException.asDataXException(StreamReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format("解析混淆函数失败[%s]", e.getMessage()), e);
                 }
-				
+
 				String typeName = eachColumnConfig.getString(Constant.TYPE);
 				if (StringUtils.isBlank(typeName)) {
 					// empty typeName will be set to default type: string
@@ -92,7 +97,7 @@ public class StreamReader extends Reader {
 
 			originalConfig.set(Key.COLUMN, dealedColumns);
 		}
-		
+
 		private void parseMixupFunctions(Configuration eachColumnConfig) throws Exception{
 		    // 支持随机函数, demo如下:
             // LONG: random 0, 10 0到10之间的随机数字
@@ -198,9 +203,9 @@ public class StreamReader extends Reader {
 		private List<String> columns;
 
 		private long sliceRecordCount;
-		
+
 		private boolean haveMixupFunction;
-		
+
 
 		@Override
 		public void init() {
@@ -237,7 +242,7 @@ public class StreamReader extends Reader {
 		@Override
 		public void destroy() {
 		}
-		
+
 		private Column buildOneColumn(Configuration eachColumnConfig) throws Exception {
 		    String columnValue = eachColumnConfig
                     .getString(Constant.VALUE);
@@ -247,7 +252,7 @@ public class StreamReader extends Reader {
             long param1Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM1, 0L);
             long param2Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM2, 1L);
             boolean isColumnMixup = StringUtils.isNotBlank(columnMixup);
-            
+
             switch (columnType) {
             case STRING:
                 if (isColumnMixup) {
@@ -271,9 +276,9 @@ public class StreamReader extends Reader {
                 SimpleDateFormat format = new SimpleDateFormat(
                         eachColumnConfig.getString(Constant.DATE_FORMAT_MARK, Constant.DEFAULT_DATE_FORMAT));
                 if (isColumnMixup) {
-                    return new DateColumn(new Date(RandomUtils.nextLong(param1Int, param2Int + 1)));
+                    return new TimeColumn(new Date(RandomUtils.nextLong(param1Int, param2Int + 1)));
                 } else {
-                    return new DateColumn(format.parse(columnValue));
+                    return new TimeColumn(format.parse(columnValue));
                 }
             case BOOL:
                 if (isColumnMixup) {

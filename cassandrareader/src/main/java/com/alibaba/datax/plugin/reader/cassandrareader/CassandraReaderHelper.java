@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.BytesColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
@@ -319,7 +319,7 @@ public class CassandraReaderHelper {
           break;
 
         case DATE:
-          record.addColumn(new DateColumn(rs.getDate(i).getMillisSinceEpoch()));
+          record.addColumn(new TimeColumn(rs.getDate(i).getMillisSinceEpoch()));
           break;
 
         case TIME:
@@ -327,7 +327,7 @@ public class CassandraReaderHelper {
           break;
 
         case TIMESTAMP:
-          record.addColumn(new DateColumn(rs.getTimestamp(i)));
+          record.addColumn(new TimeColumn(rs.getTimestamp(i)));
           break;
 
         case UUID:

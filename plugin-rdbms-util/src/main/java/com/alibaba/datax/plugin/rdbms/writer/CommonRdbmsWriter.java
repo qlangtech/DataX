@@ -1,10 +1,11 @@
 package com.alibaba.datax.plugin.rdbms.writer;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -312,7 +313,7 @@ public class CommonRdbmsWriter {
                     return (stat, colIndex, column) -> {
 
                         // String strValue = column.asString();
-                        if (emptyAsNull && column.getRawData() == null) {
+                        if (emptyAsNull && column.isNull()) {
                             stat.setNull(colIndex, cm.getType().type);
                         } else {
                             stat.setBigDecimal(colIndex, column.asBigDecimal());
@@ -323,7 +324,7 @@ public class CommonRdbmsWriter {
                     return (stat, colIndex, column) -> {
 
                         //  String strValue = column.asString();
-                        if (emptyAsNull && column.getRawData() == null) {
+                        if (emptyAsNull && column.isNull()) {
                             stat.setNull(colIndex, cm.getType().type);
                         } else {
                             stat.setDouble(colIndex, column.asDouble());
@@ -640,7 +641,7 @@ public class CommonRdbmsWriter {
         protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, IStatementSetter col, int columnIndex,
                                                                     ColumnMetaData cm, Column column) throws SQLException {
 
-            if (column.getRawData() == null) {
+            if (column.isNull()) {
                 preparedStatement.setNull(columnIndex + 1, cm.getType().type);
             } else {
                 col.set(preparedStatement, columnIndex + 1, column);

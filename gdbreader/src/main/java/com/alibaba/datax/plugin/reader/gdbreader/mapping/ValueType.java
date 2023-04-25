@@ -7,10 +7,10 @@
  */
 package com.alibaba.datax.plugin.reader.gdbreader.mapping;
 
-import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.BoolColumn;
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.element.StringColumn;
 
 import java.util.HashMap;

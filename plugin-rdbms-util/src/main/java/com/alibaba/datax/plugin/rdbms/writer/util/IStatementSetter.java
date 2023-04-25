@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.rdbms.writer.util;
 
-import com.alibaba.datax.common.element.Column;
+//import com.alibaba.datax.common.element.Column;
+
+import com.alibaba.datax.common.scala.element.Column;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

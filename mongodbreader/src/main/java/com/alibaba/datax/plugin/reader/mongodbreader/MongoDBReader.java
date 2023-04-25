@@ -6,10 +6,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
@@ -157,7 +157,7 @@ public class MongoDBReader extends Reader {
                     } else if (tempCol instanceof Boolean) {
                         record.addColumn(new BoolColumn((Boolean) tempCol));
                     } else if (tempCol instanceof Date) {
-                        record.addColumn(new DateColumn((Date) tempCol));
+                        record.addColumn(new TimeColumn((Date) tempCol));
                     } else if (tempCol instanceof Integer) {
                         record.addColumn(new LongColumn((Integer) tempCol));
                     }else if (tempCol instanceof Long) {

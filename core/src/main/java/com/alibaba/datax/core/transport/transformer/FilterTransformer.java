@@ -1,9 +1,13 @@
 package com.alibaba.datax.core.transport.transformer;
 
 
-import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.BytesColumn;
 import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.scala.element.StringColumn;
 import com.alibaba.datax.transformer.Transformer;
@@ -96,7 +100,7 @@ public class FilterTransformer extends Transformer {
                     return record;
                 }
             }
-        } else if (column instanceof LongColumn || column instanceof DateColumn) {
+        } else if (column instanceof LongColumn || column instanceof TimeColumn) {
             Long ori = column.asLong();
             long val = Long.parseLong(value);
 
@@ -157,7 +161,7 @@ public class FilterTransformer extends Transformer {
                     return record;
                 }
             }
-        } else if (column instanceof LongColumn || column instanceof DateColumn) {
+        } else if (column instanceof LongColumn || column instanceof TimeColumn) {
             Long ori = column.asLong();
             long val = Long.parseLong(value);
 
@@ -224,7 +228,7 @@ public class FilterTransformer extends Transformer {
             } else {
                 return record;
             }
-        } else if (column instanceof LongColumn || column instanceof DateColumn) {
+        } else if (column instanceof LongColumn || column instanceof TimeColumn) {
             Long ori = column.asLong();
             long val = Long.parseLong(value);
 
@@ -274,7 +278,7 @@ public class FilterTransformer extends Transformer {
             } else {
                 return record;
             }
-        } else if (column instanceof LongColumn || column instanceof DateColumn) {
+        } else if (column instanceof LongColumn || column instanceof TimeColumn) {
             Long ori = column.asLong();
             long val = Long.parseLong(value);
 

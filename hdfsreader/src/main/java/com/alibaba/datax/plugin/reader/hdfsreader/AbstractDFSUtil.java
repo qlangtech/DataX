@@ -4,6 +4,10 @@ import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
@@ -516,18 +520,18 @@ public abstract class AbstractDFSUtil {
                         case DATE:
                             try {
                                 if (columnValue == null) {
-                                    columnGenerated = new DateColumn((Date) null);
+                                    columnGenerated = new TimeColumn((Date) null);
                                 } else {
                                     String formatString = columnConfig.getFormat();
                                     if (StringUtils.isNotBlank(formatString)) {
                                         // 用户自己配置的格式转换
                                         SimpleDateFormat format = new SimpleDateFormat(
                                                 formatString);
-                                        columnGenerated = new DateColumn(
+                                        columnGenerated = new TimeColumn(
                                                 format.parse(columnValue));
                                     } else {
                                         // 框架尝试转换
-                                        columnGenerated = new DateColumn(
+                                        columnGenerated = new TimeColumn(
                                                 new StringColumn(columnValue)
                                                         .asDate());
                                     }

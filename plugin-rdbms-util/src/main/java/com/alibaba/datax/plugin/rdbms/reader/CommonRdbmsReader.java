@@ -1,9 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.reader;
 
-import com.alibaba.datax.common.element.*;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -317,35 +319,35 @@ public class CommonRdbmsReader {
                         case Types.TINYINT:
                         case Types.INTEGER:
                         case Types.BIGINT:
-                            record.addColumn(new LongColumn(rs.getString(i)));
+                            record.addColumn(new LongColumn(BigInteger.valueOf(rs.getLong(i))));
                             break;
 
                         case Types.NUMERIC:
                         case Types.DECIMAL:
-                            record.addColumn(new DoubleColumn(rs.getString(i)));
+                            record.addColumn(new DoubleColumn(rs.getBigDecimal(i)));
                             break;
 
                         case Types.FLOAT:
                         case Types.REAL:
                         case Types.DOUBLE:
-                            record.addColumn(new DoubleColumn(rs.getString(i)));
+                            record.addColumn(new DoubleColumn(rs.getBigDecimal(i)));
                             break;
 
                         case Types.TIME:
-                            record.addColumn(new DateColumn(rs.getTime(i)));
+                            record.addColumn(new TimeColumn(rs.getTime(i)));
                             break;
 
                         // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                         case Types.DATE:
                             if (cm.getType().typeName.equalsIgnoreCase("year")) {
-                                record.addColumn(new LongColumn(rs.getInt(i)));
+                                record.addColumn(new LongColumn(BigInteger.valueOf(rs.getLong(i))));
                             } else {
                                 record.addColumn(new DateColumn(rs.getDate(i)));
                             }
                             break;
 
                         case Types.TIMESTAMP:
-                            record.addColumn(new DateColumn(rs.getTimestamp(i)));
+                            record.addColumn(new TimeStampColumn(rs.getTimestamp(i)));
                             break;
 
                         case Types.BINARY:

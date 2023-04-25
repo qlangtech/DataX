@@ -3,6 +3,11 @@ package com.alibaba.datax.plugin.reader.hbase20xsqlreader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.scala.element.BoolColumn;
+import com.alibaba.datax.common.scala.element.BytesColumn;
+import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.DoubleColumn;
+import com.alibaba.datax.common.scala.element.LongColumn;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.util.Configuration;
 import org.slf4j.Logger;
@@ -104,13 +109,13 @@ public class HBase20xSQLReaderTask {
                 column = new DoubleColumn((Double) value);
                 break;
             case Types.DATE:
-                column = new DateColumn((Date) value);
+                column = new TimeColumn((Date) value);
                 break;
             case Types.TIME:
-                column = new DateColumn((Time) value);
+                column = new TimeColumn((Time) value);
                 break;
             case Types.TIMESTAMP:
-                column = new DateColumn((Timestamp) value);
+                column = new TimeColumn((Timestamp) value);
                 break;
             default:
                 throw DataXException.asDataXException(
