@@ -1,5 +1,8 @@
 package com.alibaba.datax.plugin.reader.mongodbreader;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -10,8 +13,8 @@ import com.alibaba.datax.common.scala.element.BoolColumn;
 import com.alibaba.datax.common.scala.element.TimeColumn;
 import com.alibaba.datax.common.scala.element.DoubleColumn;
 import com.alibaba.datax.common.scala.element.LongColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.scala.element.Record;
+import com.alibaba.datax.common.scala.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -153,15 +156,15 @@ public class MongoDBReader extends Reader {
                         record.addColumn(new StringColumn(null));
                     }else if (tempCol instanceof Double) {
                         //TODO deal with Double.isNaN()
-                        record.addColumn(new DoubleColumn((Double) tempCol));
+                        record.addColumn(new DoubleColumn( new BigDecimal((Double) tempCol)));
                     } else if (tempCol instanceof Boolean) {
                         record.addColumn(new BoolColumn((Boolean) tempCol));
                     } else if (tempCol instanceof Date) {
-                        record.addColumn(new TimeColumn((Date) tempCol));
+                        record.addColumn(new TimeColumn( new Time( ( (Date) tempCol).getTime())));
                     } else if (tempCol instanceof Integer) {
-                        record.addColumn(new LongColumn((Integer) tempCol));
+                        record.addColumn(new LongColumn(  BigInteger.valueOf( ((Integer) tempCol).longValue())));
                     }else if (tempCol instanceof Long) {
-                        record.addColumn(new LongColumn((Long) tempCol));
+                        record.addColumn(new LongColumn(BigInteger.valueOf((Long) tempCol)));
                     } else {
                         if(KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
                             String splitter = column.getString(KeyConstant.COLUMN_SPLITTER);

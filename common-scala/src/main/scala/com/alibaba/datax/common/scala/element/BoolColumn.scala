@@ -7,7 +7,7 @@ import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 /**
  * Created by jingxing on 14-8-24.
  */
-class BoolColumn(val bool: java.lang.Boolean) extends AnyVal with Column {
+case class BoolColumn(val bool: java.lang.Boolean) extends AnyVal with Column {
 //  def this(bool: Boolean) {
 //    this()
 //    super (bool, Column.Type.BOOL, 1)

@@ -1,8 +1,8 @@
 
 package com.alibaba.datax.plugin.writer.streamwriter;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;

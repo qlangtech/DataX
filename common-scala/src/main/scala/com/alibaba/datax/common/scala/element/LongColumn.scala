@@ -6,7 +6,7 @@ import java.util.Date
 import com.alibaba.datax.common.element.OverFlowUtil
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
-class LongColumn(val _rowData: BigInteger) extends AnyVal with Column {
+case class LongColumn(val _rowData: BigInteger) extends AnyVal with Column {
 
 
   /**
@@ -97,4 +97,14 @@ class LongColumn(val _rowData: BigInteger) extends AnyVal with Column {
   override def isNull: Boolean = this._rowData == null
 
   override def getByteSize: Integer = ???
+}
+
+object LongColumn {
+  def create(value: java.lang.Long): LongColumn = {
+    LongColumn(BigInteger.valueOf(value))
+  }
+
+  def create(value: java.lang.String): LongColumn = {
+    LongColumn(BigInteger.valueOf(java.lang.Long.parseLong(value)))
+  }
 }

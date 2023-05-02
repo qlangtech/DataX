@@ -1,13 +1,9 @@
 package com.alibaba.datax.plugin.reader.streamreader;
 
-import com.alibaba.datax.common.element.*;
+//import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.BytesColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.fastjson.JSONObject;
@@ -18,6 +14,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -262,23 +261,23 @@ public class StreamReader extends Reader {
                 }
             case LONG:
                 if (isColumnMixup) {
-                    return new LongColumn(RandomUtils.nextLong(param1Int, param2Int + 1));
+                    return new LongColumn( BigInteger.valueOf( RandomUtils.nextLong(param1Int, param2Int + 1)));
                 } else {
-                    return new LongColumn(columnValue);
+                    return new LongColumn(BigInteger.valueOf( Long.parseLong( columnValue) ));
                 }
             case DOUBLE:
                 if (isColumnMixup) {
-                    return new DoubleColumn(RandomUtils.nextDouble(param1Int, param2Int + 1));
+                    return new DoubleColumn( new BigDecimal(RandomUtils.nextDouble(param1Int, param2Int + 1)));
                 } else {
-                    return new DoubleColumn(columnValue);
+                    return new DoubleColumn( new BigDecimal( columnValue));
                 }
             case DATE:
                 SimpleDateFormat format = new SimpleDateFormat(
                         eachColumnConfig.getString(Constant.DATE_FORMAT_MARK, Constant.DEFAULT_DATE_FORMAT));
                 if (isColumnMixup) {
-                    return new TimeColumn(new Date(RandomUtils.nextLong(param1Int, param2Int + 1)));
+                    return new TimeColumn(new Time(RandomUtils.nextLong(param1Int, param2Int + 1)));
                 } else {
-                    return new TimeColumn(format.parse(columnValue));
+                    return new TimeColumn( new Time( format.parse(columnValue).getTime()));
                 }
             case BOOL:
                 if (isColumnMixup) {

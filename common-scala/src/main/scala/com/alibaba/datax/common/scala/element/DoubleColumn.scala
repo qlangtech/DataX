@@ -5,7 +5,7 @@ import java.math.{BigDecimal, BigInteger}
 import com.alibaba.datax.common.element.OverFlowUtil
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
-class DoubleColumn(val data: BigDecimal) extends AnyVal with Column {
+case class DoubleColumn(val data: BigDecimal) extends AnyVal with Column {
 
 
   //  /**

@@ -10,7 +10,19 @@
     <name>plugin-rdbms-util</name>
     <packaging>jar</packaging>
 
-
+    <build>
+        <plugins>
+            <!-- Scala Compiler -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
 
@@ -71,5 +83,23 @@
         <!-- 			<scope>system</scope>-->
         <!-- 			<systemPath>${basedir}/src/main/libs/oceanbase-client-1.1.10.jar</systemPath>-->
         <!-- 		</dependency>-->
+
+        <!-- scala start -->
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+        </dependency>
+        <!-- scala end -->
+
     </dependencies>
 </project>

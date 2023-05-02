@@ -3,7 +3,6 @@ package com.alibaba.datax.plugin.reader.kingbaseesreader;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 import java.util.List;

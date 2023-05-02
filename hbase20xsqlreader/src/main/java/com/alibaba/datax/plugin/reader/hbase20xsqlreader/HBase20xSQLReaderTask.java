@@ -1,19 +1,16 @@
 package com.alibaba.datax.plugin.reader.hbase20xsqlreader;
 
-import com.alibaba.datax.common.element.*;
+//import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.BytesColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.util.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.*;
 
 public class HBase20xSQLReaderTask {
@@ -88,34 +85,34 @@ public class HBase20xSQLReaderTask {
                 column = new BoolColumn((Boolean) value);
                 break;
             case Types.INTEGER:
-                column = new LongColumn((Integer) value);
+                column = new LongColumn(BigInteger.valueOf( (Integer) value) );
                 break;
             case Types.TINYINT:
-                column = new LongColumn(((Byte) value).longValue());
+                column = new LongColumn(BigInteger.valueOf(  ((Byte) value).longValue()) );
                 break;
             case Types.SMALLINT:
-                column = new LongColumn(((Short) value).longValue());
+                column = new LongColumn(BigInteger.valueOf(  ((Short) value).longValue()) );
                 break;
             case Types.BIGINT:
-                column = new LongColumn((Long) value);
+                column = new LongColumn(BigInteger.valueOf(  (Long) value) );
                 break;
             case Types.FLOAT:
-                column = new DoubleColumn((Float.valueOf(value.toString())));
+                column = new DoubleColumn( new BigDecimal  (Float.valueOf(value.toString())));
                 break;
             case Types.DECIMAL:
                 column = new DoubleColumn((BigDecimal)value);
                 break;
             case Types.DOUBLE:
-                column = new DoubleColumn((Double) value);
+                column = new DoubleColumn( new BigDecimal ( (Double) value ));
                 break;
             case Types.DATE:
-                column = new TimeColumn((Date) value);
+                column = new DateColumn( (Date) value);
                 break;
             case Types.TIME:
                 column = new TimeColumn((Time) value);
                 break;
             case Types.TIMESTAMP:
-                column = new TimeColumn((Timestamp) value);
+                column = new TimeStampColumn((Timestamp) value);
                 break;
             default:
                 throw DataXException.asDataXException(

@@ -1,7 +1,9 @@
 package com.alibaba.datax.common.scala.element
 
+import java.io.UnsupportedEncodingException
+import java.text.ParseException
 import java.util
-import java.util.{Collections, TimeZone}
+import java.util.{Collections, Date, TimeZone}
 
 import com.alibaba.datax.common.util.Configuration
 import org.apache.commons.lang3.time.FastDateFormat
@@ -36,46 +38,45 @@ object StringCast {
     StringCast.encoding = configuration.getString("common.column.encoding", StringCast.encoding)
   }
 
-  //  @throws[ParseException]
-  //  private[element] def asDate(column: Nothing): Date = {
-  //    if (null == column.asString) return null
-  //    try return StringCast.datetimeFormatter.parse(column.asString)
-  //    catch {
-  //      case e: ParseException =>
-  //
-  //    }
-  //    try return StringCast.dateFormatter.parse(column.asString)
-  //    catch {
-  //      case e: ParseException =>
-  //
-  //    }
-  //    var e: ParseException = null
-  //    try return StringCast.timeFormatter.parse(column.asString)
-  //    catch {
-  //      case ignored: ParseException =>
-  //        e = ignored
-  //    }
-  //    import scala.collection.JavaConversions._
-  //    for (format <- StringCast.extraFormats) {
-  //      return FastDateFormat.getInstance(format, StringCast.timeZoner).parse(column.asString)
-  //    }
-  //    throw new IllegalStateException
-  //  }
-  //
-  //  @throws[ParseException]
-  //  private[element] def asDate(column: Nothing, dateFormat: String): Date = {
-  //    var e: ParseException = null
-  //    try return FastDateFormat.getInstance(dateFormat, StringCast.timeZoner).parse(column.asString)
-  //    catch {
-  //      case ignored: ParseException =>
-  //        e = ignored
-  //    }
-  //    throw e
-  //  }
-  //
-  //  @throws[UnsupportedEncodingException]
-  //  private[element] def asBytes(column: Nothing): Array[Byte] = {
-  //    if (null == column.asString) return null
-  //    column.asString.getBytes(StringCast.encoding)
-  //  }
+      def asDate(column: Column): Date = {
+      if (null == column.asString) return null
+      try return StringCast.datetimeFormatter.parse(column.asString)
+      catch {
+        case e: ParseException =>
+
+      }
+      try return StringCast.dateFormatter.parse(column.asString)
+      catch {
+        case e: ParseException =>
+
+      }
+      var e: ParseException = null
+      try return StringCast.timeFormatter.parse(column.asString)
+      catch {
+        case ignored: ParseException =>
+          e = ignored
+      }
+      import scala.collection.JavaConversions._
+      for (format <- StringCast.extraFormats) {
+        return FastDateFormat.getInstance(format, StringCast.timeZoner).parse(column.asString)
+      }
+      throw new IllegalStateException
+    }
+
+    @throws[ParseException]
+    def asDate(column: Column, dateFormat: String): Date = {
+      var e: ParseException = null
+      try return FastDateFormat.getInstance(dateFormat, StringCast.timeZoner).parse(column.asString)
+      catch {
+        case ignored: ParseException =>
+          e = ignored
+      }
+      throw e
+    }
+
+    @throws[UnsupportedEncodingException]
+    private[element] def asBytes(column: Column): Array[Byte] = {
+      if (null == column.asString) return null
+      column.asString.getBytes(StringCast.encoding)
+    }
 }

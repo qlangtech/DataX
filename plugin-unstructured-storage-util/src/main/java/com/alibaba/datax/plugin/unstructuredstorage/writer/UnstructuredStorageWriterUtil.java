@@ -1,8 +1,9 @@
 package com.alibaba.datax.plugin.unstructuredstorage.writer;
 
-import com.alibaba.datax.common.element.Column;
+
+import com.alibaba.datax.common.scala.element.Column;
 import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -303,7 +304,8 @@ public class UnstructuredStorageWriterUtil {
                 Column column;
                 for (int i = 0; i < recordLength; i++) {
                     column = record.getColumn(i);
-                    if (null != column.getRawData()) {
+
+                    if (!column.isNull()) {
                         boolean isDateColumn = column instanceof TimeColumn;
                         if (!isDateColumn) {
                             splitedRows.add(column.asString());

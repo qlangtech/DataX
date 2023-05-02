@@ -1,12 +1,8 @@
 package com.alibaba.datax.plugin.reader.odpsreader;
 
-import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
@@ -16,7 +12,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +36,9 @@ public class ReaderProxy {
     private boolean isCompress;
 
     public ReaderProxy(RecordSender recordSender, TableTunnel.DownloadSession downloadSession,
-            Map<String, OdpsType> columnTypeMap,
-            List<Pair<String, ColumnType>> parsedColumns, String partition,
-            boolean isPartitionTable, long start, long count, boolean isCompress) {
+                       Map<String, OdpsType> columnTypeMap,
+                       List<Pair<String, ColumnType>> parsedColumns, String partition,
+                       boolean isPartitionTable, long start, long count, boolean isCompress) {
         this.recordSender = recordSender;
         this.downloadSession = downloadSession;
         this.columnTypeMap = columnTypeMap;
@@ -55,7 +53,7 @@ public class ReaderProxy {
     // warn: odps 分区列和正常列不能重名, 所有列都不不区分大小写
     public void doRead() {
         try {
-            LOG.info("start={}, count={}",start, count);
+            LOG.info("start={}, count={}", start, count);
             //RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
             RecordReader recordReader = OdpsUtil.getRecordReader(downloadSession, start, count, isCompress);
 
@@ -67,10 +65,10 @@ public class ReaderProxy {
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     //odps read 异常后重试10次
                     LOG.warn("warn : odps read exception: {}", e.getMessage());
-                    if(retryTimes < 10) {
+                    if (retryTimes < 10) {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException ignored) {
@@ -89,7 +87,7 @@ public class ReaderProxy {
 
                 if (odpsRecord != null) {
 
-                    com.alibaba.datax.common.element.Record dataXRecord = recordSender
+                    com.alibaba.datax.common.scala.element.Record dataXRecord = recordSender
                             .createRecord();
                     // warn: for PARTITION||NORMAL columnTypeMap's key
                     // sets(columnName) is big than parsedColumns's left
@@ -167,7 +165,7 @@ public class ReaderProxy {
     }
 
     private String getPartitionColumnValue(Map<String, String> partitionMap,
-            String partitionColumnName) {
+                                           String partitionColumnName) {
         // warn: to lower case
         partitionColumnName = partitionColumnName.toLowerCase();
         // it's will never happen, but add this checking
@@ -184,101 +182,94 @@ public class ReaderProxy {
 
     /**
      * TODO warn: odpsRecord 的 String 可能获取出来的是 binary
-     *
+     * <p>
      * warn: there is no dirty data in reader plugin, so do not handle dirty
      * data with TaskPluginCollector
-     *
+     * <p>
      * warn: odps only support BIGINT && String partition column actually
      *
-     * @param odpsRecord
-     *            every line record of odps table
-     * @param dataXRecord
-     *            every datax record, to be send to writer. method getXXX() case sensitive
-     * @param type
-     *            odps column type
-     * @param columnNameValue
-     *            for partition column it's column value, for normal column it's
-     *            column name
-     * @param isPartitionColumn
-     *            true means partition column and false means normal column
-     * */
+     * @param odpsRecord        every line record of odps table
+     * @param dataXRecord       every datax record, to be send to writer. method getXXX() case sensitive
+     * @param type              odps column type
+     * @param columnNameValue   for partition column it's column value, for normal column it's
+     *                          column name
+     * @param isPartitionColumn true means partition column and false means normal column
+     */
     private void odpsColumnToDataXField(Record odpsRecord,
-            com.alibaba.datax.common.element.Record dataXRecord, OdpsType type,
-            String columnNameValue, boolean isPartitionColumn) {
+                                        com.alibaba.datax.common.scala.element.Record dataXRecord, OdpsType type,
+                                        String columnNameValue, boolean isPartitionColumn) {
         switch (type) {
-        case BIGINT: {
-            if (isPartitionColumn) {
-                dataXRecord.addColumn(new LongColumn(columnNameValue));
-            } else {
-                dataXRecord.addColumn(new LongColumn(odpsRecord
-                        .getBigint(columnNameValue)));
-            }
-            break;
-        }
-        case BOOLEAN: {
-            if (isPartitionColumn) {
-                dataXRecord.addColumn(new BoolColumn(columnNameValue));
-            } else {
-                dataXRecord.addColumn(new BoolColumn(odpsRecord
-                        .getBoolean(columnNameValue)));
-            }
-            break;
-        }
-        case DATETIME: {
-            if (isPartitionColumn) {
-                try {
-                    dataXRecord.addColumn(new TimeColumn(ColumnCast
-                            .string2Date(new StringColumn(columnNameValue))));
-                } catch (ParseException e) {
-                    LOG.error(String.format("", this.partition));
-                    String errMessage = String.format(
-                            "您读取分区 [%s] 出现日期转换异常, 日期的字符串表示为 [%s].",
-                            this.partition, columnNameValue);
-                    LOG.error(errMessage);
-                    throw DataXException.asDataXException(
-                            OdpsReaderErrorCode.READ_DATA_FAIL, errMessage, e);
+            case BIGINT: {
+                if (isPartitionColumn) {
+                    dataXRecord.addColumn(new LongColumn(BigInteger.valueOf(Long.parseLong(columnNameValue))));
+                } else {
+                    dataXRecord.addColumn(new LongColumn(BigInteger.valueOf(odpsRecord
+                            .getBigint(columnNameValue))));
                 }
-            } else {
-                dataXRecord.addColumn(new TimeColumn(odpsRecord
-                        .getDatetime(columnNameValue)));
+                break;
             }
+            case BOOLEAN: {
+                if (isPartitionColumn) {
+                    dataXRecord.addColumn(new BoolColumn(Boolean.valueOf(columnNameValue)));
+                } else {
+                    dataXRecord.addColumn(new BoolColumn(odpsRecord
+                            .getBoolean(columnNameValue)));
+                }
+                break;
+            }
+            case DATETIME: {
+                if (isPartitionColumn) {
+                    // try {
+                    dataXRecord.addColumn(new TimeColumn(Time.valueOf(columnNameValue)));
+//                } catch (ParseException e) {
+//                    LOG.error(String.format("", this.partition));
+//                    String errMessage = String.format(
+//                            "您读取分区 [%s] 出现日期转换异常, 日期的字符串表示为 [%s].",
+//                            this.partition, columnNameValue);
+//                    LOG.error(errMessage);
+//                    throw DataXException.asDataXException(
+//                            OdpsReaderErrorCode.READ_DATA_FAIL, errMessage, e);
+//                }
+                } else {
+                    dataXRecord.addColumn(new TimeColumn(new Time(odpsRecord.getDatetime(columnNameValue).getTime())));
+                }
 
-            break;
-        }
-        case DOUBLE: {
-            if (isPartitionColumn) {
-                dataXRecord.addColumn(new DoubleColumn(columnNameValue));
-            } else {
-                dataXRecord.addColumn(new DoubleColumn(odpsRecord
-                        .getDouble(columnNameValue)));
+                break;
             }
-            break;
-        }
-        case DECIMAL: {
-            if(isPartitionColumn) {
-                dataXRecord.addColumn(new DoubleColumn(columnNameValue));
-            } else {
-                dataXRecord.addColumn(new DoubleColumn(odpsRecord.getDecimal(columnNameValue)));
+            case DOUBLE: {
+                if (isPartitionColumn) {
+                    dataXRecord.addColumn(new DoubleColumn(new BigDecimal(columnNameValue)));
+                } else {
+                    dataXRecord.addColumn(new DoubleColumn(BigDecimal.valueOf(odpsRecord
+                            .getDouble(columnNameValue))));
+                }
+                break;
             }
-            break;
-        }
-        case STRING: {
-            if (isPartitionColumn) {
-                dataXRecord.addColumn(new StringColumn(columnNameValue));
-            } else {
-                dataXRecord.addColumn(new StringColumn(odpsRecord
-                        .getString(columnNameValue)));
+            case DECIMAL: {
+                if (isPartitionColumn) {
+                    dataXRecord.addColumn(new DoubleColumn(new BigDecimal(columnNameValue)));
+                } else {
+                    dataXRecord.addColumn(new DoubleColumn(odpsRecord.getDecimal(columnNameValue)));
+                }
+                break;
             }
-            break;
-        }
-        default:
-            throw DataXException
-                    .asDataXException(
-                            OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format(
-                                    "DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, decimal, string. "
-                                            + "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
-                                    type));
+            case STRING: {
+                if (isPartitionColumn) {
+                    dataXRecord.addColumn(new StringColumn(columnNameValue));
+                } else {
+                    dataXRecord.addColumn(new StringColumn(odpsRecord
+                            .getString(columnNameValue)));
+                }
+                break;
+            }
+            default:
+                throw DataXException
+                        .asDataXException(
+                                OdpsReaderErrorCode.ILLEGAL_VALUE,
+                                String.format(
+                                        "DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, decimal, string. "
+                                                + "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
+                                        type));
         }
     }
 

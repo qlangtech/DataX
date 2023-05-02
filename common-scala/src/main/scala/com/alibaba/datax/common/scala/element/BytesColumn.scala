@@ -6,7 +6,7 @@ import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 /**
  * Created by jingxing on 14-8-24.
  */
-class BytesColumn(val bytes: Array[Byte]) extends AnyVal with Column {
+case class BytesColumn(val bytes: Array[Byte]) extends AnyVal with Column {
 
   override def asBytes: Array[Byte] = {
     if (null == this.bytes) return null

@@ -1,13 +1,9 @@
 package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
-import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.Compress;
 import com.alibaba.fastjson.JSON;
@@ -20,7 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.UnsupportedCharsetException;
+import java.sql.Time;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -410,7 +409,8 @@ public class UnstructuredStorageReaderUtil {
                         case INT:
                         case LONG:
                             try {
-                                columnGenerated = new LongColumn(columnValue);
+                                //BigInteger bigInteger = new LongColumn.create(columnValue);
+                                columnGenerated = new LongColumn(BigInteger.valueOf(java.lang.Long.parseLong(columnValue)));
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
@@ -419,7 +419,7 @@ public class UnstructuredStorageReaderUtil {
                             break;
                         case DOUBLE:
                             try {
-                                columnGenerated = new DoubleColumn(columnValue);
+                                columnGenerated = new DoubleColumn(new BigDecimal(columnValue));
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
@@ -428,7 +428,7 @@ public class UnstructuredStorageReaderUtil {
                             break;
                         case BOOLEAN:
                             try {
-                                columnGenerated = new BoolColumn(columnValue);
+                                columnGenerated = new BoolColumn( Boolean.getBoolean( columnValue));
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s] cindex:%s", columnValue,
@@ -439,20 +439,19 @@ public class UnstructuredStorageReaderUtil {
                         case DATE:
                             try {
                                 if (columnValue == null) {
-                                    Date date = null;
-                                    columnGenerated = new TimeColumn(date);
+                                   // Date date = null;
+                                    columnGenerated = new TimeColumn(null );
                                 } else {
                                     String formatString = columnConfig.getFormat();
                                     //if (null != formatString) {
                                     if (StringUtils.isNotBlank(formatString)) {
                                         // 用户自己配置的格式转换, 脏数据行为出现变化
-                                        DateFormat format = columnConfig
-                                                .getDateFormat();
-                                        columnGenerated = new TimeColumn(
+                                        DateFormat format = columnConfig.getDateFormat();
+                                        columnGenerated = new DateColumn(
                                                 format.parse(columnValue));
                                     } else {
                                         // 框架尝试转换
-                                        columnGenerated = new TimeColumn(
+                                        columnGenerated = new DateColumn(
                                                 new StringColumn(columnValue)
                                                         .asDate());
                                     }

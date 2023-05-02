@@ -4,10 +4,13 @@ import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.DateColumn;
 import com.alibaba.datax.common.scala.element.DoubleColumn;
 import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
@@ -36,6 +39,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -491,7 +496,7 @@ public abstract class AbstractDFSUtil {
                             break;
                         case LONG:
                             try {
-                                columnGenerated = new LongColumn(columnValue);
+                                columnGenerated = new LongColumn(BigInteger.valueOf( Long.valueOf(columnValue)) );
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
@@ -500,7 +505,7 @@ public abstract class AbstractDFSUtil {
                             break;
                         case DOUBLE:
                             try {
-                                columnGenerated = new DoubleColumn(columnValue);
+                                columnGenerated = new DoubleColumn(new BigDecimal(columnValue));
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
@@ -509,7 +514,7 @@ public abstract class AbstractDFSUtil {
                             break;
                         case BOOLEAN:
                             try {
-                                columnGenerated = new BoolColumn(columnValue);
+                                columnGenerated = new BoolColumn(Boolean.valueOf(columnValue));
                             } catch (Exception e) {
                                 throw new IllegalArgumentException(String.format(
                                         "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
@@ -520,18 +525,18 @@ public abstract class AbstractDFSUtil {
                         case DATE:
                             try {
                                 if (columnValue == null) {
-                                    columnGenerated = new TimeColumn((Date) null);
+                                    columnGenerated = new TimeColumn( null);
                                 } else {
                                     String formatString = columnConfig.getFormat();
                                     if (StringUtils.isNotBlank(formatString)) {
                                         // 用户自己配置的格式转换
                                         SimpleDateFormat format = new SimpleDateFormat(
                                                 formatString);
-                                        columnGenerated = new TimeColumn(
+                                        columnGenerated = new DateColumn(
                                                 format.parse(columnValue));
                                     } else {
                                         // 框架尝试转换
-                                        columnGenerated = new TimeColumn(
+                                        columnGenerated = new DateColumn(
                                                 new StringColumn(columnValue)
                                                         .asDate());
                                     }

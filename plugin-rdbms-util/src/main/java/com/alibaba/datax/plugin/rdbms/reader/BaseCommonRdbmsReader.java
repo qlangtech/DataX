@@ -41,10 +41,10 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CommonRdbmsReader {
+public class BaseCommonRdbmsReader {
 
     public static void main(String[] args) {
-        Matcher matcher = Task.PATTERN_FROM_TABLE.matcher("select * frome user where from =1");
+        Matcher matcher = BaseTask.PATTERN_FROM_TABLE.matcher("select * frome user where from =1");
         if (matcher.find()) {
             System.out.println(matcher.group(1));
         } else {
@@ -127,10 +127,10 @@ public class CommonRdbmsReader {
 
     }
 
-    public static class Task {
+    public static class BaseTask {
         private static final Logger LOG = LoggerFactory
-                .getLogger(Task.class);
-        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+                .getLogger(BaseTask.class);
+        protected static final boolean IS_DEBUG = LOG.isDebugEnabled();
         protected final byte[] EMPTY_CHAR_ARRAY = new byte[0];
 
         private DataBaseType dataBaseType;
@@ -148,11 +148,11 @@ public class CommonRdbmsReader {
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private String basicMsg;
 
-        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext) {
+        public BaseTask(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             this(dataBaseType, containerContext, -1, -1);
         }
 
-        public Task(DataBaseType dataBaseType, IJobContainerContext containerContext, int taskGropuId, int taskId) {
+        public BaseTask(DataBaseType dataBaseType, IJobContainerContext containerContext, int taskGropuId, int taskId) {
             this.dataBaseType = dataBaseType;
             this.taskGroupId = taskGropuId;
             this.taskId = taskId;

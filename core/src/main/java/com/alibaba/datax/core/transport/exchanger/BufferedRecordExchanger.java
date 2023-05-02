@@ -60,7 +60,7 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 			BufferedRecordExchanger.RECORD_CLASS = ((Class<? extends Record>) Class
 					.forName(configuration.getString(
                             CoreConstant.DATAX_CORE_TRANSPORT_RECORD_CLASS,
-                            "com.alibaba.datax.core.transport.record.DefaultRecord")));
+                            "com.alibaba.datax.common.scala.record.DefaultRecord")));
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.CONFIG_ERROR, e);

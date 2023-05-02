@@ -16,15 +16,27 @@ object TerminateRecord {
 }
 
 class TerminateRecord private() extends Record {
-  override def addColumn(column: Column): Unit = ???
+  override def addColumn(column: Column): Unit = {
 
-  override def setColumn(i: Integer, column: Column): Unit = ???
+  }
 
-  override def getColumn(i: Integer): Column = ???
+  override def setColumn(i: Integer, column: Column): Unit = {
 
-  override def getColumnNumber: Integer = ???
+  }
 
-  override def getByteSize: Integer = ???
+  override def getColumn(i: Integer): Column = {
+    null
+  }
 
-  override def getMemorySize: Integer = ???
+  override def getColumnNumber: Integer = {
+    -1
+  }
+
+  override def getByteSize: Integer = {
+    0
+  }
+
+  override def getMemorySize: Integer = {
+    0
+  }
 }

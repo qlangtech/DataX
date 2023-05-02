@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -13,13 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.BytesColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
@@ -40,6 +36,7 @@ import com.datastax.driver.core.UDTValue;
 import com.datastax.driver.core.UserType;
 import com.google.common.reflect.TypeToken;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -267,7 +264,7 @@ public class CassandraReaderHelper {
       for (int i = 0; i < columnNumber; i++)
         try {
           if (rs.isNull(i)) {
-            record.addColumn(new StringColumn());
+            record.addColumn(new StringColumn(StringUtils.EMPTY));
           continue;
         }
         switch (metaData.getType(i).getName()) {
@@ -287,31 +284,31 @@ public class CassandraReaderHelper {
           break;
 
         case SMALLINT:
-          record.addColumn(new LongColumn((int)rs.getShort(i)));
+          record.addColumn(new LongColumn(  BigInteger.valueOf( rs.getLong(i) )));
           break;
 
         case TINYINT:
-          record.addColumn(new LongColumn((int)rs.getByte(i)));
+          record.addColumn(new LongColumn(BigInteger.valueOf( rs.getByte(i))));
           break;
 
         case INT:
-          record.addColumn(new LongColumn(rs.getInt(i)));
+          record.addColumn(new LongColumn(BigInteger.valueOf( rs.getInt(i))));
           break;
 
         case BIGINT:
-          record.addColumn(new LongColumn(rs.getLong(i)));
+          record.addColumn(new LongColumn(BigInteger.valueOf(rs.getLong(i))));
           break;
 
         case VARINT:
-          record.addColumn(new LongColumn(rs.getVarint(i)));
+          record.addColumn(new LongColumn((rs.getVarint(i))));
           break;
 
         case FLOAT:
-          record.addColumn(new DoubleColumn(rs.getFloat(i)));
+          record.addColumn(new DoubleColumn( BigDecimal.valueOf(rs.getFloat(i))));
           break;
 
         case DOUBLE:
-          record.addColumn(new DoubleColumn(rs.getDouble(i)));
+          record.addColumn(new DoubleColumn(BigDecimal.valueOf( rs.getDouble(i))));
           break;
 
         case DECIMAL:
@@ -319,15 +316,15 @@ public class CassandraReaderHelper {
           break;
 
         case DATE:
-          record.addColumn(new TimeColumn(rs.getDate(i).getMillisSinceEpoch()));
+          record.addColumn(new DateColumn( new Date( rs.getDate(i).getMillisSinceEpoch() )));
           break;
 
         case TIME:
-          record.addColumn(new LongColumn(rs.getTime(i)));
+          record.addColumn(new TimeColumn( new Time( rs.getTime(i) )));
           break;
 
         case TIMESTAMP:
-          record.addColumn(new TimeColumn(rs.getTimestamp(i)));
+          record.addColumn(new TimeStampColumn( new Timestamp( (rs.getTimestamp(i).getTime()))));
           break;
 
         case UUID:

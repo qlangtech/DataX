@@ -1,13 +1,9 @@
 package com.alibaba.datax.plugin.writer.mongodbwriter;
 
-import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.scala.element.BoolColumn;
-import com.alibaba.datax.common.scala.element.BytesColumn;
-import com.alibaba.datax.common.scala.element.TimeColumn;
-import com.alibaba.datax.common.scala.element.DoubleColumn;
-import com.alibaba.datax.common.scala.element.LongColumn;
+import com.alibaba.datax.common.scala.element.*;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -178,8 +174,7 @@ public class MongoDBWriter extends Writer {
                         //int是特殊类型, 其他类型按照保存时Column的类型进行处理
                         try {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
-                                    Integer.parseInt(
-                                            String.valueOf(record.getColumn(i).getRawData())));
+                                    ((record.getColumn(i).asLong().intValue())));
                         } catch (Exception e) {
                             super.getTaskPluginCollector().collectDirtyRecord(record, e);
                         }

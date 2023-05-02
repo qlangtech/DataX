@@ -5,6 +5,7 @@
         <groupId>com.alibaba.datax</groupId>
         <artifactId>datax-all</artifactId>
         <version>3.7.1</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>datax-core</artifactId>
