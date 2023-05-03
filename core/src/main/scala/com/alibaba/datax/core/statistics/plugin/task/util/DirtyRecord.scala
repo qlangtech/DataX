@@ -8,7 +8,6 @@ import java.util
 import com.alibaba.datax.common.exception.DataXException
 import com.alibaba.datax.common.scala.element.{Column, Record}
 import com.alibaba.datax.core.util.{FrameworkErrorCode, RecordUtils}
-import com.alibaba.fastjson.JSON
 
 object DirtyRecord {
   def asDirtyRecord(record: Record) = {

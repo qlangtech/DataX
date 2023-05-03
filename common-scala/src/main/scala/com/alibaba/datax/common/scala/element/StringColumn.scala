@@ -132,4 +132,14 @@ case class StringColumn(colVal: String) extends AnyVal with Column {
     if ("NaN" == data || "Infinity" == data || "-Infinity" == data)
       throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, String.format("String[\"%s\"]属于Double特殊类型，不能转为其他类型 .", data))
   }
+
+
+}
+
+object StringColumn{
+  def main(args: Array[String]): Unit = {
+    var s = StringColumn("123456")
+    println(s.colVal);
+    Thread.sleep(10000)
+  }
 }
