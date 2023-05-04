@@ -53,7 +53,6 @@
     <modules>
         <!--        <module>datax-config</module>-->
         <module>common</module>
-        <module>common-scala</module>
         <module>core</module>
         <module>transformer</module>
         <module>ftp-common</module>
