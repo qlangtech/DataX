@@ -1,4 +1,4 @@
-mvn install -Dmaven.test.skip=true -fn -pl  \
+mvn install -Dmaven.test.skip=true -pl  \
 hbase20xsqlreader\
 ,common-scala\
 ,plugin-unstructured-storage-util\
@@ -9,6 +9,7 @@ hbase20xsqlreader\
 ,mysqlreader\
 ,mysqlwriter\
 ,osswriter\
+,ossreader\
 ,postgresqlreader\
 ,postgresqlwriter\
 ,plugin-rdbms-util\

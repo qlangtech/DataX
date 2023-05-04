@@ -10,9 +10,9 @@ import java.util.Date
  * @create: 2023-04-25 16:26
  **/
 case class DateColumn(val date: Date) extends AnyVal with Column {
-  override def isNull: Boolean = ???
+  override def isNull: Boolean = this.date == null
 
-  override def asLong: lang.Long = ???
+  override def asLong: lang.Long = date.getTime
 
   override def asDouble: lang.Double = ???
 
@@ -20,7 +20,7 @@ case class DateColumn(val date: Date) extends AnyVal with Column {
 
   override def asDate: Date = this.date
 
-  override def asDate(dateFormat: String): Date = ???
+  override def asDate(dateFormat: String): Date = this.date
 
   override def asBytes: Array[Byte] = ???
 
@@ -28,7 +28,7 @@ case class DateColumn(val date: Date) extends AnyVal with Column {
 
   override def asBigDecimal: java.math.BigDecimal = ???
 
-  override def asBigInteger: BigInteger = ???
+  override def asBigInteger: BigInteger = BigInteger.valueOf(date.getTime)
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }

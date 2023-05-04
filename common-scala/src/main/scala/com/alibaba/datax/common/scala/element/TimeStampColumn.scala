@@ -5,6 +5,8 @@ import java.math.BigInteger
 import java.sql.Timestamp
 import java.util.Date
 
+import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
+
 /**
  *
  * @author: 百岁（baisui@qlangtech.com）
@@ -13,23 +15,29 @@ import java.util.Date
 case class TimeStampColumn(val stamp: Timestamp) extends AnyVal with Column {
   override def isNull: Boolean = stamp == null
 
-  override def asLong: lang.Long = ???
+  override def asLong: lang.Long = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def asDouble: lang.Double = ???
+  override def asDouble: lang.Double = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def asString: String = ???
+  override def asString: String = try {
+    DateCast.asString(this)
+  }
+  catch {
+    case e: Exception =>
+      throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, String.format("Date[%s]类型不能转为String .", this.toString))
+  }
 
   override def asDate: Date = this.stamp
 
   override def asDate(dateFormat: String): Date = this.stamp
 
-  override def asBytes: Array[Byte] = ???
+  override def asBytes: Array[Byte] = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def asBoolean: lang.Boolean = ???
+  override def asBoolean: lang.Boolean = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def asBigDecimal: java.math.BigDecimal = ???
+  override def asBigDecimal: java.math.BigDecimal = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def asBigInteger: BigInteger = ???
+  override def asBigInteger: BigInteger = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }

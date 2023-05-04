@@ -1,24 +1,18 @@
 package com.alibaba.datax.plugin.writer.clickhousewriter;
 
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
-import com.alibaba.datax.plugin.rdbms.writer.util.IStatementSetter;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
-import com.qlangtech.tis.plugin.ds.DataType;
 
 import java.sql.*;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class ClickhouseWriter extends Writer {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.ClickHouse;
@@ -30,7 +24,7 @@ public class ClickhouseWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE,this.containerContext);
+            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE, this.containerContext);
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
 
@@ -64,7 +58,7 @@ public class ClickhouseWriter extends Writer {
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
 
-            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(DATABASE_TYPE,this.containerContext) {
+            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(DATABASE_TYPE, this.containerContext) {
 
 //                @Override
 //                protected PreparedStatement fillPreparedStatementColumnType(

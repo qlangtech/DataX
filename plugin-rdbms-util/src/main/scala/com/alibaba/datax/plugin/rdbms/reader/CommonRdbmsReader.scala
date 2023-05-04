@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils
  **/
 object CommonRdbmsReader {
 
-  class Task(val dataBaseType: DataBaseType, val containerContext: IJobContainerContext, val taskGropuId: java.lang.Integer, val taskId: java.lang.Integer)
+  class Task(val dataBaseType: DataBaseType, val containerContext: IJobContainerContext, val taskGropuId: Int, val taskId: Int)
     extends BaseCommonRdbmsReader.BaseTask(dataBaseType, containerContext, taskGropuId, taskId) {
     override protected def buildRecord(recordSender: RecordSender, rs: ResultSet
                                        , cols: java.util.List[ColumnMetaData], columnNumber: Int

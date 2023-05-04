@@ -96,7 +96,7 @@ case class LongColumn(val _rowData: BigInteger) extends AnyVal with Column {
 
   override def isNull: Boolean = this._rowData == null
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }
 
 object LongColumn {

@@ -99,5 +99,5 @@ case class TimeColumn(val stamp: Time)
   //  def setSubType(subType: DateColumn.DateType) = this.subType = subType
   override def isNull: Boolean = this.stamp  == null
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }

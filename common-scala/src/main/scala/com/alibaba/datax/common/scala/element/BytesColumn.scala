@@ -38,5 +38,5 @@ case class BytesColumn(val bytes: Array[Byte]) extends AnyVal with Column {
 
   override def isNull: Boolean = this.bytes == null
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }

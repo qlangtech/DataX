@@ -73,5 +73,5 @@ case class BoolColumn(val bool: java.lang.Boolean) extends AnyVal with Column {
 
   override def isNull: Boolean = this.bool == null
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }

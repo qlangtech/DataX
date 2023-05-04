@@ -96,5 +96,5 @@ case class DoubleColumn(val data: BigDecimal) extends AnyVal with Column {
 
   override def isNull: Boolean = this.data == null
 
-  override def getByteSize: Integer = ???
+  override def getByteSize: Integer = 0
 }
