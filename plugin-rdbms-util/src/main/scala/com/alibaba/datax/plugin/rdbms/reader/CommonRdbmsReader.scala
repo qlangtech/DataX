@@ -106,8 +106,7 @@ object CommonRdbmsReader {
 
   }
 
-  class CommonRdbmsReader extends BaseCommonRdbmsReader {
-
-  }
+}
+class CommonRdbmsReader extends BaseCommonRdbmsReader {
 
 }
