@@ -32,7 +32,6 @@
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-common</artifactId>
-            <version>${datax-project-version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
