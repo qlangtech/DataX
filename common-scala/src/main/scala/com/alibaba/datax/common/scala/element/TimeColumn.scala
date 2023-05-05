@@ -3,7 +3,7 @@ package com.alibaba.datax.common.scala.element
 import java.sql.Time
 import java.util.Date
 
-import com.alibaba.datax.common.element.ColumnCast
+import com.alibaba.datax.common.element.Column
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 /**
@@ -25,7 +25,9 @@ case class TimeColumn(val stamp: Time)
  * 实际存储有date改为long的ms，节省存储
  **/
   extends AnyVal with Column {
- // private var subType = DateColumn.DateType.DATETIME
+
+
+  // private var subType = DateColumn.DateType.DATETIME
 
   //  /**
   //   * 构建值为null的DateColumn，使用Date子类型为DATETIME
@@ -69,6 +71,8 @@ case class TimeColumn(val stamp: Time)
   //    this.setSubType(DateColumn.DateType.DATETIME)
   //  }
 
+  override def getType(): Column.Type = Column.Type.DATE
+
   override def asLong = this.stamp.getTime //this.getRawData.asInstanceOf[Long]
 
   override def asString = try DateCast.asString(this)
@@ -97,7 +101,7 @@ case class TimeColumn(val stamp: Time)
   //  def getSubType = subType
   //
   //  def setSubType(subType: DateColumn.DateType) = this.subType = subType
-  override def isNull: Boolean = this.stamp  == null
+  override def isNull: Boolean = this.stamp == null
 
   override def getByteSize: Integer = 0
 }

@@ -2,7 +2,7 @@ package com.alibaba.datax.common.scala.element
 
 import java.math.{BigDecimal, BigInteger}
 
-import com.alibaba.datax.common.element.OverFlowUtil
+import com.alibaba.datax.common.element.{Column, OverFlowUtil}
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 case class DoubleColumn(val data: BigDecimal) extends AnyVal with Column {
@@ -38,6 +38,8 @@ case class DoubleColumn(val data: BigDecimal) extends AnyVal with Column {
   //  def this {
   //    this(null.asInstanceOf[String])
   //  }
+
+  override def getType(): Column.Type = Column.Type.DOUBLE
 
   override def asBigDecimal: BigDecimal = {
     if (null == this.data) return null

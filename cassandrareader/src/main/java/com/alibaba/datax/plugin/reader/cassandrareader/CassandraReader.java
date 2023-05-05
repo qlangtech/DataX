@@ -1,6 +1,6 @@
 package com.alibaba.datax.plugin.reader.cassandrareader;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;

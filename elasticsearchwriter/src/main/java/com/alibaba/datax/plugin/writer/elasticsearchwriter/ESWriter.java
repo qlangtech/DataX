@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.writer.elasticsearchwriter;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Column;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -310,11 +310,11 @@ public class ESWriter extends Writer {
                 // 所有时区参考 http://www.joda.org/joda-time/timezones.html
                 dtz = DateTimeZone.forID(esColumn.getTimezone());
             }
-            if (column.getType() != Column.Type.DATE && esColumn.getFormat() != null) {
+            if (column.getType() != Column.Type.DATE() && esColumn.getFormat() != null) {
                 DateTimeFormatter formatter = DateTimeFormat.forPattern(esColumn.getFormat());
                 date = formatter.withZone(dtz).parseDateTime(column.asString());
                 return date.toString();
-            } else if (column.getType() == Column.Type.DATE) {
+            } else if (column.getType() == Column.Type.DATE()) {
                 date = new DateTime(column.asLong(), dtz);
                 return date.toString();
             } else {

@@ -3,11 +3,13 @@ package com.alibaba.datax.common.scala.element
 import java.math.{BigDecimal, BigInteger}
 import java.util.Date
 
-import com.alibaba.datax.common.element.OverFlowUtil
+import com.alibaba.datax.common.element.{Column, OverFlowUtil}
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 case class LongColumn(val _rowData: BigInteger) extends AnyVal with Column {
 
+
+  override def getType(): Column.Type = Column.Type.LONG
 
   /**
    * 从整形字符串表示转为LongColumn，支持Java科学计数法

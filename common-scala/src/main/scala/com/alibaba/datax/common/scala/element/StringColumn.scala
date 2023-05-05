@@ -4,7 +4,7 @@ import java.math.{BigDecimal, BigInteger}
 import java.text.ParseException
 import java.util.Date
 
-import com.alibaba.datax.common.element.OverFlowUtil
+import com.alibaba.datax.common.element.{Column, OverFlowUtil}
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.FastDateFormat
@@ -15,6 +15,8 @@ import org.apache.commons.lang3.time.FastDateFormat
  * @create: 2023-04-25 12:55
  **/
 case class StringColumn(colVal: String) extends AnyVal with Column {
+
+  override def getType(): Column.Type = Column.Type.STRING
 
   override def isNull: Boolean = StringUtils.isEmpty(this.colVal)
 
@@ -136,7 +138,7 @@ case class StringColumn(colVal: String) extends AnyVal with Column {
 
 }
 
-object StringColumn{
+object StringColumn {
   def main(args: Array[String]): Unit = {
     var s = StringColumn("123456")
     println(s.colVal);

@@ -5,6 +5,7 @@ import java.math.BigInteger
 import java.sql.Timestamp
 import java.util.Date
 
+import com.alibaba.datax.common.element.Column
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 /**
@@ -13,6 +14,9 @@ import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
  * @create: 2023-04-25 16:41
  **/
 case class TimeStampColumn(val stamp: Timestamp) extends AnyVal with Column {
+
+  override def getType(): Column.Type = Column.Type.DATE
+
   override def isNull: Boolean = stamp == null
 
   override def asLong: lang.Long = throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .")

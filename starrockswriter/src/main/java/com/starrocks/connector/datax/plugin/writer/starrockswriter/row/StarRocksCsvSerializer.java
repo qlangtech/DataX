@@ -2,12 +2,12 @@ package com.starrocks.connector.datax.plugin.writer.starrockswriter.row;
 
 import java.io.StringWriter;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 
 import com.google.common.base.Strings;
 
 public class StarRocksCsvSerializer extends StarRocksBaseSerializer implements StarRocksISerializer {
-    
+
     private static final long serialVersionUID = 1L;
 
     private final String columnSeparator;

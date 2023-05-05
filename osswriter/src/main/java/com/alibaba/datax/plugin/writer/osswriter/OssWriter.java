@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -437,7 +437,7 @@ public class OssWriter extends Writer {
         /**
          * 对于同一个UploadID，该号码不但唯一标识这一块数据，也标识了这块数据在整个文件内的相对位置。
          * 如果你用同一个part号码，上传了新的数据，那么OSS上已有的这个号码的Part数据将被覆盖。
-         * 
+         *
          * @throws Exception
          * */
         private void uploadOnePart(

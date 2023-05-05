@@ -4,6 +4,8 @@ import java.lang
 import java.math.BigInteger
 import java.util.Date
 
+import com.alibaba.datax.common.element.Column
+
 /**
  *
  * @author: 百岁（baisui@qlangtech.com）
@@ -11,6 +13,9 @@ import java.util.Date
  **/
 case class DateColumn(val date: Date) extends AnyVal with Column {
   override def isNull: Boolean = this.date == null
+
+
+  override def getType(): Column.Type = Column.Type.DATE
 
   override def asLong: lang.Long = date.getTime
 

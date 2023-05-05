@@ -1,6 +1,6 @@
 package com.alibaba.datax.plugin.writer.odpswriter.util;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.odpswriter.model.PartitionInfo;
 import com.alibaba.datax.plugin.writer.odpswriter.model.UserDefinedFunction;

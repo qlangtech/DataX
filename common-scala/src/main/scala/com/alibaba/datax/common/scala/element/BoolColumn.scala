@@ -2,29 +2,33 @@ package com.alibaba.datax.common.scala.element
 
 import java.math.{BigDecimal, BigInteger}
 
+import com.alibaba.datax.common.element.Column
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 /**
  * Created by jingxing on 14-8-24.
  */
 case class BoolColumn(val bool: java.lang.Boolean) extends AnyVal with Column {
-//  def this(bool: Boolean) {
-//    this()
-//    super (bool, Column.Type.BOOL, 1)
-//  }
-//
-//  def this(data: String) {
-//    this(true)
-//    this.validate(data)
-//    if (null == data) {
-//      this.setRawData(null)
-//      this.setByteSize(0)
-//    }
-//    else {
-//      this.setRawData(Boolean.valueOf(data))
-//      this.setByteSize(1)
-//    }
-//  }
+
+  //  def this(bool: Boolean) {
+  //    this()
+  //    super (bool, Column.Type.BOOL, 1)
+  //  }
+  //
+  //  def this(data: String) {
+  //    this(true)
+  //    this.validate(data)
+  //    if (null == data) {
+  //      this.setRawData(null)
+  //      this.setByteSize(0)
+  //    }
+  //    else {
+  //      this.setRawData(Boolean.valueOf(data))
+  //      this.setByteSize(1)
+  //    }
+  //  }
+
+  override def getType(): Column.Type = Column.Type.BOOL
 
   override def asBoolean: java.lang.Boolean = {
     if (null == bool) return null

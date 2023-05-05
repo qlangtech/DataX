@@ -17,14 +17,13 @@
 
 package com.alibaba.datax.plugin.writer.doriswriter;
 
-import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +50,7 @@ public class DorisWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             options = new Keys(super.getPluginJobConf());
             options.doPretreatment();
-            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig,this.containerContext);
+            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig, this.containerContext);
         }
 
         @Override

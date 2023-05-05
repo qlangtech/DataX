@@ -1,6 +1,6 @@
 package com.alibaba.datax.plugin.writer.doriswriter;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.scala.element.Record;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.collections.CollectionUtils;
 

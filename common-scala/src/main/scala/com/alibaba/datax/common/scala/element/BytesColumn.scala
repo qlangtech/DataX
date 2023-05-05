@@ -1,12 +1,14 @@
 package com.alibaba.datax.common.scala.element
 
-import com.alibaba.datax.common.element.ColumnCast
+import com.alibaba.datax.common.element.{Column, ColumnCast}
 import com.alibaba.datax.common.exception.{CommonErrorCode, DataXException}
 
 /**
  * Created by jingxing on 14-8-24.
  */
 case class BytesColumn(val bytes: Array[Byte]) extends AnyVal with Column {
+
+  override def getType(): Column.Type = Column.Type.BYTES
 
   override def asBytes: Array[Byte] = {
     if (null == this.bytes) return null

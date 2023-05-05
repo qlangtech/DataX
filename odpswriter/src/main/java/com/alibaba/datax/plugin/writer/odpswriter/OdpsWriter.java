@@ -598,7 +598,7 @@ public class OdpsWriter extends Writer {
                     currentWriteBlocks = null;
                 }
 
-                com.alibaba.datax.common.element.Record dataXRecord = null;
+                com.alibaba.datax.common.scala.element.Record dataXRecord = null;
 
                 PerfRecord blockClose = new PerfRecord(super.getTaskGroupId(), super.getTaskId(), PerfRecord.PHASE.ODPS_BLOCK_CLOSE);
                 blockClose.start();

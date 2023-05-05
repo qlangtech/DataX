@@ -37,6 +37,11 @@
             <artifactId>guava</artifactId>
             <version>16.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-common-scala-${scala.binary.version}</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>
