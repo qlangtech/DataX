@@ -1,4 +1,6 @@
-mvn install -Dmaven.test.skip=true -pl  \
+mvn install -Dmaven.test.skip=true \
+-DaltDeploymentRepository=base::default::http://localhost:8080/release \
+-pl  \
 hbase20xsqlreader\
 ,plugin-unstructured-storage-util\
 ,odpswriter\
