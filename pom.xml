@@ -5,7 +5,7 @@
 
     <groupId>com.alibaba.datax</groupId>
     <artifactId>datax-all</artifactId>
-    <version>3.7.1</version>
+    <version>3.7.2</version>
     <dependencies>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -119,6 +119,7 @@
         <module>hbase20xsqlreader</module>
         <module>hbase20xsqlwriter</module>
         <module>kuduwriter</module>
+        <module>tis-datax-executor</module>
 
 
     </modules>

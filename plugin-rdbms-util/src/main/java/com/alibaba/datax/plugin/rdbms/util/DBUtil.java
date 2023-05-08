@@ -12,12 +12,16 @@ import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.qlangtech.tis.TIS;
+import com.qlangtech.tis.datax.IDataxProcessor;
+import com.qlangtech.tis.datax.IDataxReader;
+import com.qlangtech.tis.datax.impl.DataxProcessor;
 import com.qlangtech.tis.datax.impl.DataxWriter;
 import com.qlangtech.tis.offline.DataxUtils;
 import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.plugin.ds.*;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -420,10 +424,10 @@ public final class DBUtil {
      * @return a {@link ResultSet}
      * @throws SQLException if occurs SQLException.
      */
-    public static ResultSet query(Connection conn, String sql, int fetchSize)
+    public static Pair<Statement, ResultSet> query(Connection conn, String sql, int fetchSize, IDataSourceFactoryGetter readerDataSourceFactoryGetter)
             throws SQLException {
         // 默认3600 s 的query Timeout
-        return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND);
+        return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND, readerDataSourceFactoryGetter);
     }
 
     /**
@@ -436,15 +440,16 @@ public final class DBUtil {
      * @return
      * @throws SQLException
      */
-    public static ResultSet query(Connection conn, String sql, int fetchSize, int queryTimeout)
+    public static Pair<Statement, ResultSet> query(Connection conn, String sql
+            , int fetchSize, int queryTimeout, IDataSourceFactoryGetter readerDataSourceFactoryGetter)
             throws SQLException {
         // make sure autocommit is off
         conn.setAutoCommit(false);
-        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
+        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         stmt.setFetchSize(fetchSize);
         stmt.setQueryTimeout(queryTimeout);
-        return query(stmt, sql);
+        readerDataSourceFactoryGetter.setReaderStatement(stmt);
+        return Pair.of(stmt, query(stmt, sql));
     }
 
     /**
@@ -872,6 +877,13 @@ public final class DBUtil {
 
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config, IJobContainerContext containerContext) {
         return getDataSourceFactoryGetter(config, containerContext, (res) -> {
+
+            IDataxProcessor processor = DataxProcessor.load(null, res.resType, res.getDataXName());
+            IDataxReader reader = null;
+            if ((reader = processor.getReader(null)) instanceof IDataSourceFactoryGetter) {
+                return reader;
+            }
+
             final DBIdentity dbFactoryId = DBIdentity.parseId(config.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
             return new IDataSourceFactoryGetter() {
                 @Override

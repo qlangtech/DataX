@@ -24,13 +24,11 @@ import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Types;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -227,13 +225,17 @@ public class CommonRdbmsReader {
             DBUtil.dealWithSessionConfig(conn, readerSliceConfig, this.dataBaseType, basicMsg);
 
             int columnNumber = 0;
+            Pair<Statement, ResultSet> statResult = null;
             ResultSet rs = null;
+            Statement statement = null;
             try {
                 Integer rowFetchSize = this.readerDataSourceFactoryGetter.getRowFetchSize();
                 if (rowFetchSize == null) {
                     throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
                 }
-                rs = DBUtil.query(conn, querySql, rowFetchSize);
+                statResult = DBUtil.query(conn, querySql, rowFetchSize, this.readerDataSourceFactoryGetter);
+                rs = statResult.getRight();
+                statement = statResult.getKey();
                 queryPerfRecord.end();
 
                 ResultSetMetaData metaData = rs.getMetaData();
@@ -263,7 +265,7 @@ public class CommonRdbmsReader {
             } catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);
             } finally {
-                DBUtil.closeDBResources(null, conn);
+                DBUtil.closeDBResources(statement, conn);
             }
         }
 
