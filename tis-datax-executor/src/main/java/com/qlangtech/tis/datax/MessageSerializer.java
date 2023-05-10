@@ -20,20 +20,21 @@ package com.qlangtech.tis.datax;
 
 import com.alibaba.fastjson.JSON;
 import com.qlangtech.tis.manage.common.TisUTF8;
-import org.apache.curator.framework.recipes.queue.QueueSerializer;
+//import org.apache.curator.framework.recipes.queue.QueueSerializer;
 
 /**
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2021-05-06 15:33
  **/
-public class MessageSerializer implements QueueSerializer<CuratorDataXTaskMessage> {
+public class MessageSerializer  //implements QueueSerializer<CuratorDataXTaskMessage>
+{
 
-    @Override
+    //@Override
     public byte[] serialize(CuratorDataXTaskMessage item) {
         return JSON.toJSONString(item, false).getBytes(TisUTF8.get());
     }
 
-    @Override
+   // @Override
     public CuratorDataXTaskMessage deserialize(byte[] bytes) {
         return JSON.parseObject(new String(bytes), CuratorDataXTaskMessage.class);
     }

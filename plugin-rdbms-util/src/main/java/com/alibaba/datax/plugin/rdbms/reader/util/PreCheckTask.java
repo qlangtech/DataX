@@ -8,11 +8,13 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.druid.sql.parser.ParserException;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -66,17 +68,20 @@ public class PreCheckTask implements Callable<Boolean> {
 
                 /*verify query*/
                 ResultSet rs = null;
+                Statement statement = null;
                 try {
                     DBUtil.sqlValid(querySql, dataBaseType);
                     if (i == 0) {
-                        rs = DBUtil.query(conn, querySql, fetchSize);
+                        Pair<Statement, ResultSet> stat = DBUtil.query(conn, querySql, fetchSize, dataSourceFactoryGetter);
+                        statement = stat.getLeft();
+                        rs = stat.getRight();
                     }
                 } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, querySql);
                 } catch (Exception e) {
                     throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, userName);
                 } finally {
-                    DBUtil.closeDBResources(rs, null, null);
+                    DBUtil.closeDBResources(rs, statement, null);
                 }
                 /*verify splitPK*/
                 try {
@@ -84,7 +89,7 @@ public class PreCheckTask implements Callable<Boolean> {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql, dataBaseType);
                         if (i == 0) {
-                            SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
+                            SingleTableSplitUtil.precheckSplitPk(dataSourceFactoryGetter, conn, splitPkSql, fetchSize, table, userName);
                         }
                     }
                 } catch (ParserException e) {

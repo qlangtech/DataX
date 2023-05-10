@@ -14,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,11 +39,11 @@ public class SingleTableSplitUtil {
         //String splitMode = configuration.getString(Key.SPLIT_MODE, "");
         //if (Constant.SPLIT_MODE_RANDOMSAMPLE.equals(splitMode) && DATABASE_TYPE == DataBaseType.Oracle) {
         if (DATABASE_TYPE == DataBaseType.Oracle) {
-            rangeList = genSplitSqlForOracle(dataSourceFactoryGetter,splitPkName, table, where,
+            rangeList = genSplitSqlForOracle(dataSourceFactoryGetter, splitPkName, table, where,
                     configuration, adviceNum);
             // warn: mysql etc to be added...
         } else {
-            Pair<Object, Object> minMaxPK = getPkRange(dataSourceFactoryGetter,configuration);
+            Pair<Object, Object> minMaxPK = getPkRange(dataSourceFactoryGetter, configuration);
             if (null == minMaxPK) {
                 throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                         "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
@@ -148,14 +145,14 @@ public class SingleTableSplitUtil {
         String table = configuration.getString(Key.TABLE);
 
         Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcURL, username, password);
-        Pair<Object, Object> minMaxPK = checkSplitPk(conn, pkRangeSQL, fetchSize, table, username, configuration);
+        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, conn, pkRangeSQL, fetchSize, table, username, configuration);
         DBUtil.closeDBResources(null, null, conn);
         return minMaxPK;
     }
 
-    public static void precheckSplitPk(Connection conn, String pkRangeSQL, int fetchSize,
+    public static void precheckSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter, Connection conn, String pkRangeSQL, int fetchSize,
                                        String table, String username) {
-        Pair<Object, Object> minMaxPK = checkSplitPk(conn, pkRangeSQL, fetchSize, table, username, null);
+        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, conn, pkRangeSQL, fetchSize, table, username, null);
         if (null == minMaxPK) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
@@ -166,14 +163,18 @@ public class SingleTableSplitUtil {
      * 检测splitPk的配置是否正确。
      * configuration为null, 是precheck的逻辑，不需要回写PK_TYPE到configuration中
      */
-    private static Pair<Object, Object> checkSplitPk(Connection conn, String pkRangeSQL, int fetchSize, String table,
+    private static Pair<Object, Object> checkSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter, Connection conn, String pkRangeSQL, int fetchSize, String table,
                                                      String username, Configuration configuration) {
         LOG.info("split pk [sql={}] is running... ", pkRangeSQL);
         ResultSet rs = null;
+        Statement statement = null;
         Pair<Object, Object> minMaxPK = null;
         try {
             try {
-                rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
+
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, pkRangeSQL, fetchSize, dataSourceFactoryGetter);
+                rs = p.getRight();
+                statement = p.getKey();
             } catch (Exception e) {
                 throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL, table, username);
             }
@@ -217,7 +218,7 @@ public class SingleTableSplitUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, "DataX尝试切分表发生错误. 请检查您的配置并作出修改.", e);
         } finally {
-            DBUtil.closeDBResources(rs, null, null);
+            DBUtil.closeDBResources(rs, statement, null);
         }
 
         return minMaxPK;
@@ -316,10 +317,13 @@ public class SingleTableSplitUtil {
         Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcURL, username, password);
         LOG.info("split pk [sql={}] is running... ", splitSql);
         ResultSet rs = null;
+        Statement statement = null;
         List<Pair<Object, Integer>> splitedRange = new ArrayList<Pair<Object, Integer>>();
         try {
             try {
-                rs = DBUtil.query(conn, splitSql, fetchSize);
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, splitSql, fetchSize, dataSourceFactoryGetter);
+                rs = p.getRight();
+                statement = p.getKey();
             } catch (Exception e) {
                 throw RdbmsException.asQueryException(DATABASE_TYPE, e,
                         splitSql, table, username);
@@ -341,7 +345,7 @@ public class SingleTableSplitUtil {
                     DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "DataX尝试切分表发生错误. 请检查您的配置并作出修改.", e);
         } finally {
-            DBUtil.closeDBResources(rs, null, null);
+            DBUtil.closeDBResources(rs, statement, null);
         }
         LOG.debug(JSON.toJSONString(splitedRange));
         List<String> rangeSql = new ArrayList<String>();
