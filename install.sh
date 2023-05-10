@@ -1,4 +1,4 @@
-mvn install -Dmaven.test.skip=true \
+mvn clean deploy -Dmaven.test.skip=true \
 -DaltDeploymentRepository=base::default::http://localhost:8080/release \
 -pl  \
 tis-datax-executor\

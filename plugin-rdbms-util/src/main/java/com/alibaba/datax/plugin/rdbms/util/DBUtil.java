@@ -448,7 +448,9 @@ public final class DBUtil {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         stmt.setFetchSize(fetchSize);
         stmt.setQueryTimeout(queryTimeout);
-        readerDataSourceFactoryGetter.setReaderStatement(stmt);
+        DataSourceFactory dsFactory = readerDataSourceFactoryGetter.getDataSourceFactory();
+        dsFactory.setReaderStatement(stmt);
+        //readerDataSourceFactoryGetter.setReaderStatement(stmt);
         return Pair.of(stmt, query(stmt, sql));
     }
 

@@ -1,15 +1,18 @@
 package com.starrocks.connector.datax.plugin.writer.starrockswriter;
 
-import java.io.Serializable;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.google.common.collect.Maps;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * https://docs.starrocks.io/zh-cn/latest/sql-reference/sql-statements/data-manipulation/STREAM%20LOAD#%E8%AF%AD%E6%B3%95
+ */
 public class StarRocksWriterOptions implements Serializable {
 
     private static final long serialVersionUID = 1l;
@@ -21,6 +24,7 @@ public class StarRocksWriterOptions implements Serializable {
     private static final long FLUSH_INTERVAL = 300000;
 
     private static final String KEY_LOAD_PROPS_FORMAT = "format";
+
     public enum StreamLoadFormat {
         CSV, JSON;
     }
@@ -48,6 +52,7 @@ public class StarRocksWriterOptions implements Serializable {
 
     public StarRocksWriterOptions(Configuration options) {
         this.options = options;
+
         this.userSetColumns = options.getList(KEY_COLUMN, String.class).stream().map(str -> str.replace("`", "")).collect(Collectors.toList());
         if (1 == options.getList(KEY_COLUMN, String.class).size() && "*".trim().equals(options.getList(KEY_COLUMN, String.class).get(0))) {
             this.isWildcardColumn = true;
@@ -58,7 +63,7 @@ public class StarRocksWriterOptions implements Serializable {
         validateRequired();
         validateStreamLoadUrl();
     }
-    
+
     public String getJdbcUrl() {
         return options.getString(KEY_JDBC_URL);
     }
@@ -111,7 +116,13 @@ public class StarRocksWriterOptions implements Serializable {
     }
 
     public Map<String, Object> getLoadProps() {
-        return options.getMap(KEY_LOAD_PROPS);
+        Map<String, Object> loadProps = Maps.newHashMap();
+        // for json
+        loadProps.put("strip_outer_array", true);
+        loadProps.put("format", "JSON");
+
+        return loadProps;
+      //  return options.getMap(KEY_LOAD_PROPS);
     }
 
     public int getMaxRetries() {
@@ -132,22 +143,23 @@ public class StarRocksWriterOptions implements Serializable {
         Long interval = options.getLong(KEY_FLUSH_INTERVAL);
         return null == interval ? FLUSH_INTERVAL : interval;
     }
-    
+
     public int getFlushQueueLength() {
         Integer len = options.getInt(KEY_FLUSH_QUEUE_LENGTH);
         return null == len ? 1 : len;
     }
 
     public StreamLoadFormat getStreamLoadFormat() {
-        Map<String, Object> loadProps = getLoadProps();
-        if (null == loadProps) {
-            return StreamLoadFormat.CSV;
-        }
-        if (loadProps.containsKey(KEY_LOAD_PROPS_FORMAT) 
-            && StreamLoadFormat.JSON.name().equalsIgnoreCase(String.valueOf(loadProps.get(KEY_LOAD_PROPS_FORMAT)))) {
-            return StreamLoadFormat.JSON;
-        }
-        return StreamLoadFormat.CSV;
+        return StreamLoadFormat.JSON;
+//        Map<String, Object> loadProps = getLoadProps();
+//        if (null == loadProps) {
+//            return StreamLoadFormat.CSV;
+//        }
+//        if (loadProps.containsKey(KEY_LOAD_PROPS_FORMAT)
+//            && StreamLoadFormat.JSON.name().equalsIgnoreCase(String.valueOf(loadProps.get(KEY_LOAD_PROPS_FORMAT)))) {
+//            return StreamLoadFormat.JSON;
+//        }
+//        return StreamLoadFormat.CSV;
     }
 
     private void validateStreamLoadUrl() {
@@ -155,18 +167,18 @@ public class StarRocksWriterOptions implements Serializable {
         for (String host : urlList) {
             if (host.split(":").length < 2) {
                 throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                    "loadUrl的格式不正确，请输入 `fe_ip:fe_http_ip;fe_ip:fe_http_ip`。");
+                        "loadUrl的格式不正确，请输入 `fe_ip:fe_http_ip;fe_ip:fe_http_ip`。");
             }
         }
     }
 
     private void validateRequired() {
-       final String[] requiredOptionKeys = new String[]{
-            KEY_USERNAME,
-            KEY_DATABASE,
-            KEY_TABLE,
-            KEY_COLUMN,
-            KEY_LOAD_URL
+        final String[] requiredOptionKeys = new String[]{
+                KEY_USERNAME,
+                KEY_DATABASE,
+                KEY_TABLE,
+                KEY_COLUMN,
+                KEY_LOAD_URL
         };
         for (String optionKey : requiredOptionKeys) {
             options.getNecessaryValue(optionKey, DBUtilErrorCode.REQUIRED_VALUE);
