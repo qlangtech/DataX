@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -175,6 +176,13 @@ public class DorisStreamLoadObserver {
                     httpPut.setHeader(entry.getKey(), String.valueOf(entry.getValue()));
                 }
             }
+
+            // 2023/05/21 百岁 add for sequencde update
+            Optional<String> seqColName = this.options.getSeqColName();
+            if (seqColName.isPresent()) {
+                httpPut.setHeader("function_column.sequence_col", seqColName.get());
+            }
+
             httpPut.setHeader("Expect", "100-continue");
             httpPut.setHeader("label", label);
             httpPut.setHeader("two_phase_commit", "false");

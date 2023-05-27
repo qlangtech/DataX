@@ -137,6 +137,7 @@ public class DorisWriter extends Writer {
             }
             writerManager = new DorisWriterManager(options);
             rowCodec = DorisCodecFactory.createCodec(options);
+
         }
 
         @Override

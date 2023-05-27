@@ -880,11 +880,14 @@ public final class DBUtil {
     public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config, IJobContainerContext containerContext) {
         return getDataSourceFactoryGetter(config, containerContext, (res) -> {
 
-            IDataxProcessor processor = DataxProcessor.load(null, res.resType, res.getDataXName());
-            IDataxReader reader = null;
-            if ((reader = processor.getReader(null)) instanceof IDataSourceFactoryGetter) {
-                return reader;
+            if (res.resType != StoreResourceType.DataFlow) {
+                IDataxProcessor processor = DataxProcessor.load(null, res.resType, res.getDataXName());
+                IDataxReader reader = null;
+                if ((reader = processor.getReader(null)) instanceof IDataSourceFactoryGetter) {
+                    return reader;
+                }
             }
+
 
             final DBIdentity dbFactoryId = DBIdentity.parseId(config.getString(DataxUtils.DATASOURCE_FACTORY_IDENTITY));
             return new IDataSourceFactoryGetter() {

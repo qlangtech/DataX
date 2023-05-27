@@ -3,10 +3,12 @@ package com.alibaba.datax.plugin.writer.doriswriter;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import org.apache.commons.collections.MapUtils;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Keys implements Serializable {
@@ -49,6 +51,11 @@ public class Keys implements Serializable {
     private static final String LOAD_URL = "feLoadUrl";
     private static final String FLUSH_QUEUE_LENGTH = "flushQueueLength";
     private static final String LOAD_PROPS = "loadProps";
+
+    /**
+     * baisui add: https://doris.apache.org/zh-CN/docs/dev/data-operate/update-delete/sequence-column-manual
+     */
+    public static final String COL_SEQUENCE_NAME = "sequence_col_name";
 
     private static final String DEFAULT_LABEL_PREFIX = "datax_doris_writer_";
 
@@ -127,6 +134,15 @@ public class Keys implements Serializable {
 
     public Map<String, Object> getLoadProps() {
         return options.getMap(LOAD_PROPS);
+    }
+
+    public Optional<String> getSeqColName() {
+
+        Map<String, Object> props = getLoadProps();
+        if (MapUtils.isEmpty(props)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable((String) props.get(COL_SEQUENCE_NAME));
     }
 
     public int getMaxRetries() {
