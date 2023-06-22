@@ -120,13 +120,10 @@
 [INFO] |  +- org.apache.curator:apache-curator:pom:2.6.0:compile
 [INFO] |  +- org.codehaus.groovy:groovy-all:jar:2.1.6:compile
 [INFO] |  +- org.datanucleus:datanucleus-core:jar:3.2.10:compile
-[INFO] |  +- org.apache.calcite:calcite-core:jar:1.0.0-incubating:compile
-[INFO] |  |  +- org.apache.calcite:calcite-linq4j:jar:1.0.0-incubating:compile
-[INFO] |  |  +- org.pentaho:pentaho-aggdesigner-algorithm:jar:5.1.5-jhyde:compile
+[INFO] |  +- org.apache.calcite:calcite-avatica:jar:1.0.0-incubating:compile
 [INFO] |  |  +- eigenbase:eigenbase-properties:jar:1.1.4:compile
 [INFO] |  |  +- org.codehaus.janino:janino:jar:2.7.6:compile
 [INFO] |  |  \- org.codehaus.janino:commons-compiler:jar:2.7.6:compile
-[INFO] |  +- org.apache.calcite:calcite-avatica:jar:1.0.0-incubating:compile
 [INFO] |  +- stax:stax-api:jar:1.0.1:compile
 [INFO] |  \- jline:jline:jar:2.12:compile
 [INFO] +- org.apache.hive:hive-serde:jar:1.1.1:compile
@@ -155,6 +152,6 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  1.578 s
-[INFO] Finished at: 2023-06-22T18:46:45+08:00
+[INFO] Total time:  1.748 s
+[INFO] Finished at: 2023-06-22T19:03:50+08:00
 [INFO] ------------------------------------------------------------------------
