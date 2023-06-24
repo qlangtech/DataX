@@ -1,5 +1,5 @@
 mvn clean install -Dmaven.test.skip=true \
--DaltDeploymentRepository=base::default::http://localhost:8080/release \
+-Ptis-repo \
 -pl  \
 tis-datax-executor\
 ,hbase20xsqlreader\

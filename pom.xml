@@ -2,10 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    <parent>
+        <groupId>com.qlangtech.tis</groupId>
+        <artifactId>tis-parent</artifactId>
+        <version>2.0.3</version>
+    </parent>
     <groupId>com.alibaba.datax</groupId>
     <artifactId>datax-all</artifactId>
-    <version>3.8.0</version>
+    <version>${revision}</version>
     <dependencies>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -19,6 +23,7 @@
 
     <properties>
         <jdk-version>1.8</jdk-version>
+        <revision>3.8.0</revision>
         <datax-project-version>${project.version}</datax-project-version>
         <tis.version>${project.version}</tis.version>
         <commons-lang3-version>3.3.2</commons-lang3-version>
@@ -283,6 +288,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

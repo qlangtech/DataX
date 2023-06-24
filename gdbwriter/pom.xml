@@ -6,7 +6,7 @@
     <parent>
         <artifactId>datax-all</artifactId>
         <groupId>com.alibaba.datax</groupId>
-        <version>3.8.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>gdbwriter</artifactId>
