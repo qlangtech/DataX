@@ -6,12 +6,8 @@ tis-datax-executor\
 ,plugin-unstructured-storage-util\
 ,odpswriter\
 ,elasticsearchwriter\
-,hdfsreader\
-,hdfswriter\
 ,mysqlreader\
 ,mysqlwriter\
-,osswriter\
-,ossreader\
 ,postgresqlreader\
 ,postgresqlwriter\
 ,plugin-rdbms-util\
@@ -32,5 +28,5 @@ tis-datax-executor\
 ,cassandrawriter\
 ,mongodbreader\
 ,mongodbwriter \
--am
+-am -fn
 

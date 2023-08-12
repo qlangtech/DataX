@@ -5,93 +5,101 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.ftp.common.FtpHelper;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredReader;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FtpReader extends Reader {
-    public static class Job extends Reader.Job {
+    public static abstract class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
         private Configuration originConfig = null;
 
         private List<String> path = null;
 
-        private HashSet<String> sourceFiles;
+        private Set<ITDFSSession.Res> sourceFiles;
 
         // ftp链接参数
-        private String protocol;
-        private String host;
-        private int port;
-        private String username;
-        private String password;
-        private int timeout;
-        private String connectPattern;
-        private int maxTraversalLevel;
+        //  private String protocol;
+        // private String host;
+        // private int port;
+        // private String username;
+        // private String password;
+        // private int timeout;
+        // private String connectPattern;
+       // private int maxTraversalLevel;
 
-        private FtpHelper ftpHelper = null;
+        private ITDFSSession dfsSession = null;
 
         @Override
         public void init() {
             this.originConfig = this.getPluginJobConf();
-            this.sourceFiles = new HashSet<String>();
+            this.sourceFiles = new HashSet<ITDFSSession.Res>();
 
             this.validateParameter();
             UnstructuredStorageReaderUtil.validateParameter(this.originConfig);
-            this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
-            ftpHelper = FtpHelper.createFtpClient(originConfig);
+            //  this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
+            dfsSession = createTdfsSession();
 
         }
 
+        protected abstract ITDFSSession createTdfsSession();
+//        {
+//            return FtpHelper.createFtpClient(originConfig);
+//        }
+
         private void validateParameter() {
             //todo 常量
-            this.protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
-            boolean ptrotocolTag = "ftp".equals(this.protocol) || "sftp".equals(this.protocol);
-            if (!ptrotocolTag) {
-                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]", protocol));
-            }
-            this.host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
-            this.username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
-            this.password = this.originConfig.getNecessaryValue(Key.PASSWORD, FtpReaderErrorCode.REQUIRED_VALUE);
-            this.timeout = originConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
-            this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
+//            this.protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
+//            boolean ptrotocolTag = "ftp".equals(this.protocol) || "sftp".equals(this.protocol);
+//            if (!ptrotocolTag) {
+//                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+//                        String.format("仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]", protocol));
+//            }
+//            this.host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
+//            this.username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
+//            this.password = this.originConfig.getNecessaryValue(Key.PASSWORD, FtpReaderErrorCode.REQUIRED_VALUE);
+//            this.timeout = originConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
+          //  this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
 
             // only support connect pattern
-            this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
-            boolean connectPatternTag = "PORT".equals(connectPattern) || "PASV".equals(connectPattern);
-            if (!connectPatternTag) {
-                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("不支持您配置的ftp传输模式: [%s]", connectPattern));
-            } else {
-                this.originConfig.set(Key.CONNECTPATTERN, connectPattern);
-            }
+//            this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
+//            boolean connectPatternTag = "PORT".equals(connectPattern) || "PASV".equals(connectPattern);
+//            if (!connectPatternTag) {
+//                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+//                        String.format("不支持您配置的ftp传输模式: [%s]", connectPattern));
+//            } else {
+//                this.originConfig.set(Key.CONNECTPATTERN, connectPattern);
+//            }
 
             //path check
-            String pathInString = this.originConfig.getNecessaryValue(Key.PATH, FtpReaderErrorCode.REQUIRED_VALUE);
-            if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
-                path = new ArrayList<String>();
-                path.add(pathInString);
-            } else {
-                path = this.originConfig.getList(Key.PATH, String.class);
-                if (null == path || path.size() == 0) {
-                    throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定待读取的源目录或文件");
-                }
-                for (String eachPath : path) {
-                    if (!eachPath.startsWith("/")) {
-                        String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
-                        LOG.error(message);
-                        throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE, message);
-                    }
-                }
+//            String pathInString = this.originConfig.getNecessaryValue(Key.PATH, FtpReaderErrorCode.REQUIRED_VALUE);
+//            if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
+//                path = new ArrayList<String>();
+//                path.add(pathInString);
+//            } else {
+            path = Collections.singletonList( this.originConfig.getString(Key.PATH));
+            if (CollectionUtils.isEmpty(path)) {
+                throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定待读取的源目录或文件");
             }
+//            for (String eachPath : path) {
+//                if (!eachPath.startsWith("/")) {
+//                    String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
+//                    LOG.error(message);
+//                    throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE, message);
+//                }
+//            }
+            //}
 
         }
 
@@ -99,10 +107,12 @@ public class FtpReader extends Reader {
         public void prepare() {
             LOG.debug("prepare() begin...");
 
-            this.sourceFiles = ftpHelper.getAllFiles(path, 0, maxTraversalLevel);
+            this.sourceFiles = this.findAllMatchedRes(dfsSession); //dfsSession.getAllFiles(path, 0, maxTraversalLevel);
 
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
         }
+
+        protected abstract Set<ITDFSSession.Res> findAllMatchedRes(ITDFSSession dfsSession);
 
         @Override
         public void post() {
@@ -111,11 +121,14 @@ public class FtpReader extends Reader {
         @Override
         public void destroy() {
             try {
-                this.ftpHelper.logoutFtpServer();
+                this.dfsSession.close();
             } catch (Exception e) {
+//                String message = String.format(
+//                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
+//                        e.getMessage(), host, username, port);
+
                 String message = String.format(
-                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
-                        e.getMessage(), host, username, port);
+                        "关闭与ftp服务器连接失败: [%s]", e.getMessage());
                 LOG.error(message, e);
             }
         }
@@ -134,10 +147,10 @@ public class FtpReader extends Reader {
                         String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.originConfig.getString(Key.PATH)));
             }
 
-            List<List<String>> splitedSourceFiles = this.splitSourceFiles(new ArrayList(this.sourceFiles), splitNumber);
-            for (List<String> files : splitedSourceFiles) {
+            List<List<ITDFSSession.Res>> splitedSourceFiles = this.splitSourceFiles(new ArrayList<ITDFSSession.Res>(this.sourceFiles), splitNumber);
+            for (List<ITDFSSession.Res> files : splitedSourceFiles) {
                 Configuration splitedConfig = this.originConfig.clone();
-                splitedConfig.set(Constant.SOURCE_FILES, files.stream()
+                splitedConfig.set(Constant.SOURCE_FILES, files.stream().map((r) -> r.fullPath)
                         .filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList()));
                 readerSplitConfigs.add(splitedConfig);
             }
@@ -162,36 +175,41 @@ public class FtpReader extends Reader {
 
     }
 
-    public static class Task extends Reader.Task {
+    public static abstract class Task extends Reader.Task {
         private static Logger LOG = LoggerFactory.getLogger(Task.class);
 
-        private String host;
-        private int port;
-        private String username;
-        private String password;
-        private String protocol;
-        private int timeout;
-        private String connectPattern;
+//        private String host;
+//        private int port;
+//        private String username;
+//        private String password;
+//        private String protocol;
+//        private int timeout;
+//        private String connectPattern;
 
         private Configuration readerSliceConfig;
         private List<String> sourceFiles;
 
-        private FtpHelper ftpHelper = null;
+        private ITDFSSession hdfsSession = null;
+        private List<ColumnEntry> colsMeta = null;
+        protected Function<InputStream, UnstructuredReader> unstructuredReaderCreator;
+
 
         @Override
         public void init() {//连接重试
             /* for ftp connection */
             this.readerSliceConfig = this.getPluginJobConf();
-            this.host = readerSliceConfig.getString(Key.HOST);
-            this.protocol = readerSliceConfig.getString(Key.PROTOCOL);
-            this.username = readerSliceConfig.getString(Key.USERNAME);
-            this.password = readerSliceConfig.getString(Key.PASSWORD);
-            this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
+//            this.host = readerSliceConfig.getString(Key.HOST);
+//            this.protocol = readerSliceConfig.getString(Key.PROTOCOL);
+//            this.username = readerSliceConfig.getString(Key.USERNAME);
+//            this.password = readerSliceConfig.getString(Key.PASSWORD);
+//            this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
 
             this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
-            this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
-            ftpHelper = FtpHelper.createFtpClient(readerSliceConfig);
+            // this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
+            this.hdfsSession = createTdfsSession();// FtpHelper.createFtpClient(readerSliceConfig);
+            this.colsMeta = createColsMeta();
 
+            Objects.requireNonNull(unstructuredReaderCreator, "unstructuredReaderCreator can not be null");
 //            if ("sftp".equals(protocol)) {
 //                //sftp协议
 //                this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
@@ -206,6 +224,10 @@ public class FtpReader extends Reader {
 
         }
 
+        protected abstract List<ColumnEntry> createColsMeta();
+
+        protected abstract ITDFSSession createTdfsSession();
+
         @Override
         public void prepare() {
 
@@ -219,11 +241,10 @@ public class FtpReader extends Reader {
         @Override
         public void destroy() {
             try {
-                this.ftpHelper.logoutFtpServer();
+                this.hdfsSession.close();
             } catch (Exception e) {
                 String message = String.format(
-                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
-                        e.getMessage(), host, username, port);
+                        "关闭与ftp服务器连接失败: [%s] ", e.getMessage());
                 LOG.error(message, e);
             }
         }
@@ -231,14 +252,18 @@ public class FtpReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
             LOG.debug("start read source files...");
+
             for (String fileName : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", fileName));
-                InputStream inputStream = null;
 
-                inputStream = ftpHelper.getInputStream(fileName);
+                InputStream inputStream = hdfsSession.getInputStream(fileName);
 
-                UnstructuredStorageReaderUtil.readFromStream(inputStream, fileName, this.readerSliceConfig,
-                        recordSender, this.getTaskPluginCollector());
+                UnstructuredStorageReaderUtil.readFromStream(inputStream
+                        , this.unstructuredReaderCreator
+                        , Objects.requireNonNull(colsMeta, "colsMeta can not be null")
+                        , fileName
+                        , this.readerSliceConfig
+                        , recordSender, this.getTaskPluginCollector());
                 recordSender.flush();
             }
 

@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageRe
 import com.alibaba.datax.plugin.writer.ftpwriter.FtpWriterErrorCode;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.qlangtech.tis.plugin.tdfs.TDFSLinker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.ftp.FTP;
@@ -24,6 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StandardFtpHelper extends FtpHelper {
     private static final Logger LOG = LoggerFactory.getLogger(StandardFtpHelper.class);
     FTPClient ftpClient = null;
+
+    public StandardFtpHelper(TDFSLinker dfsLinker) {
+        super(dfsLinker);
+    }
 
     @Override
     public void loginFtpServer(String host, String username, String password, int port, int timeout,
@@ -142,10 +147,10 @@ public class StandardFtpHelper extends FtpHelper {
         return isExitFlag;
     }
 
-    HashSet<String> sourceFiles = new HashSet<String>();
+    HashSet<Res> sourceFiles = new HashSet<Res>();
 
     @Override
-    public HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
+    public HashSet<Res> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
         if (parentLevel < maxTraversalLevel) {
             String parentPath = null;// 父级目录,以'/'结尾
             int pathLen = directoryPath.length();
@@ -169,7 +174,7 @@ public class StandardFtpHelper extends FtpHelper {
                 }
             } else if (isFileExist(directoryPath)) {
                 // path指向具体文件
-                sourceFiles.add(directoryPath);
+                sourceFiles.add(new Res(directoryPath, directoryPath));
                 return sourceFiles;
             } else if (isSymbolicLink(directoryPath)) {
                 //path是链接文件
@@ -194,7 +199,7 @@ public class StandardFtpHelper extends FtpHelper {
                         }
                     } else if (ff.isFile()) {
                         // 是文件
-                        sourceFiles.add(filePath);
+                        sourceFiles.add(new Res(filePath, filePath));
                     } else if (ff.isSymbolicLink()) {
                         //是链接文件
                         String message = String.format("文件:[%s]是链接文件，当前不支持链接文件的读取", filePath);

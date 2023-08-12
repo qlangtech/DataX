@@ -1,8 +1,7 @@
 package com.alibaba.datax.plugin.ftp.common;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.ftpreader.Constant;
-import com.alibaba.datax.plugin.reader.ftpreader.Key;
+import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
+import com.qlangtech.tis.plugin.tdfs.TDFSLinker;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,20 +9,30 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public abstract class FtpHelper implements AutoCloseable {
+public abstract class FtpHelper implements ITDFSSession {
     public static final String KEY_META_FILE = "meta.json";
-    public static FtpHelper createFtpClient(Configuration cfg) {
-        String host = cfg.getString(Key.HOST);
-        String protocol = cfg.getString(Key.PROTOCOL);
-        String username = cfg.getString(Key.USERNAME);
-        String password = cfg.getString(Key.PASSWORD);
-        int timeout = cfg.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
-        int port = cfg.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
-        String connectPattern = cfg.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
-        return createFtpClient(protocol, host, username, password, port, timeout, connectPattern);
+    private final TDFSLinker dfsLinker;
+
+    public FtpHelper(TDFSLinker dfsLinker) {
+        this.dfsLinker = dfsLinker;
     }
 
-    public static FtpHelper createFtpClient(String protocol, String host
+    @Override
+    public final String getRootPath() {
+        return this.dfsLinker.getRootPath();
+    }
+//    public static FtpHelper createFtpClient(Configuration cfg) {
+//        String host = cfg.getString(Key.HOST);
+//        String protocol = cfg.getString(Key.PROTOCOL);
+//        String username = cfg.getString(Key.USERNAME);
+//        String password = cfg.getString(Key.PASSWORD);
+//        int timeout = cfg.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
+//        int port = cfg.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
+//        String connectPattern = cfg.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
+//        return createFtpClient(protocol, host, username, password, port, timeout, connectPattern);
+//    }
+
+    public static FtpHelper createFtpClient(TDFSLinker dfsLinker, String protocol, String host
             , String username, String password, int port, int timeout, String connectPattern) {
         if (port < 1) {
             throw new IllegalArgumentException("ftp port can not small than 1");
@@ -31,10 +40,10 @@ public abstract class FtpHelper implements AutoCloseable {
         FtpHelper ftpHelper = null;
         if ("sftp".equals(protocol)) {
             //sftp协议
-            ftpHelper = new SftpHelper();
+            ftpHelper = new SftpHelper(dfsLinker);
         } else if ("ftp".equals(protocol)) {
             // ftp 协议
-            ftpHelper = new StandardFtpHelper();
+            ftpHelper = new StandardFtpHelper(dfsLinker);
         }
         ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
         return ftpHelper;
@@ -104,17 +113,17 @@ public abstract class FtpHelper implements AutoCloseable {
      */
     public abstract boolean isSymbolicLink(String filePath);
 
-    /**
-     * @param @param  directoryPath
-     * @param @param  parentLevel 父目录的递归层数（首次为0）
-     * @param @param  maxTraversalLevel 允许的最大递归层数
-     * @param @return
-     * @return HashSet<String>
-     * @throws
-     * @Title: getListFiles
-     * @Description: 递归获取指定路径下符合条件的所有文件绝对路径
-     */
-    public abstract HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel);
+//    /**
+//     * @param @param  directoryPath
+//     * @param @param  parentLevel 父目录的递归层数（首次为0）
+//     * @param @param  maxTraversalLevel 允许的最大递归层数
+//     * @param @return
+//     * @return HashSet<String>
+//     * @throws
+//     * @Title: getListFiles
+//     * @Description: 递归获取指定路径下符合条件的所有文件绝对路径
+//     */
+//    public abstract HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel);
 
     /**
      * @param @param  filePath
@@ -136,8 +145,9 @@ public abstract class FtpHelper implements AutoCloseable {
      * @Title: getAllFiles
      * @Description: 获取指定路径列表下符合条件的所有文件的绝对路径
      */
-    public HashSet<String> getAllFiles(List<String> srcPaths, int parentLevel, int maxTraversalLevel) {
-        HashSet<String> sourceAllFiles = new HashSet<String>();
+    @Override
+    public HashSet<Res> getAllFiles(List<String> srcPaths, int parentLevel, int maxTraversalLevel) {
+        HashSet<Res> sourceAllFiles = new HashSet<Res>();
         if (!srcPaths.isEmpty()) {
             for (String eachPath : srcPaths) {
                 sourceAllFiles.addAll(getListFiles(eachPath, parentLevel, maxTraversalLevel));

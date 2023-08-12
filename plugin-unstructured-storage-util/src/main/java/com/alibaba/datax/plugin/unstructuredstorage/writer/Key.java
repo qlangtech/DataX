@@ -17,22 +17,22 @@ public class Key {
     public static final String COMPRESS = "compress";
 
     // not must, not default \N
-    public static final String NULL_FORMAT = "nullFormat";
+//    public static final String NULL_FORMAT = "nullFormat";
 
     // not must, date format old style, do not use this
     public static final String FORMAT = "format";
     // for writers ' data format
-    public static final String DATE_FORMAT = "dateFormat";
-    
+//    public static final String DATE_FORMAT = "dateFormat";
+
     // csv or plain text
     public static final String FILE_FORMAT = "fileFormat";
-    
+
     // writer headers
     public static final String HEADER = "header";
-    
+
     // writer maxFileSize
     public static final String MAX_FILE_SIZE = "maxFileSize";
-    
+
     // writer file type suffix, like .txt  .csv
     public static final String SUFFIX = "suffix";
 }

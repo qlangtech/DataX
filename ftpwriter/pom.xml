@@ -31,7 +31,10 @@
 			<artifactId>logback-classic</artifactId>
 		</dependency>
 
-
+		<dependency>
+			<groupId>com.qlangtech.tis</groupId>
+			<artifactId>tis-plugin</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>commons-net</groupId>

@@ -4,9 +4,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.ftp.common.FtpHelper;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
-import com.alibaba.datax.plugin.writer.ftpwriter.util.Constant;
+import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredWriter;
+import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -18,20 +18,20 @@ import java.util.List;
 import java.util.Set;
 
 public class FtpWriter extends Writer {
-    public static class Job extends Writer.Job {
+    public static abstract class Job extends Writer.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
         private Configuration writerSliceConfig = null;
         private Set<String> allFileExists = null;
 
-        private String protocol;
-        private String host;
-        private int port;
-        private String username;
-        private String password;
-        private int timeout;
+//        private String protocol;
+//        private String host;
+//        private int port;
+//        private String username;
+//        private String password;
+//        private int timeout;
 
-        private FtpHelper ftpHelper = null;
+        private ITDFSSession dfsSession = null;
 
         @Override
         public void init() {
@@ -71,9 +71,9 @@ public class FtpWriter extends Writer {
                 throw DataXException.asDataXException(
                         FtpWriterErrorCode.ILLEGAL_VALUE, message);
             }
-            this.port = this.writerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
-            this.writerSliceConfig.set(Key.PORT, this.port);
-            this.ftpHelper = FtpHelper.createFtpClient(writerSliceConfig);
+//            this.port = this.writerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
+//            this.writerSliceConfig.set(Key.PORT, this.port);
+            this.dfsSession = createTdfsSession();
 
 //            this.host = this.writerSliceConfig.getNecessaryValue(Key.HOST,
 //                    FtpWriterErrorCode.REQUIRED_VALUE);
@@ -103,6 +103,11 @@ public class FtpWriter extends Writer {
 
         }
 
+        protected abstract ITDFSSession createTdfsSession();
+//        {
+//            return FtpHelper.createFtpClient(writerSliceConfig);
+//        }
+
         @Override
         public void prepare() {
 
@@ -116,11 +121,11 @@ public class FtpWriter extends Writer {
             // 可能重新定义了，覆盖掉，Task中就可以拿到了
             this.writerSliceConfig.set(Key.PATH, path);
 
-            this.ftpHelper.mkDirRecursive(path);
+            this.dfsSession.mkDirRecursive(path);
             String writeMode = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE);
 
-            Set<String> allFileExists = this.ftpHelper.getAllFilesInDir(path, fileName);
+            Set<String> allFileExists = this.dfsSession.getAllFilesInDir(path, fileName);
             this.allFileExists = allFileExists;
 
             // truncate option handler
@@ -138,7 +143,7 @@ public class FtpWriter extends Writer {
                         fileName,
                         StringUtils.join(fullFileNameToDelete.iterator(), ", ")));
 
-                this.ftpHelper.deleteFiles(fullFileNameToDelete);
+                this.dfsSession.deleteFiles(fullFileNameToDelete);
             } else if ("append".equals(writeMode)) {
                 LOG.info(String
                         .format("由于您配置了writeMode append, 写入前不做清理工作, [%s] 目录下写入相应文件名前缀  [%s] 的文件",
@@ -184,11 +189,10 @@ public class FtpWriter extends Writer {
         @Override
         public void destroy() {
             try {
-                this.ftpHelper.logoutFtpServer();
+                this.dfsSession.close();
             } catch (Exception e) {
                 String message = String
-                        .format("关闭与ftp服务器连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
-                                host, username, port, e.getMessage());
+                        .format("关闭与ftp服务器连接失败,  errorMessage:%s", e.getMessage());
                 LOG.error(message, e);
             }
         }
@@ -201,7 +205,7 @@ public class FtpWriter extends Writer {
 
     }
 
-    public static class Task extends Writer.Task {
+    public static abstract class Task extends Writer.Task {
         private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
         private Configuration writerSliceConfig;
@@ -210,14 +214,15 @@ public class FtpWriter extends Writer {
         protected String fileName;
         private String suffix;
 
-        private String protocol;
-        private String host;
-        private int port;
-        private String username;
-        private String password;
-        private int timeout;
+//        private String protocol;
+//        private String host;
+//        private int port;
+//        private String username;
+//        private String password;
+//        private int timeout;
 
-        private FtpHelper ftpHelper = null;
+        private ITDFSSession ftpHelper = null;
+        //  private UnstructuredWriter unstructuredWriter = null;
 
         @Override
         public void init() {
@@ -229,15 +234,17 @@ public class FtpWriter extends Writer {
             this.suffix = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.SUFFIX);
 
-            this.host = this.writerSliceConfig.getString(Key.HOST);
-            this.port = this.writerSliceConfig.getInt(Key.PORT);
-            this.username = this.writerSliceConfig.getString(Key.USERNAME);
-            this.password = this.writerSliceConfig.getString(Key.PASSWORD);
-            this.timeout = this.writerSliceConfig.getInt(Key.TIMEOUT,
-                    Constant.DEFAULT_TIMEOUT);
-            this.protocol = this.writerSliceConfig.getString(Key.PROTOCOL);
+//            this.host = this.writerSliceConfig.getString(Key.HOST);
+//            this.port = this.writerSliceConfig.getInt(Key.PORT);
+//            this.username = this.writerSliceConfig.getString(Key.USERNAME);
+//            this.password = this.writerSliceConfig.getString(Key.PASSWORD);
+//            this.timeout = this.writerSliceConfig.getInt(Key.TIMEOUT,
+//                    Constant.DEFAULT_TIMEOUT);
+//            this.protocol = this.writerSliceConfig.getString(Key.PROTOCOL);
 
-            this.ftpHelper = FtpHelper.createFtpClient(writerSliceConfig);
+            this.ftpHelper = createTdfsSession(); // FtpHelper.createFtpClient(writerSliceConfig);
+            // this.unstructuredWriter = createUnstructuredWriter();
+
 //            if ("sftp".equalsIgnoreCase(this.protocol)) {
 //                this.ftpHelper = new SftpHelperImpl();
 //            } else if ("ftp".equalsIgnoreCase(this.protocol)) {
@@ -262,6 +269,9 @@ public class FtpWriter extends Writer {
 //            }
         }
 
+        protected abstract ITDFSSession createTdfsSession();
+
+        protected abstract UnstructuredWriter createUnstructuredWriter(OutputStream writer);
 
         @Override
         public void prepare() {
@@ -279,7 +289,7 @@ public class FtpWriter extends Writer {
             try {
                 outputStream = this.ftpHelper.getOutputStream(fileFullPath);
                 UnstructuredStorageWriterUtil.writeToStream(lineReceiver,
-                        outputStream, this.writerSliceConfig, this.fileName,
+                        outputStream, (writer) -> createUnstructuredWriter(writer), this.writerSliceConfig, this.fileName,
                         this.getTaskPluginCollector());
             } catch (Exception e) {
                 throw DataXException.asDataXException(
@@ -299,11 +309,10 @@ public class FtpWriter extends Writer {
         @Override
         public void destroy() {
             try {
-                this.ftpHelper.logoutFtpServer();
+                this.ftpHelper.close();
             } catch (Exception e) {
                 String message = String
-                        .format("关闭与ftp服务器连接失败, host:%s, username:%s, port:%s, errorMessage:%s",
-                                host, username, port, e.getMessage());
+                        .format("关闭与ftp服务器连接失败, errorMessage:%s", e.getMessage());
                 LOG.error(message, e);
             }
         }

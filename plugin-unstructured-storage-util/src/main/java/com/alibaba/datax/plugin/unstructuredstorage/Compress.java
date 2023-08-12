@@ -17,6 +17,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -24,7 +25,7 @@ import java.util.function.Function;
  * @create: 2022-10-16 15:31
  **/
 public enum Compress {
-    noCompress("none", (input) -> {
+    none("none", (input) -> {
         return input;
 //        return new BufferedReader(new InputStreamReader(input,
 //                encoding), Constant.DEFAULT_BUFFER_SIZE);
@@ -112,7 +113,7 @@ public enum Compress {
 
     public static Compress parse(String token) {
         if (StringUtils.isEmpty(token)) {
-            return noCompress;
+            return none;
         }
         for (Compress compress : Compress.values()) {
             if (compress.token.equalsIgnoreCase(token)) {
@@ -143,7 +144,7 @@ public enum Compress {
     }
 
     public BufferedWriter decorate(OutputStream outputStream, String encoding) throws UnsupportedEncodingException, IOException {
-        OutputStream output = compressCreator.apply(outputStream);
+        OutputStream output = Objects.requireNonNull(compressCreator.apply(outputStream), "comress outputStream can not be empty");
         return new BufferedWriter(new OutputStreamWriter(output, encoding), Constant.DEFAULT_BUFFER_SIZE);
     }
 

@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.unstructuredstorage.writer;
 
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -20,8 +19,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
 
 public class UnstructuredStorageWriterUtil {
     private UnstructuredStorageWriterUtil() {
@@ -172,23 +171,26 @@ public class UnstructuredStorageWriterUtil {
     }
 
     public static void writeToStream(RecordReceiver lineReceiver,
-                                     OutputStream outputStream, Configuration config, String context,
+                                     OutputStream outputStream, Function<OutputStream, UnstructuredWriter> unstructuredWriterCreator, Configuration config, String context,
                                      TaskPluginCollector taskPluginCollector) {
-        String encoding = config.getString(Key.ENCODING,
-                Constant.DEFAULT_ENCODING);
-        // handle blank encoding
-        if (StringUtils.isBlank(encoding)) {
-            LOG.warn(String.format("您配置的encoding为[%s], 使用默认值[%s]", encoding,
-                    Constant.DEFAULT_ENCODING));
-            encoding = Constant.DEFAULT_ENCODING;
-        }
-        String compress = config.getString(Key.COMPRESS);
 
-        BufferedWriter writer = null;
+//        String encoding = config.getString(Key.ENCODING,
+//                Constant.DEFAULT_ENCODING);
+//        // handle blank encoding
+//        if (StringUtils.isBlank(encoding)) {
+//            LOG.warn(String.format("您配置的encoding为[%s], 使用默认值[%s]", encoding,
+//                    Constant.DEFAULT_ENCODING));
+//            encoding = Constant.DEFAULT_ENCODING;
+//        }
+      //  String compress = config.getString(Key.COMPRESS);
+
+      //  BufferedWriter writer = null;
         // compress logic
+        UnstructuredWriter unstructuredWriter= null;
         try {
-            writer = Compress.parse(compress).decorate(outputStream, encoding);
-
+           // writer = Compress.parse(compress).decorate(outputStream, encoding);
+             unstructuredWriter = unstructuredWriterCreator.apply(outputStream);
+            Objects.requireNonNull(unstructuredWriter, "unstructuredWriter can not be null");
 //            if (null == compress) {
 //                writer = new BufferedWriter(new OutputStreamWriter(
 //                        outputStream, encoding));
@@ -215,13 +217,12 @@ public class UnstructuredStorageWriterUtil {
 //                                            compress));
 //                }
 //            }
-            UnstructuredStorageWriterUtil.doWriteToStream(lineReceiver, writer,
-                    context, config, taskPluginCollector);
-        } catch (UnsupportedEncodingException uee) {
-            throw DataXException
-                    .asDataXException(
-                            UnstructuredStorageWriterErrorCode.Write_FILE_WITH_CHARSET_ERROR,
-                            String.format("不支持的编码格式 : [%s]", encoding), uee);
+            UnstructuredStorageWriterUtil.doWriteToStream(lineReceiver, unstructuredWriter, context, config, taskPluginCollector);
+     //   } catch (UnsupportedEncodingException uee) {
+//            throw DataXException
+//                    .asDataXException(
+//                            UnstructuredStorageWriterErrorCode.Write_FILE_WITH_CHARSET_ERROR,
+//                            String.format("不支持的编码格式 : [%s]", encoding), uee);
         } catch (NullPointerException e) {
             throw DataXException.asDataXException(
                     UnstructuredStorageWriterErrorCode.RUNTIME_EXCEPTION,
@@ -231,26 +232,26 @@ public class UnstructuredStorageWriterUtil {
                     UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR,
                     String.format("流写入错误 : [%s]", context), e);
         } finally {
-            IOUtils.closeQuietly(writer);
+            IOUtils.closeQuietly(unstructuredWriter);
         }
     }
 
-    private static void doWriteToStream(RecordReceiver lineReceiver,
-                                        BufferedWriter writer, String contex, Configuration config,
+    private static void doWriteToStream(RecordReceiver lineReceiver, UnstructuredWriter unstructuredWriter,
+                                        String contex, Configuration config,
                                         TaskPluginCollector taskPluginCollector) throws IOException {
 
-        String nullFormat = config.getString(Key.NULL_FORMAT);
+        // String nullFormat = config.getString(Key.NULL_FORMAT);
 
         // 兼容format & dataFormat
-        String dateFormat = config.getString(Key.DATE_FORMAT);
-        DateFormat dateParse = null; // warn: 可能不兼容
-        if (StringUtils.isNotBlank(dateFormat)) {
-            dateParse = new SimpleDateFormat(dateFormat);
-        }
+        // String dateFormat = config.getString(Key.DATE_FORMAT);
+//        DateFormat dateParse = null; // warn: 可能不兼容
+//        if (StringUtils.isNotBlank(dateFormat)) {
+//            dateParse = new SimpleDateFormat(dateFormat);
+//        }
 
         // warn: default false
-        String fileFormat = config.getString(Key.FILE_FORMAT,
-                Constant.FILE_FORMAT_TEXT);
+//        String fileFormat = config.getString(Key.FILE_FORMAT,
+//                Constant.FILE_FORMAT_TEXT);
 
         String delimiterInStr = config.getString(Key.FIELD_DELIMITER);
         if (null != delimiterInStr && 1 != delimiterInStr.length()) {
@@ -264,21 +265,22 @@ public class UnstructuredStorageWriterUtil {
         }
 
         // warn: fieldDelimiter could not be '' for no fieldDelimiter
-        char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
-                Constant.DEFAULT_FIELD_DELIMITER);
+//        char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
+//                Constant.DEFAULT_FIELD_DELIMITER);
 
-        UnstructuredWriter unstructuredWriter = TextCsvWriterManager
-                .produceUnstructuredWriter(fileFormat, fieldDelimiter, writer);
+//        UnstructuredWriter unstructuredWriter = TextCsvWriterManager
+//                .produceUnstructuredWriter(fileFormat, fieldDelimiter, writer);
 
         List<String> headers = config.getList(Key.HEADER, String.class);
-        if (null != headers && !headers.isEmpty()) {
-            unstructuredWriter.writeOneRecord(headers);
-        }
+//        if (null != headers && !headers.isEmpty()) {
+//            unstructuredWriter.writeOneRecord(headers);
+//        }
+        unstructuredWriter.writeHeader(headers);
 
         Record record = null;
         while ((record = lineReceiver.getFromReader()) != null) {
             UnstructuredStorageWriterUtil.transportOneRecord(record,
-                    nullFormat, dateParse, taskPluginCollector,
+                    null, null, taskPluginCollector,
                     unstructuredWriter);
         }
 
@@ -293,35 +295,35 @@ public class UnstructuredStorageWriterUtil {
                                           DateFormat dateParse, TaskPluginCollector taskPluginCollector,
                                           UnstructuredWriter unstructuredWriter) {
         // warn: default is null
-        if (null == nullFormat) {
-            nullFormat = "null";
-        }
+//        if (null == nullFormat) {
+//            nullFormat = "null";
+//        }
         try {
-            List<String> splitedRows = new ArrayList<String>();
-            int recordLength = record.getColumnNumber();
-            if (0 != recordLength) {
-                Column column;
-                for (int i = 0; i < recordLength; i++) {
-                    column = record.getColumn(i);
-                    if (null != column.getRawData()) {
-                        boolean isDateColumn = column instanceof DateColumn;
-                        if (!isDateColumn) {
-                            splitedRows.add(column.asString());
-                        } else {
-                            if (null != dateParse) {
-                                splitedRows.add(dateParse.format(column
-                                        .asDate()));
-                            } else {
-                                splitedRows.add(column.asString());
-                            }
-                        }
-                    } else {
-                        // warn: it's all ok if nullFormat is null
-                        splitedRows.add(nullFormat);
-                    }
-                }
-            }
-            unstructuredWriter.writeOneRecord(splitedRows);
+//            List<String> splitedRows = new ArrayList<String>();
+//            int recordLength = record.getColumnNumber();
+//            if (0 != recordLength) {
+//                Column column;
+//                for (int i = 0; i < recordLength; i++) {
+//                    column = record.getColumn(i);
+//                    if (null != column.getRawData()) {
+//                        boolean isDateColumn = column instanceof DateColumn;
+//                        if (!isDateColumn) {
+//                            splitedRows.add(column.asString());
+//                        } else {
+//                            if (null != dateParse) {
+//                                splitedRows.add(dateParse.format(column
+//                                        .asDate()));
+//                            } else {
+//                                splitedRows.add(column.asString());
+//                            }
+//                        }
+//                    } else {
+//                        // warn: it's all ok if nullFormat is null
+//                        splitedRows.add(nullFormat);
+//                    }
+//                }
+//            }
+            unstructuredWriter.writeOneRecord(record);
         } catch (Exception e) {
             // warn: dirty data
             taskPluginCollector.collectDirtyRecord(record, e);

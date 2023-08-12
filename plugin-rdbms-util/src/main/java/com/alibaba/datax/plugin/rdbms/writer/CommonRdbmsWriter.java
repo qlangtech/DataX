@@ -579,26 +579,25 @@ public class CommonRdbmsWriter {
                     } catch (SQLException e) {
 
                         if (TisAppLaunch.isTestMock()) {
-                            // 试图找到哪一列有问题
-                            final int allCols = this.columnNumber;
-                            for (int tryColNumer = allCols; tryColNumer > 0; tryColNumer--) {
-                                try {
-                                    preparedStatement = connection
-                                            .prepareStatement(this.writeRecordSql);
-                                    preparedStatement = fillPreparedStatement(
-                                            preparedStatement, record);
-                                    for (int startNullIndex = (tryColNumer); startNullIndex < allCols; startNullIndex++) {
-                                        preparedStatement.setNull(startNullIndex + 1, this.resultSetMetaData.get(startNullIndex).getLeft().getType().type);
-                                    }
-                                    preparedStatement.execute();
-                                    LOG.info("success columnNumber:" + columnNumber + "," + this.resultSetMetaData.get(columnNumber).getLeft());
-                                    break;
-                                } catch (Throwable ex) {
-                                    // ex.printStackTrace();
-                                } finally {
-                                    this.columnNumber--;
-                                }
-                            }
+//                            // 试图找到哪一列有问题
+//                            final int allCols = this.columnNumber;
+//                            for (int tryColNumer = allCols; tryColNumer > 0; tryColNumer--) {
+//                                try {
+//                                    preparedStatement = connection.prepareStatement(this.writeRecordSql);
+//                                    preparedStatement = fillPreparedStatement(preparedStatement, record);
+//
+//                                    for (int startNullIndex = (tryColNumer); startNullIndex < allCols; startNullIndex++) {
+//                                        preparedStatement.setNull(startNullIndex + 1, this.resultSetMetaData.get(startNullIndex).getLeft().getType().type);
+//                                    }
+//                                    preparedStatement.execute();
+//                                    LOG.info("success columnNumber:" + columnNumber + "," + this.resultSetMetaData.get(columnNumber).getLeft());
+//                                    break;
+//                                } catch (Throwable ex) {
+//                                    // ex.printStackTrace();
+//                                } finally {
+//                                    //  this.columnNumber--;
+//                                }
+//                            }
                         }
                         LOG.debug(e.toString());
 

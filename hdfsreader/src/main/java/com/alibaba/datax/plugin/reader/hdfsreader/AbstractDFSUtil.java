@@ -137,8 +137,9 @@ public abstract class AbstractDFSUtil {
             Text value = new Text();
             while (reader.next(key, value)) {
                 if (StringUtils.isNotBlank(value.toString())) {
-                    UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
-                            readerSliceConfig, taskPluginCollector, value.toString());
+                    throw new UnsupportedOperationException();
+//                    UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
+//                            readerSliceConfig, taskPluginCollector, value.toString());
                 }
             }
         } catch (Exception e) {
@@ -154,124 +155,124 @@ public abstract class AbstractDFSUtil {
 
     public void rcFileStartRead(String sourceRcFilePath, Configuration readerSliceConfig,
                                 RecordSender recordSender, TaskPluginCollector taskPluginCollector) {
-        LOG.info(String.format("Start Read rcfile [%s].", sourceRcFilePath));
-        List<ColumnEntry> column = UnstructuredStorageReaderUtil
-                .getListColumnEntry(readerSliceConfig, com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
-        // warn: no default value '\N'
-        String nullFormat = readerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.NULL_FORMAT);
-
-        Path rcFilePath = new Path(sourceRcFilePath);
-        FileSystem fs = null;
-        RCFileRecordReader recordReader = null;
-        try {
-            fs = FileSystem.get(rcFilePath.toUri(), hadoopConf);
-            long fileLen = fs.getFileStatus(rcFilePath).getLen();
-            FileSplit split = new FileSplit(rcFilePath, 0, fileLen, (String[]) null);
-            recordReader = new RCFileRecordReader(hadoopConf, split);
-            LongWritable key = new LongWritable();
-            BytesRefArrayWritable value = new BytesRefArrayWritable();
-            Text txt = new Text();
-            while (recordReader.next(key, value)) {
-                String[] sourceLine = new String[value.size()];
-                txt.clear();
-                for (int i = 0; i < value.size(); i++) {
-                    BytesRefWritable v = value.get(i);
-                    txt.set(v.getData(), v.getStart(), v.getLength());
-                    sourceLine[i] = txt.toString();
-                }
-                UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
-                        column, sourceLine, nullFormat, taskPluginCollector);
-            }
-
-        } catch (IOException e) {
-            String message = String.format("读取文件[%s]时出错", sourceRcFilePath);
-            LOG.error(message);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_RCFILE_ERROR, message, e);
-        } finally {
-            try {
-                if (recordReader != null) {
-                    recordReader.close();
-                    LOG.info("Finally, Close RCFileRecordReader.");
-                }
-            } catch (IOException e) {
-                LOG.warn(String.format("finally: 关闭RCFileRecordReader失败, %s", e.getMessage()));
-            }
-        }
+//        LOG.info(String.format("Start Read rcfile [%s].", sourceRcFilePath));
+//        List<ColumnEntry> column = UnstructuredStorageReaderUtil
+//                .getListColumnEntry(readerSliceConfig, com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+//        // warn: no default value '\N'
+//        String nullFormat = readerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.NULL_FORMAT);
+//
+//        Path rcFilePath = new Path(sourceRcFilePath);
+//        FileSystem fs = null;
+//        RCFileRecordReader recordReader = null;
+//        try {
+//            fs = FileSystem.get(rcFilePath.toUri(), hadoopConf);
+//            long fileLen = fs.getFileStatus(rcFilePath).getLen();
+//            FileSplit split = new FileSplit(rcFilePath, 0, fileLen, (String[]) null);
+//            recordReader = new RCFileRecordReader(hadoopConf, split);
+//            LongWritable key = new LongWritable();
+//            BytesRefArrayWritable value = new BytesRefArrayWritable();
+//            Text txt = new Text();
+//            while (recordReader.next(key, value)) {
+//                String[] sourceLine = new String[value.size()];
+//                txt.clear();
+//                for (int i = 0; i < value.size(); i++) {
+//                    BytesRefWritable v = value.get(i);
+//                    txt.set(v.getData(), v.getStart(), v.getLength());
+//                    sourceLine[i] = txt.toString();
+//                }
+//                UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
+//                        column, sourceLine, nullFormat, taskPluginCollector);
+//            }
+//
+//        } catch (IOException e) {
+//            String message = String.format("读取文件[%s]时出错", sourceRcFilePath);
+//            LOG.error(message);
+//            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_RCFILE_ERROR, message, e);
+//        } finally {
+//            try {
+//                if (recordReader != null) {
+//                    recordReader.close();
+//                    LOG.info("Finally, Close RCFileRecordReader.");
+//                }
+//            } catch (IOException e) {
+//                LOG.warn(String.format("finally: 关闭RCFileRecordReader失败, %s", e.getMessage()));
+//            }
+//        }
 
     }
 
     public void orcFileStartRead(String sourceOrcFilePath, Configuration readerSliceConfig,
                                  RecordSender recordSender, TaskPluginCollector taskPluginCollector) {
-        LOG.info(String.format("Start Read orcfile [%s].", sourceOrcFilePath));
-        List<ColumnEntry> column = UnstructuredStorageReaderUtil
-                .getListColumnEntry(readerSliceConfig, com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
-        String nullFormat = readerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.NULL_FORMAT);
-        StringBuilder allColumns = new StringBuilder();
-        StringBuilder allColumnTypes = new StringBuilder();
-        boolean isReadAllColumns = false;
-        int columnIndexMax = -1;
-        // 判断是否读取所有列
-        if (null == column || column.size() == 0) {
-            int allColumnsCount = getAllColumnsCount(sourceOrcFilePath);
-            columnIndexMax = allColumnsCount - 1;
-            isReadAllColumns = true;
-        } else {
-            columnIndexMax = getMaxIndex(column);
-        }
-        for (int i = 0; i <= columnIndexMax; i++) {
-            allColumns.append("col");
-            allColumnTypes.append("string");
-            if (i != columnIndexMax) {
-                allColumns.append(",");
-                allColumnTypes.append(":");
-            }
-        }
-        if (columnIndexMax >= 0) {
-            JobConf conf = new JobConf(hadoopConf);
-            Path orcFilePath = new Path(sourceOrcFilePath);
-            Properties p = new Properties();
-            p.setProperty("columns", allColumns.toString());
-            p.setProperty("columns.types", allColumnTypes.toString());
-            try {
-                OrcSerde serde = new OrcSerde();
-                serde.initialize(conf, p);
-                StructObjectInspector inspector = (StructObjectInspector) serde.getObjectInspector();
-                InputFormat<?, ?> in = new OrcInputFormat();
-                FileInputFormat.setInputPaths(conf, orcFilePath.toString());
-
-                //If the network disconnected, will retry 45 times, each time the retry interval for 20 seconds
-                //Each file as a split
-                //TODO multy threads
-                InputSplit[] splits = in.getSplits(conf, 1);
-
-                RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
-                Object key = reader.createKey();
-                Object value = reader.createValue();
-                // 获取列信息
-                List<? extends StructField> fields = inspector.getAllStructFieldRefs();
-
-                List<Object> recordFields;
-                while (reader.next(key, value)) {
-                    recordFields = new ArrayList<Object>();
-
-                    for (int i = 0; i <= columnIndexMax; i++) {
-                        Object field = inspector.getStructFieldData(value, fields.get(i));
-                        recordFields.add(field);
-                    }
-                    transportOneRecord(column, recordFields, recordSender,
-                            taskPluginCollector, isReadAllColumns, nullFormat);
-                }
-                reader.close();
-            } catch (Exception e) {
-                String message = String.format("从orcfile文件路径[%s]中读取数据发生异常，请联系系统管理员。"
-                        , sourceOrcFilePath);
-                LOG.error(message);
-                throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
-            }
-        } else {
-            String message = String.format("请确认您所读取的列配置正确！columnIndexMax 小于0,column:%s", JSON.toJSONString(column));
-            throw DataXException.asDataXException(HdfsReaderErrorCode.BAD_CONFIG_VALUE, message);
-        }
+//        LOG.info(String.format("Start Read orcfile [%s].", sourceOrcFilePath));
+//        List<ColumnEntry> column = UnstructuredStorageReaderUtil
+//                .getListColumnEntry(readerSliceConfig, com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+//        String nullFormat = readerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.NULL_FORMAT);
+//        StringBuilder allColumns = new StringBuilder();
+//        StringBuilder allColumnTypes = new StringBuilder();
+//        boolean isReadAllColumns = false;
+//        int columnIndexMax = -1;
+//        // 判断是否读取所有列
+//        if (null == column || column.size() == 0) {
+//            int allColumnsCount = getAllColumnsCount(sourceOrcFilePath);
+//            columnIndexMax = allColumnsCount - 1;
+//            isReadAllColumns = true;
+//        } else {
+//            columnIndexMax = getMaxIndex(column);
+//        }
+//        for (int i = 0; i <= columnIndexMax; i++) {
+//            allColumns.append("col");
+//            allColumnTypes.append("string");
+//            if (i != columnIndexMax) {
+//                allColumns.append(",");
+//                allColumnTypes.append(":");
+//            }
+//        }
+//        if (columnIndexMax >= 0) {
+//            JobConf conf = new JobConf(hadoopConf);
+//            Path orcFilePath = new Path(sourceOrcFilePath);
+//            Properties p = new Properties();
+//            p.setProperty("columns", allColumns.toString());
+//            p.setProperty("columns.types", allColumnTypes.toString());
+//            try {
+//                OrcSerde serde = new OrcSerde();
+//                serde.initialize(conf, p);
+//                StructObjectInspector inspector = (StructObjectInspector) serde.getObjectInspector();
+//                InputFormat<?, ?> in = new OrcInputFormat();
+//                FileInputFormat.setInputPaths(conf, orcFilePath.toString());
+//
+//                //If the network disconnected, will retry 45 times, each time the retry interval for 20 seconds
+//                //Each file as a split
+//                //TODO multy threads
+//                InputSplit[] splits = in.getSplits(conf, 1);
+//
+//                RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
+//                Object key = reader.createKey();
+//                Object value = reader.createValue();
+//                // 获取列信息
+//                List<? extends StructField> fields = inspector.getAllStructFieldRefs();
+//
+//                List<Object> recordFields;
+//                while (reader.next(key, value)) {
+//                    recordFields = new ArrayList<Object>();
+//
+//                    for (int i = 0; i <= columnIndexMax; i++) {
+//                        Object field = inspector.getStructFieldData(value, fields.get(i));
+//                        recordFields.add(field);
+//                    }
+//                    transportOneRecord(column, recordFields, recordSender,
+//                            taskPluginCollector, isReadAllColumns, nullFormat);
+//                }
+//                reader.close();
+//            } catch (Exception e) {
+//                String message = String.format("从orcfile文件路径[%s]中读取数据发生异常，请联系系统管理员。"
+//                        , sourceOrcFilePath);
+//                LOG.error(message);
+//                throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
+//            }
+//        } else {
+//            String message = String.format("请确认您所读取的列配置正确！columnIndexMax 小于0,column:%s", JSON.toJSONString(column));
+//            throw DataXException.asDataXException(HdfsReaderErrorCode.BAD_CONFIG_VALUE, message);
+//        }
     }
 
     public boolean checkHdfsFileType(String filepath, String specifiedFileType) {
@@ -449,124 +450,125 @@ public abstract class AbstractDFSUtil {
 
     private Record transportOneRecord(List<ColumnEntry> columnConfigs, List<Object> recordFields
             , RecordSender recordSender, TaskPluginCollector taskPluginCollector, boolean isReadAllColumns, String nullFormat) {
-        Record record = recordSender.createRecord();
-        Column columnGenerated;
-        try {
-            if (isReadAllColumns) {
-                // 读取所有列，创建都为String类型的column
-                for (Object recordField : recordFields) {
-                    String columnValue = null;
-                    if (recordField != null) {
-                        columnValue = recordField.toString();
-                    }
-                    columnGenerated = new StringColumn(columnValue);
-                    record.addColumn(columnGenerated);
-                }
-            } else {
-                for (ColumnEntry columnConfig : columnConfigs) {
-                    UnstructuredStorageReaderUtil.Type columnType = columnConfig.getCType();
-                    Integer columnIndex = columnConfig.getIndex();
-                    String columnConst = columnConfig.getValue();
-
-                    String columnValue = null;
-
-                    if (null != columnIndex) {
-                        if (null != recordFields.get(columnIndex))
-                            columnValue = recordFields.get(columnIndex).toString();
-                    } else {
-                        columnValue = columnConst;
-                    }
-                   // Type type =  columnType;//DFSUtil.Type.valueOf(columnType.toUpperCase());
-                    // it's all ok if nullFormat is null
-                    if (StringUtils.equals(columnValue, nullFormat)) {
-                        columnValue = null;
-                    }
-                    switch (columnType) {
-                        case STRING:
-                            columnGenerated = new StringColumn(columnValue);
-                            break;
-                        case LONG:
-                            try {
-                                columnGenerated = new LongColumn(columnValue);
-                            } catch (Exception e) {
-                                throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "LONG"));
-                            }
-                            break;
-                        case DOUBLE:
-                            try {
-                                columnGenerated = new DoubleColumn(columnValue);
-                            } catch (Exception e) {
-                                throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "DOUBLE"));
-                            }
-                            break;
-                        case BOOLEAN:
-                            try {
-                                columnGenerated = new BoolColumn(columnValue);
-                            } catch (Exception e) {
-                                throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "BOOLEAN"));
-                            }
-
-                            break;
-                        case DATE:
-                            try {
-                                if (columnValue == null) {
-                                    columnGenerated = new DateColumn((Date) null);
-                                } else {
-                                    String formatString = columnConfig.getFormat();
-                                    if (StringUtils.isNotBlank(formatString)) {
-                                        // 用户自己配置的格式转换
-                                        SimpleDateFormat format = new SimpleDateFormat(
-                                                formatString);
-                                        columnGenerated = new DateColumn(
-                                                format.parse(columnValue));
-                                    } else {
-                                        // 框架尝试转换
-                                        columnGenerated = new DateColumn(
-                                                new StringColumn(columnValue)
-                                                        .asDate());
-                                    }
-                                }
-                            } catch (Exception e) {
-                                throw new IllegalArgumentException(String.format(
-                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
-                                        "DATE"));
-                            }
-                            break;
-                        default:
-                            String errorMessage = String.format(
-                                    "您配置的列类型暂不支持 : [%s]", columnType);
-                            LOG.error(errorMessage);
-                            throw DataXException
-                                    .asDataXException(
-                                            UnstructuredStorageReaderErrorCode.NOT_SUPPORT_TYPE,
-                                            errorMessage);
-                    }
-
-                    record.addColumn(columnGenerated);
-                }
-            }
-            recordSender.sendToWriter(record);
-        } catch (IllegalArgumentException iae) {
-            taskPluginCollector
-                    .collectDirtyRecord(record, iae.getMessage());
-        } catch (IndexOutOfBoundsException ioe) {
-            taskPluginCollector
-                    .collectDirtyRecord(record, ioe.getMessage());
-        } catch (Exception e) {
-            if (e instanceof DataXException) {
-                throw (DataXException) e;
-            }
-            // 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
-            taskPluginCollector.collectDirtyRecord(record, e.getMessage());
-        }
-
-        return record;
+        throw new UnsupportedOperationException();
+//        Record record = recordSender.createRecord();
+//        Column columnGenerated;
+//        try {
+//            if (isReadAllColumns) {
+//                // 读取所有列，创建都为String类型的column
+//                for (Object recordField : recordFields) {
+//                    String columnValue = null;
+//                    if (recordField != null) {
+//                        columnValue = recordField.toString();
+//                    }
+//                    columnGenerated = new StringColumn(columnValue);
+//                    record.addColumn(columnGenerated);
+//                }
+//            } else {
+//                for (ColumnEntry columnConfig : columnConfigs) {
+//                    UnstructuredStorageReaderUtil.Type columnType = columnConfig.getCType();
+//                    Integer columnIndex = columnConfig.getIndex();
+//                    String columnConst = columnConfig.getValue();
+//
+//                    String columnValue = null;
+//
+//                    if (null != columnIndex) {
+//                        if (null != recordFields.get(columnIndex))
+//                            columnValue = recordFields.get(columnIndex).toString();
+//                    } else {
+//                        columnValue = columnConst;
+//                    }
+//                   // Type type =  columnType;//DFSUtil.Type.valueOf(columnType.toUpperCase());
+//                    // it's all ok if nullFormat is null
+//                    if (StringUtils.equals(columnValue, nullFormat)) {
+//                        columnValue = null;
+//                    }
+//                    switch (columnType) {
+//                        case STRING:
+//                            columnGenerated = new StringColumn(columnValue);
+//                            break;
+//                        case LONG:
+//                            try {
+//                                columnGenerated = new LongColumn(columnValue);
+//                            } catch (Exception e) {
+//                                throw new IllegalArgumentException(String.format(
+//                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+//                                        "LONG"));
+//                            }
+//                            break;
+//                        case DOUBLE:
+//                            try {
+//                                columnGenerated = new DoubleColumn(columnValue);
+//                            } catch (Exception e) {
+//                                throw new IllegalArgumentException(String.format(
+//                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+//                                        "DOUBLE"));
+//                            }
+//                            break;
+//                        case BOOLEAN:
+//                            try {
+//                                columnGenerated = new BoolColumn(columnValue);
+//                            } catch (Exception e) {
+//                                throw new IllegalArgumentException(String.format(
+//                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+//                                        "BOOLEAN"));
+//                            }
+//
+//                            break;
+//                        case DATE:
+//                            try {
+//                                if (columnValue == null) {
+//                                    columnGenerated = new DateColumn((Date) null);
+//                                } else {
+//                                    String formatString = columnConfig.getFormat();
+//                                    if (StringUtils.isNotBlank(formatString)) {
+//                                        // 用户自己配置的格式转换
+//                                        SimpleDateFormat format = new SimpleDateFormat(
+//                                                formatString);
+//                                        columnGenerated = new DateColumn(
+//                                                format.parse(columnValue));
+//                                    } else {
+//                                        // 框架尝试转换
+//                                        columnGenerated = new DateColumn(
+//                                                new StringColumn(columnValue)
+//                                                        .asDate());
+//                                    }
+//                                }
+//                            } catch (Exception e) {
+//                                throw new IllegalArgumentException(String.format(
+//                                        "类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+//                                        "DATE"));
+//                            }
+//                            break;
+//                        default:
+//                            String errorMessage = String.format(
+//                                    "您配置的列类型暂不支持 : [%s]", columnType);
+//                            LOG.error(errorMessage);
+//                            throw DataXException
+//                                    .asDataXException(
+//                                            UnstructuredStorageReaderErrorCode.NOT_SUPPORT_TYPE,
+//                                            errorMessage);
+//                    }
+//
+//                    record.addColumn(columnGenerated);
+//                }
+//            }
+//            recordSender.sendToWriter(record);
+//        } catch (IllegalArgumentException iae) {
+//            taskPluginCollector
+//                    .collectDirtyRecord(record, iae.getMessage());
+//        } catch (IndexOutOfBoundsException ioe) {
+//            taskPluginCollector
+//                    .collectDirtyRecord(record, ioe.getMessage());
+//        } catch (Exception e) {
+//            if (e instanceof DataXException) {
+//                throw (DataXException) e;
+//            }
+//            // 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
+//            taskPluginCollector.collectDirtyRecord(record, e.getMessage());
+//        }
+//
+//        return record;
     }
 
     private int getAllColumnsCount(String filePath) {

@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
+import com.qlangtech.tis.plugin.tdfs.TDFSLinker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -25,6 +26,10 @@ public class SftpHelper extends FtpHelper {
 
     Session session = null;
     ChannelSftp channelSftp = null;
+
+    public SftpHelper(TDFSLinker dfsLinker) {
+        super(dfsLinker);
+    }
 
     @Override
     public void loginFtpServer(String host, String username, String password, int port, int timeout,
@@ -151,10 +156,10 @@ public class SftpHelper extends FtpHelper {
         }
     }
 
-    HashSet<String> sourceFiles = new HashSet<String>();
+    HashSet<Res> sourceFiles = new HashSet<Res>();
 
     @Override
-    public HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
+    public HashSet<Res> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
         if (parentLevel < maxTraversalLevel) {
             String parentPath = null;// 父级目录,以'/'结尾
             int pathLen = directoryPath.length();
@@ -184,7 +189,7 @@ public class SftpHelper extends FtpHelper {
                 throw DataXException.asDataXException(FtpReaderErrorCode.LINK_FILE, message);
             } else if (isFileExist(directoryPath)) {
                 // path指向具体文件
-                sourceFiles.add(directoryPath);
+                sourceFiles.add(new Res(directoryPath, directoryPath));
                 return sourceFiles;
             } else {
                 String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", directoryPath);
@@ -212,7 +217,7 @@ public class SftpHelper extends FtpHelper {
                         throw DataXException.asDataXException(FtpReaderErrorCode.LINK_FILE, message);
                     } else if (isFileExist(filePath)) {
                         // 是文件
-                        sourceFiles.add(filePath);
+                        sourceFiles.add(new Res(filePath, filePath));
                     } else {
                         String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取", filePath);
                         LOG.error(message);
