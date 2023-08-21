@@ -7,6 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredWriter;
 import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -65,12 +66,12 @@ public class FtpWriter extends Writer {
                             FtpWriterErrorCode.REQUIRED_VALUE);
             String path = this.writerSliceConfig.getNecessaryValue(Key.PATH,
                     FtpWriterErrorCode.REQUIRED_VALUE);
-            if (!path.startsWith("/")) {
-                String message = String.format("请检查参数path:%s,需要配置为绝对路径", path);
-                LOG.error(message);
-                throw DataXException.asDataXException(
-                        FtpWriterErrorCode.ILLEGAL_VALUE, message);
-            }
+//            if (!path.startsWith("/")) {
+//                String message = String.format("请检查参数path:%s,需要配置为绝对路径", path);
+//                LOG.error(message);
+//                throw DataXException.asDataXException(
+//                        FtpWriterErrorCode.ILLEGAL_VALUE, message);
+//            }
 //            this.port = this.writerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
 //            this.writerSliceConfig.set(Key.PORT, this.port);
             this.dfsSession = createTdfsSession();
@@ -130,20 +131,22 @@ public class FtpWriter extends Writer {
 
             // truncate option handler
             if ("truncate".equals(writeMode)) {
-                LOG.info(String.format(
-                        "由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
-                        path, fileName));
-                Set<String> fullFileNameToDelete = new HashSet<String>();
-                for (String each : allFileExists) {
-                    fullFileNameToDelete.add(UnstructuredStorageWriterUtil
-                            .buildFilePath(path, each, null));
-                }
-                LOG.info(String.format(
-                        "删除目录path:[%s] 下指定前缀fileName:[%s] 文件列表如下: [%s]", path,
-                        fileName,
-                        StringUtils.join(fullFileNameToDelete.iterator(), ", ")));
+                if (CollectionUtils.isNotEmpty(allFileExists)) {
+                    LOG.info(String.format(
+                            "由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
+                            path, fileName));
+                    Set<String> fullFileNameToDelete = new HashSet<String>();
+                    for (String each : allFileExists) {
+                        fullFileNameToDelete.add(UnstructuredStorageWriterUtil
+                                .buildFilePath(path, each, null));
+                    }
+                    LOG.info(String.format(
+                            "删除目录path:[%s] 下指定前缀fileName:[%s] 文件列表如下: [%s]", path,
+                            fileName,
+                            StringUtils.join(fullFileNameToDelete.iterator(), ", ")));
 
-                this.dfsSession.deleteFiles(fullFileNameToDelete);
+                    this.dfsSession.deleteFiles(fullFileNameToDelete);
+                }
             } else if ("append".equals(writeMode)) {
                 LOG.info(String
                         .format("由于您配置了writeMode append, 写入前不做清理工作, [%s] 目录下写入相应文件名前缀  [%s] 的文件",

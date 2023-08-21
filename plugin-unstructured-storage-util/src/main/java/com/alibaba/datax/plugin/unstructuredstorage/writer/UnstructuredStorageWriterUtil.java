@@ -52,30 +52,30 @@ public class UnstructuredStorageWriterUtil {
         writerConfiguration.set(Key.WRITE_MODE, writeMode);
 
         // encoding check
-        String encoding = writerConfiguration.getString(Key.ENCODING);
-        if (StringUtils.isBlank(encoding)) {
-            // like "  ", null
-            LOG.warn(String.format("您的encoding配置为空, 将使用默认值[%s]",
-                    Constant.DEFAULT_ENCODING));
-            writerConfiguration.set(Key.ENCODING, Constant.DEFAULT_ENCODING);
-        } else {
-            try {
-                encoding = encoding.trim();
-                writerConfiguration.set(Key.ENCODING, encoding);
-                Charsets.toCharset(encoding);
-            } catch (Exception e) {
-                throw DataXException.asDataXException(
-                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("不支持您配置的编码格式:[%s]", encoding), e);
-            }
-        }
+//        String encoding = writerConfiguration.getString(Key.ENCODING);
+//        if (StringUtils.isBlank(encoding)) {
+//            // like "  ", null
+//            LOG.warn(String.format("您的encoding配置为空, 将使用默认值[%s]",
+//                    Constant.DEFAULT_ENCODING));
+//            writerConfiguration.set(Key.ENCODING, Constant.DEFAULT_ENCODING);
+//        } else {
+//            try {
+//                encoding = encoding.trim();
+//                writerConfiguration.set(Key.ENCODING, encoding);
+//                Charsets.toCharset(encoding);
+//            } catch (Exception e) {
+//                throw DataXException.asDataXException(
+//                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+//                        String.format("不支持您配置的编码格式:[%s]", encoding), e);
+//            }
+//        }
 
         // only support compress types
-        String compress = writerConfiguration.getString(Key.COMPRESS);
-        if (StringUtils.isBlank(compress)) {
-            writerConfiguration.set(Key.COMPRESS, null);
-        } else {
-            Compress.parse(compress);
+//        String compress = writerConfiguration.getString(Key.COMPRESS);
+//        if (StringUtils.isBlank(compress)) {
+//            writerConfiguration.set(Key.COMPRESS, null);
+//        } else {
+//            Compress.parse(compress);
 //            Set<String> supportedCompress = Sets.newHashSet("gzip", "bzip2");
 //            if (!supportedCompress.contains(compress.toLowerCase().trim())) {
 //                String message = String.format(
@@ -85,34 +85,34 @@ public class UnstructuredStorageWriterUtil {
 //                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
 //                        String.format(message, compress));
 //            }
-        }
+       // }
 
         // fieldDelimiter check
-        String delimiterInStr = writerConfiguration
-                .getString(Key.FIELD_DELIMITER);
-        // warn: if have, length must be one
-        if (null != delimiterInStr && 1 != delimiterInStr.length()) {
-            throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                    String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
-        }
-        if (null == delimiterInStr) {
-            LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
-                    Constant.DEFAULT_FIELD_DELIMITER));
-            writerConfiguration.set(Key.FIELD_DELIMITER,
-                    Constant.DEFAULT_FIELD_DELIMITER);
-        }
-
-        // fileFormat check
-        String fileFormat = writerConfiguration.getString(Key.FILE_FORMAT,
-                Constant.FILE_FORMAT_TEXT);
-        if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
-                && !Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
-            throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, String
-                            .format("您配置的fileFormat [%s]错误, 支持csv, text两种.",
-                                    fileFormat));
-        }
+//        String delimiterInStr = writerConfiguration
+//                .getString(Key.FIELD_DELIMITER);
+//        // warn: if have, length must be one
+//        if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+//            throw DataXException.asDataXException(
+//                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+//                    String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+//        }
+//        if (null == delimiterInStr) {
+//            LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
+//                    Constant.DEFAULT_FIELD_DELIMITER));
+//            writerConfiguration.set(Key.FIELD_DELIMITER,
+//                    Constant.DEFAULT_FIELD_DELIMITER);
+//        }
+//
+//        // fileFormat check
+//        String fileFormat = writerConfiguration.getString(Key.FILE_FORMAT,
+//                Constant.FILE_FORMAT_TEXT);
+//        if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
+//                && !Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
+//            throw DataXException.asDataXException(
+//                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, String
+//                            .format("您配置的fileFormat [%s]错误, 支持csv, text两种.",
+//                                    fileFormat));
+//        }
     }
 
     public static List<Configuration> split(Configuration writerSliceConfig,

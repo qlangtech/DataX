@@ -20,12 +20,32 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FtpReader extends Reader {
+
+    protected static List<String> getPaths(Configuration cfg) {
+        List<String> path = null;
+        Object pathObj = cfg.get(Key.PATH);
+        if (pathObj == null) {
+            throw new NullPointerException("property of key:" + Key.PATH + " relevant val can not be null");
+        }
+        if (pathObj instanceof List) {
+            path = cfg.getList(Key.PATH, String.class);
+        } else if (pathObj instanceof String) {
+            path = Collections.singletonList((String) pathObj);
+        } else {
+            throw new IllegalStateException("illegal type of pathObj:" + pathObj.getClass());
+        }
+        if (CollectionUtils.isEmpty(path)) {
+            throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定待读取的源目录或文件");
+        }
+        return path;
+    }
+
     public static abstract class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
         private Configuration originConfig = null;
 
-        private List<String> path = null;
+        protected List<String> path = null;
 
         private Set<ITDFSSession.Res> sourceFiles;
 
@@ -37,7 +57,7 @@ public class FtpReader extends Reader {
         // private String password;
         // private int timeout;
         // private String connectPattern;
-       // private int maxTraversalLevel;
+        // private int maxTraversalLevel;
 
         private ITDFSSession dfsSession = null;
 
@@ -70,7 +90,7 @@ public class FtpReader extends Reader {
 //            this.username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
 //            this.password = this.originConfig.getNecessaryValue(Key.PASSWORD, FtpReaderErrorCode.REQUIRED_VALUE);
 //            this.timeout = originConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
-          //  this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
+            //  this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
 
             // only support connect pattern
 //            this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
@@ -88,10 +108,8 @@ public class FtpReader extends Reader {
 //                path = new ArrayList<String>();
 //                path.add(pathInString);
 //            } else {
-            path = Collections.singletonList( this.originConfig.getString(Key.PATH));
-            if (CollectionUtils.isEmpty(path)) {
-                throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定待读取的源目录或文件");
-            }
+
+            this.path = getPaths(this.originConfig);
 //            for (String eachPath : path) {
 //                if (!eachPath.startsWith("/")) {
 //                    String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
@@ -103,16 +121,17 @@ public class FtpReader extends Reader {
 
         }
 
+
         @Override
         public void prepare() {
             LOG.debug("prepare() begin...");
 
-            this.sourceFiles = this.findAllMatchedRes(dfsSession); //dfsSession.getAllFiles(path, 0, maxTraversalLevel);
+            this.sourceFiles = this.findAllMatchedRes(this.path, dfsSession); //dfsSession.getAllFiles(path, 0, maxTraversalLevel);
 
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
         }
 
-        protected abstract Set<ITDFSSession.Res> findAllMatchedRes(ITDFSSession dfsSession);
+        protected abstract Set<ITDFSSession.Res> findAllMatchedRes(List<String> targetPath, ITDFSSession dfsSession);
 
         @Override
         public void post() {
@@ -148,10 +167,17 @@ public class FtpReader extends Reader {
             }
 
             List<List<ITDFSSession.Res>> splitedSourceFiles = this.splitSourceFiles(new ArrayList<ITDFSSession.Res>(this.sourceFiles), splitNumber);
+            List<String> sourceFiles = null;
             for (List<ITDFSSession.Res> files : splitedSourceFiles) {
                 Configuration splitedConfig = this.originConfig.clone();
-                splitedConfig.set(Constant.SOURCE_FILES, files.stream().map((r) -> r.fullPath)
-                        .filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList()));
+
+                sourceFiles = files.stream().map((r) -> r.fullPath)
+                        .filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(sourceFiles)) {
+                    throw new IllegalStateException("sourceFiles can not be empty,raw sourceFiles:"
+                            + this.sourceFiles.stream().map((ff) -> ff.fullPath).collect(Collectors.joining(",")));
+                }
+                splitedConfig.set(Constant.SOURCE_FILES, sourceFiles);
                 readerSplitConfigs.add(splitedConfig);
             }
             LOG.debug("split() ok and end...");
@@ -189,7 +215,7 @@ public class FtpReader extends Reader {
         private Configuration readerSliceConfig;
         private List<String> sourceFiles;
 
-        private ITDFSSession hdfsSession = null;
+        protected ITDFSSession hdfsSession = null;
         private List<ColumnEntry> colsMeta = null;
         protected Function<InputStream, UnstructuredReader> unstructuredReaderCreator;
 
@@ -207,7 +233,8 @@ public class FtpReader extends Reader {
             this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
             // this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             this.hdfsSession = createTdfsSession();// FtpHelper.createFtpClient(readerSliceConfig);
-            this.colsMeta = createColsMeta();
+            this.colsMeta = createColsMeta(this.getEntityName());
+
 
             Objects.requireNonNull(unstructuredReaderCreator, "unstructuredReaderCreator can not be null");
 //            if ("sftp".equals(protocol)) {
@@ -221,10 +248,13 @@ public class FtpReader extends Reader {
 //                this.ftpHelper = new StandardFtpHelper();
 //            }
 //            ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
-
         }
 
-        protected abstract List<ColumnEntry> createColsMeta();
+        private Optional<String> getEntityName() {
+            return Optional.ofNullable(this.readerSliceConfig.getString(Key.ENTITY_NAME));
+        }
+
+        protected abstract List<ColumnEntry> createColsMeta(Optional<String> entityName);
 
         protected abstract ITDFSSession createTdfsSession();
 
