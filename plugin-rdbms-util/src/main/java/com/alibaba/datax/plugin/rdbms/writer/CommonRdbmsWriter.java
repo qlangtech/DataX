@@ -47,7 +47,8 @@ public class CommonRdbmsWriter {
         }
 
         public void init(Configuration originalConfig) {
-            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig, this.containerContext);
+            this.dataSourceFactoryGetter = IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(originalConfig,
+                    this.containerContext);
             OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataSourceFactoryGetter, this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
@@ -241,7 +242,8 @@ public class CommonRdbmsWriter {
                 this.jdbcUrl = ss[2];
                 LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
             }
-            this.dataSourceFactoryGetter = DBUtil.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
+            this.dataSourceFactoryGetter = IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(writerSliceConfig,
+                    this.containerContext);
             this.table = SelectTable.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
 
@@ -279,7 +281,7 @@ public class CommonRdbmsWriter {
 
         protected IStatementSetter parseColSetter(ColumnMetaData cm) {
 
-            switch (cm.getType().type) {
+            switch (cm.getType().getType()) {
                 case Types.CHAR:
                 case Types.NCHAR:
                 case Types.CLOB:
@@ -313,7 +315,7 @@ public class CommonRdbmsWriter {
 
                         // String strValue = column.asString();
                         if (emptyAsNull && column.getRawData() == null) {
-                            stat.setNull(colIndex, cm.getType().type);
+                            stat.setNull(colIndex, cm.getType().getType());
                         } else {
                             stat.setBigDecimal(colIndex, column.asBigDecimal());
                         }
@@ -324,7 +326,7 @@ public class CommonRdbmsWriter {
 
                         //  String strValue = column.asString();
                         if (emptyAsNull && column.getRawData() == null) {
-                            stat.setNull(colIndex, cm.getType().type);
+                            stat.setNull(colIndex, cm.getType().getType());
                         } else {
                             stat.setDouble(colIndex, column.asDouble());
                         }
@@ -438,7 +440,7 @@ public class CommonRdbmsWriter {
                                     String.format(
                                             "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
                                             cm.getName(),
-                                            cm.getType().type,
+                                            cm.getType().getType(),
                                             cm.getType().typeName));
             }
 
@@ -640,7 +642,7 @@ public class CommonRdbmsWriter {
                                                                     ColumnMetaData cm, Column column) throws SQLException {
 
             if (column.getRawData() == null) {
-                preparedStatement.setNull(columnIndex + 1, cm.getType().type);
+                preparedStatement.setNull(columnIndex + 1, cm.getType().getType());
             } else {
                 col.set(preparedStatement, columnIndex + 1, column);
             }

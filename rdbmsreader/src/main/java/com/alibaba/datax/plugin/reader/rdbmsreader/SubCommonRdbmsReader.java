@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.reader.rdbmsreader;
 
-import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;

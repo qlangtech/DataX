@@ -40,6 +40,10 @@ public class FtpReader extends Reader {
         return path;
     }
 
+    private static Optional<String> getEntityName(Configuration cfg) {
+        return Optional.ofNullable(cfg.getString(Key.ENTITY_NAME));
+    }
+
     public static abstract class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
@@ -70,7 +74,7 @@ public class FtpReader extends Reader {
             UnstructuredStorageReaderUtil.validateParameter(this.originConfig);
             //  this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             dfsSession = createTdfsSession();
-
+            this.path = this.getReaderPaths(this.originConfig, this.dfsSession, getEntityName(this.originConfig));
         }
 
         protected abstract ITDFSSession createTdfsSession();
@@ -109,7 +113,7 @@ public class FtpReader extends Reader {
 //                path.add(pathInString);
 //            } else {
 
-            this.path = getPaths(this.originConfig);
+
 //            for (String eachPath : path) {
 //                if (!eachPath.startsWith("/")) {
 //                    String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
@@ -121,11 +125,16 @@ public class FtpReader extends Reader {
 
         }
 
+        protected List<String> getReaderPaths(Configuration cfg, ITDFSSession dfsSession, Optional<String> entityName) {
+            return getPaths(cfg);
+        }
 
         @Override
         public void prepare() {
             LOG.debug("prepare() begin...");
-
+            if (CollectionUtils.isEmpty(this.path)) {
+                throw new IllegalStateException("property path can not be empty");
+            }
             this.sourceFiles = this.findAllMatchedRes(this.path, dfsSession); //dfsSession.getAllFiles(path, 0, maxTraversalLevel);
 
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
@@ -146,8 +155,7 @@ public class FtpReader extends Reader {
 //                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
 //                        e.getMessage(), host, username, port);
 
-                String message = String.format(
-                        "关闭与ftp服务器连接失败: [%s]", e.getMessage());
+                String message = String.format("关闭与ftp服务器连接失败: [%s]", e.getMessage());
                 LOG.error(message, e);
             }
         }
@@ -162,8 +170,7 @@ public class FtpReader extends Reader {
             // int splitNumber = adviceNumber;
             int splitNumber = this.sourceFiles.size();
             if (0 == splitNumber) {
-                throw DataXException.asDataXException(FtpReaderErrorCode.EMPTY_DIR_EXCEPTION,
-                        String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.originConfig.getString(Key.PATH)));
+                throw DataXException.asDataXException(FtpReaderErrorCode.EMPTY_DIR_EXCEPTION, String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.originConfig.getString(Key.PATH)));
             }
 
             List<List<ITDFSSession.Res>> splitedSourceFiles = this.splitSourceFiles(new ArrayList<ITDFSSession.Res>(this.sourceFiles), splitNumber);
@@ -171,11 +178,9 @@ public class FtpReader extends Reader {
             for (List<ITDFSSession.Res> files : splitedSourceFiles) {
                 Configuration splitedConfig = this.originConfig.clone();
 
-                sourceFiles = files.stream().map((r) -> r.fullPath)
-                        .filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList());
+                sourceFiles = files.stream().map((r) -> r.fullPath).filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(sourceFiles)) {
-                    throw new IllegalStateException("sourceFiles can not be empty,raw sourceFiles:"
-                            + this.sourceFiles.stream().map((ff) -> ff.fullPath).collect(Collectors.joining(",")));
+                    throw new IllegalStateException("sourceFiles can not be empty,raw sourceFiles:" + this.sourceFiles.stream().map((ff) -> ff.fullPath).collect(Collectors.joining(",")));
                 }
                 splitedConfig.set(Constant.SOURCE_FILES, sourceFiles);
                 readerSplitConfigs.add(splitedConfig);
@@ -233,7 +238,7 @@ public class FtpReader extends Reader {
             this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
             // this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             this.hdfsSession = createTdfsSession();// FtpHelper.createFtpClient(readerSliceConfig);
-            this.colsMeta = createColsMeta(this.getEntityName());
+            this.colsMeta = createColsMeta(getEntityName(this.readerSliceConfig));
 
 
             Objects.requireNonNull(unstructuredReaderCreator, "unstructuredReaderCreator can not be null");
@@ -250,9 +255,6 @@ public class FtpReader extends Reader {
 //            ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
         }
 
-        private Optional<String> getEntityName() {
-            return Optional.ofNullable(this.readerSliceConfig.getString(Key.ENTITY_NAME));
-        }
 
         protected abstract List<ColumnEntry> createColsMeta(Optional<String> entityName);
 
@@ -273,8 +275,7 @@ public class FtpReader extends Reader {
             try {
                 this.hdfsSession.close();
             } catch (Exception e) {
-                String message = String.format(
-                        "关闭与ftp服务器连接失败: [%s] ", e.getMessage());
+                String message = String.format("关闭与ftp服务器连接失败: [%s] ", e.getMessage());
                 LOG.error(message, e);
             }
         }
@@ -288,12 +289,7 @@ public class FtpReader extends Reader {
 
                 InputStream inputStream = hdfsSession.getInputStream(fileName);
 
-                UnstructuredStorageReaderUtil.readFromStream(inputStream
-                        , this.unstructuredReaderCreator
-                        , Objects.requireNonNull(colsMeta, "colsMeta can not be null")
-                        , fileName
-                        , this.readerSliceConfig
-                        , recordSender, this.getTaskPluginCollector());
+                UnstructuredStorageReaderUtil.readFromStream(inputStream, this.unstructuredReaderCreator, Objects.requireNonNull(colsMeta, "colsMeta can not be null"), fileName, this.readerSliceConfig, recordSender, this.getTaskPluginCollector());
                 recordSender.flush();
             }
 

@@ -25,6 +25,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class DorisWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             options = new Keys(super.getPluginJobConf());
             options.doPretreatment();
-            this.dsGetter = DBUtil.getWriterDataSourceFactoryGetter(originalConfig,this.containerContext);
+            this.dsGetter = IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(originalConfig,this.containerContext);
         }
 
         @Override

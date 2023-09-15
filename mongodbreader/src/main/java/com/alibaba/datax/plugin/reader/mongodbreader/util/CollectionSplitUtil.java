@@ -105,11 +105,11 @@ public class CollectionSplitUtil {
         }
 
         if (supportSplitVector) {
-            boolean forceMedianSplit = false;
+           final  boolean forceMedianSplit = true;
             int maxChunkSize = (docCount / splitPointCount - 1) * 2 * avgObjSize / (1024 * 1024);
             //int maxChunkSize = (chunkDocCount - 1) * 2 * avgObjSize / (1024 * 1024);
             if (maxChunkSize < 1) {
-                forceMedianSplit = true;
+               // forceMedianSplit = true;
             }
             if (!forceMedianSplit) {
                 result = database.runCommand(new Document("splitVector", dbName + "." + collName)

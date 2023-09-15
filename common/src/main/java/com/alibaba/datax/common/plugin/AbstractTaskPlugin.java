@@ -1,7 +1,5 @@
 package com.alibaba.datax.common.plugin;
 
-import com.alibaba.datax.core.job.IJobContainerContext;
-
 /**
  * Created by jingxing on 14-8-24.
  */

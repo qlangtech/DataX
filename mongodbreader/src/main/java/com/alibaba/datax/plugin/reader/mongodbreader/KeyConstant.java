@@ -40,6 +40,7 @@ public class KeyConstant {
      * mongodb 集合名
      */
     public static final String MONGO_COLLECTION_NAME = "collectionName";
+
     /**
      * mongodb 查询条件
      */
@@ -82,8 +83,10 @@ public class KeyConstant {
      */
     public static final int MONGO_UNAUTHORIZED_ERR_CODE = 13;
     public static final int MONGO_ILLEGALOP_ERR_CODE = 20;
+
     /**
      * 判断是否为数组类型
+     *
      * @param type 数据类型
      * @return
      */

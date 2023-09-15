@@ -4,7 +4,6 @@ import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClient;
 import com.alibaba.cloud.analyticdb.adb4pgclient.Adb4pgClientException;
 import com.alibaba.cloud.analyticdb.adb4pgclient.DatabaseConfig;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
