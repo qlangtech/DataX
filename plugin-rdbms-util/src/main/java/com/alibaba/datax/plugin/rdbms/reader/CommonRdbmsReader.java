@@ -157,8 +157,8 @@ public class CommonRdbmsReader {
         public void init(Configuration readerSliceConfig) {
 
             /* for database connection */
-            this.readerDataSourceFactoryGetter = IDataSourceFactoryGetter.getReaderDataSourceFactoryGetter(readerSliceConfig,
-                    this.containerContext);
+            this.readerDataSourceFactoryGetter =
+                    IDataSourceFactoryGetter.getReaderDataSourceFactoryGetter(readerSliceConfig, this.containerContext);
             this.username = readerSliceConfig.getString(Key.USERNAME);
             this.password = readerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
@@ -208,8 +208,10 @@ public class CommonRdbmsReader {
             Connection conn = DBUtil.getConnection(this.readerDataSourceFactoryGetter, jdbcUrl, username, password);
             Map<String, ColumnMetaData> tabCols = null;
             try {
-                tabCols =
-                        ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory().getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), false, EntityName.parse(table, true)));
+                tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory() //
+                        .getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), false,
+                                EntityName.parse(table, true)));
+
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -237,8 +239,11 @@ public class CommonRdbmsReader {
 
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = metaData.getColumnCount();
+                String columnName = null;
                 for (int colIdx = 1; colIdx <= columnNumber; colIdx++) {
-                    cols.add(Objects.requireNonNull(tabCols.get(metaData.getColumnName(colIdx))));
+                    columnName = metaData.getColumnName(colIdx);
+                    cols.add(Objects.requireNonNull(tabCols.get(columnName), "columnName:" + columnName + " relevant "
+                            + ColumnMetaData.class.getSimpleName() + " can not be null"));
                 }
 
                 //这个统计干净的result_Next时间

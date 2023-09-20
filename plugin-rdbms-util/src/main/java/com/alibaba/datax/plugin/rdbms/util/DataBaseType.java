@@ -10,21 +10,14 @@ import java.util.regex.Pattern;
  * <p/>
  */
 public enum DataBaseType {
-    MySql("mysql", "com.mysql.jdbc.Driver"),
-    MySql8("mysql", "com.mysql.cj.jdbc.Driver"),
-    Tddl("mysql", "com.mysql.jdbc.Driver"),
-    DRDS("drds", "com.mysql.jdbc.Driver"),
-    Oracle("oracle", "oracle.jdbc.OracleDriver"),
-    SQLServer("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
-    PostgreSQL("postgresql", "org.postgresql.Driver"),
-    RDBMS("rdbms", "com.alibaba.datax.plugin.rdbms.util.DataBaseType"),
-    DB2("db2", "com.ibm.db2.jcc.DB2Driver"),
-    ADS("ads","com.mysql.jdbc.Driver"),
-    ClickHouse("clickhouse", "ru.yandex.clickhouse.ClickHouseDriver"),
-    KingbaseES("kingbasees", "com.kingbase8.Driver"),
-    Oscar("oscar", "com.oscar.Driver"),
-    OceanBase("oceanbase", "com.alipay.oceanbase.jdbc.Driver"),
-    DaMeng("dameng", "dm.jdbc.driver.DmDriver");;
+    MySql("mysql", "com.mysql.jdbc.Driver"), MySql8("mysql", "com.mysql.cj.jdbc.Driver"), Tddl("mysql",
+            "com.mysql" + ".jdbc.Driver"), DRDS("drds", "com.mysql.jdbc.Driver"), Oracle("oracle", "oracle.jdbc" +
+            ".OracleDriver"), SQLServer("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver"), PostgreSQL(
+                    "postgresql", "org.postgresql" + ".Driver"), RDBMS("rdbms",
+            "com.alibaba.datax.plugin.rdbms.util" + ".DataBaseType"), DB2("db2", "com.ibm.db2" + ".jcc.DB2Driver"),
+    ADS("ads", "com.mysql.jdbc.Driver"), ClickHouse("clickhouse", "ru.yandex.clickhouse" + ".ClickHouseDriver"),
+    KingbaseES("kingbasees", "com.kingbase8" + ".Driver"), Oscar("oscar", "com.oscar" + ".Driver"), OceanBase(
+            "oceanbase", "com.alipay.oceanbase.jdbc" + ".Driver"), DaMeng("dameng", "dm.jdbc" + ".driver.DmDriver");;
 
 
     private String typeName;
@@ -35,18 +28,21 @@ public enum DataBaseType {
         this.driverClassName = driverClassName;
     }
 
-//    public String getDriverClassName() {
-//        return this.driverClassName;
-//    }
+    //    public String getDriverClassName() {
+    //        return this.driverClassName;
+    //    }
 
     public String appendJDBCSuffixForReader(String jdbc) {
         String result = jdbc;
         String suffix = null;
         switch (this) {
+            case DaMeng:
+                break;
             case MySql:
             case DRDS:
             case OceanBase:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true&DataBaseType=true";
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false" +
+                        "&rewriteBatchedStatements=true&DataBaseType=true";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {
@@ -70,7 +66,8 @@ public enum DataBaseType {
             case Oscar:
                 break;
             default:
-                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
+                        "unsupported database type:" + this);
         }
 
         return result;
@@ -80,8 +77,11 @@ public enum DataBaseType {
         String result = jdbc;
         String suffix = null;
         switch (this) {
+            case DaMeng:
+                break;
             case MySql:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true&tinyInt1isBit=false";
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true" +
+                        "&tinyInt1isBit=false";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {
@@ -113,7 +113,8 @@ public enum DataBaseType {
             case Oscar:
                 break;
             case OceanBase:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true";
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false" +
+                        "&rewriteBatchedStatements=true";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {
@@ -121,7 +122,8 @@ public enum DataBaseType {
                 }
                 break;
             default:
-                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
+                        "unsupported database type:" + this);
         }
 
         return result;
@@ -222,6 +224,7 @@ public enum DataBaseType {
         }
         return null;
     }
+
     public String getTypeName() {
         return typeName;
     }

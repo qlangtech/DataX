@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.writer.util;
 
 import com.alibaba.datax.common.element.Column;
+import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -10,5 +11,8 @@ import java.sql.SQLException;
  * @create: 2022-10-04 13:14
  **/
 public interface IStatementSetter {
+
+
+
     void set(PreparedStatement statement, int colIndex, Column column) throws SQLException;
 }
