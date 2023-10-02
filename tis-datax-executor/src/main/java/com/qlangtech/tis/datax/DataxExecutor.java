@@ -283,7 +283,7 @@ public class DataxExecutor {
             this.startWork(jobName, dataxProcessor, uberClassLoader, jobArgs);
             success = true;
         } finally {
-            TIS.clean();
+            TIS.clean(false);
             if (execMode == DataXJobSubmit.InstanceType.DISTRIBUTE) {
                 try {
                     DagTaskUtils.feedbackAsynTaskStatus(jobArgs.jobId, jobName.jobFileName, success);

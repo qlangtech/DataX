@@ -97,7 +97,7 @@ public class DorisStreamLoadObserver {
                         throw new IOException(String.format("Failed to flush data to Doris, Error " +
                                 "could not get the final state of label[%s].\n", label), null);
                     }
-                    Map<String, Object> result = (Map<String, Object>) JSON.parse(EntityUtils.toString(respEntity));
+                    Map<String, Object> result = (Map<String, Object>) JSON.parseObject(EntityUtils.toString(respEntity));
                     String labelState = (String) result.get("state");
                     if (null == labelState) {
                         throw new IOException(String.format("Failed to flush data to Doris, Error " +
@@ -195,7 +195,7 @@ public class DorisStreamLoadObserver {
                 HttpEntity respEntity = getHttpEntity(resp);
                 if (respEntity == null)
                     return null;
-                return (Map<String, Object>) JSON.parse(EntityUtils.toString(respEntity));
+                return (Map<String, Object>) JSON.parseObject(EntityUtils.toString(respEntity));
             }
         }
     }
