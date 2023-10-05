@@ -19,6 +19,7 @@ package com.qlangtech.tis.datax;
 
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.spi.IDataXCfg;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
@@ -461,10 +462,10 @@ public class DataxExecutor {
         setAllReadApproximately(dataXContainer.getContainerCommunicator().collect());
     }
 
-    public static final String connectKeyParameter = "parameter";
-
-    static final String readerKeyPrefix = "job.content[0].reader." + connectKeyParameter + ".";
-    static final String writerKeyPrefix = "job.content[0].writer." + connectKeyParameter + ".";
+//    public static final String connectKeyParameter = "parameter";
+//
+//    static final String readerKeyPrefix = "job.content[0].reader." + connectKeyParameter + ".";
+//    static final String writerKeyPrefix = "job.content[0].writer." + connectKeyParameter + ".";
 
     private class TISDataXJobContainer extends JobContainer {
         private final Integer jobId;
@@ -516,8 +517,8 @@ public class DataxExecutor {
         if (resType == null) {
             throw new IllegalArgumentException("param resType can not be null");
         }
-        configuration.set(readerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
-        configuration.set(writerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
+        configuration.set(IDataXCfg.readerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
+        configuration.set(IDataXCfg.writerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
     }
 
     private void setAllReadApproximately(Communication communication) {
@@ -550,7 +551,7 @@ public class DataxExecutor {
 //        configuration.set(writerKeyPrefix + DataxUtils.DATAX_NAME, dataxName);
 
         final String readerDbFactoryId = jobName.getDbFactoryId().identityValue();
-        configuration.set(readerKeyPrefix + DataxUtils.DATASOURCE_FACTORY_IDENTITY, readerDbFactoryId);
+        configuration.set(IDataXCfg.readerKeyPrefix + DataxUtils.DATASOURCE_FACTORY_IDENTITY, readerDbFactoryId);
 
         setResType(configuration, resType);
 //        configuration.set(readerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());

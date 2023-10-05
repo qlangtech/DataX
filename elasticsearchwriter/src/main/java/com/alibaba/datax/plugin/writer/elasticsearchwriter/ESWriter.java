@@ -56,7 +56,7 @@ public class ESWriter extends Writer {
             String indexName = Key.getIndexName(conf);
             String typeName = Key.getTypeName(conf);
             boolean dynamic = Key.getDynamic(conf);
-            String mappings = esClient.genMappings((JSONArray) conf.getList("column"), typeName, (columnList) -> {
+            String mappings = DataConvertUtils.genMappings((JSONArray) conf.getList("column"), typeName, (columnList) -> {
                 conf.set(WRITE_COLUMNS, JSON.toJSONString(columnList));
             });
             String settings = JSONObject.toJSONString(Key.getSettings(conf));
