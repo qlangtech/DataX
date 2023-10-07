@@ -260,7 +260,7 @@ public class ESWriter extends Writer {
             typeList = new ArrayList<ESFieldType>();
 
             for (ESColumn col : columnList) {
-                typeList.add(ESFieldType.getESFieldType(col.getType()));
+                typeList.add(col.getEsType());
             }
 
             esClient = new ESClient(ESInitialization.create(conf, Key.isMultiThread(conf), Key.getTimeout(conf),

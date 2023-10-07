@@ -57,6 +57,7 @@ public class DataConvertUtils {
                 JSONObject jo = (JSONObject) col;
                 String colName = jo.getString("name");
                 String colTypeStr = jo.getString("type");
+                boolean pk = jo.getBooleanValue("pk");
                 if (colTypeStr == null) {
                     //throw DataXException.asDataXException(ESWriterErrorCode.BAD_CONFIG_VALUE, col.toString() + "
                     // column must have type");
@@ -79,6 +80,7 @@ public class DataConvertUtils {
 
                 columnItem.setName(colName);
                 columnItem.setType(colTypeStr);
+                columnItem.setPk(pk);
 
                 if (colType == ESFieldType.ID) {
                     columnList.add(columnItem);

@@ -1,13 +1,15 @@
 package com.alibaba.datax.plugin.writer.elasticsearchwriter;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 /**
  * Created by xiongfeng.bxf on 17/3/2.
  */
 public class ESColumn {
-
     private String name;//: "appkey",
 
     private String type;//": "TEXT",
+    private boolean pk;
 
     private String timezone;
 
@@ -39,6 +41,11 @@ public class ESColumn {
         return type;
     }
 
+    @JSONField(serialize = false)
+    public ESFieldType getEsType() {
+        return ESFieldType.getESFieldType(this.getType());
+    }
+
     public String getTimezone() {
         return timezone;
     }
@@ -61,5 +68,13 @@ public class ESColumn {
 
     public Boolean getArray() {
         return array;
+    }
+
+    public boolean isPk() {
+        return pk;
+    }
+
+    public void setPk(boolean pk) {
+        this.pk = pk;
     }
 }
