@@ -16,6 +16,7 @@ import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.web.start.TisAppLaunch;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -126,16 +127,20 @@ public class CommonRdbmsWriter {
                 List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
 
                 originalConfig.remove(Constant.CONN_MARK);
-                if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+
+                if (CollectionUtils.isNotEmpty(renderedPreSqls)) {
                     // 说明有 preSql 配置，则此处删除掉
                     originalConfig.remove(Key.PRE_SQL);
 
-                    Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, username, password);
-                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls,
-                            ";"), jdbcUrl);
+                    try (Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, username, password)) {
+                        LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls,
+                                ";"), jdbcUrl);
+                        WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
 
-                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
-                    DBUtil.closeDBResources(null, null, conn);
+                    // DBUtil.closeDBResources(null, null, conn);
                 }
             }
 
@@ -260,19 +265,22 @@ public class CommonRdbmsWriter {
         }
 
         public void prepare(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username,
-                    password);
+            try (Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username,
+                    password)) {
+                DBUtil.dealWithSessionConfig(connection, writerSliceConfig, this.dataBaseType, BASIC_MESSAGE);
 
-            DBUtil.dealWithSessionConfig(connection, writerSliceConfig, this.dataBaseType, BASIC_MESSAGE);
-
-            int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
-            if (tableNumber != 1) {
-                LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
-                        BASIC_MESSAGE);
-                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
+                int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
+                if (tableNumber != 1) {
+                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+                            BASIC_MESSAGE);
+                    WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
 
-            DBUtil.closeDBResources(null, null, connection);
+
+            // DBUtil.closeDBResources(null, null, connection);
         }
 
         private IStatementSetter showErrColSetter(ColumnMetaData cm) {

@@ -24,8 +24,8 @@ public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
 
     //TODO 切分报错
-    public static List<Configuration> doSplit(Configuration simplifiedConf,
-                                              int adviceNumber, IDBReservedKeys reservedKeys) {
+    public static List<Configuration> doSplit(Configuration simplifiedConf, int adviceNumber,
+                                              IDBReservedKeys reservedKeys) {
 
         List<Configuration> splitResultConfigs = new ArrayList<Configuration>();
 
@@ -42,9 +42,8 @@ public final class WriterUtil {
         }
 
         if (tableNumber != adviceNumber) {
-            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                    String.format("您的配置文件中的列配置信息有误. 您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s. 请检查您的配置并作出修改.",
-                            tableNumber, adviceNumber));
+            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR, String.format("您的配置文件中的列配置信息有误. " +
+                    "您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s. 请检查您的配置并作出修改.", tableNumber, adviceNumber));
         }
 
         String jdbcUrl;
@@ -97,73 +96,64 @@ public final class WriterUtil {
     }
 
     public static void executeSqls(Connection conn, List<String> sqls, String basicMessage, DataBaseType dataBaseType) {
-        Statement stmt = null;
+
         String currentSql = null;
-        try {
-            stmt = conn.createStatement();
+
+        try (Statement stmt = conn.createStatement()) {
             for (String sql : sqls) {
                 currentSql = sql;
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
         } catch (Exception e) {
             throw RdbmsException.asQueryException(dataBaseType, e, currentSql, null, null);
-        } finally {
-            DBUtil.closeDBResources(null, stmt, null);
         }
     }
 
-    public static String getWriteTemplate(SelectCols columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
-        boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
-                || writeMode.trim().toLowerCase().startsWith("replace")
-                || writeMode.trim().toLowerCase().startsWith("update");
+    public static String getWriteTemplate(SelectCols columnHolders, List<String> valueHolders, String writeMode,
+                                          DataBaseType dataBaseType, boolean forceUseUpdate) {
+        boolean isWriteModeLegal =
+                writeMode.trim().toLowerCase().startsWith("insert") || writeMode.trim().toLowerCase().startsWith(
+                        "replace") || writeMode.trim().toLowerCase().startsWith("update");
 
         if (!isWriteModeLegal) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                    String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace,update 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
+                    String.format("您所配置的 " + "writeMode" + ":%s 错误. 因为DataX 目前仅支持replace,update 或 insert 方式. " +
+                            "请检查您的配置并作出修改.", writeMode));
         }
         // && writeMode.trim().toLowerCase().startsWith("replace")
         String writeDataSqlTemplate;
-        if (forceUseUpdate ||
-                ((dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Tddl) && writeMode.trim().toLowerCase().startsWith("update"))
-        ) {
+        if (forceUseUpdate || ((dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Tddl) && writeMode.trim().toLowerCase().startsWith("update"))) {
             //update只在mysql下使用
 
-            writeDataSqlTemplate = new StringBuilder()
-                    .append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ","))
-                    .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
-                    .append(")")
-                    .append(columnHolders.onDuplicateKeyUpdateString())
-                    .toString();
+            writeDataSqlTemplate =
+                    new StringBuilder().append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ",")).append(") VALUES(").append(StringUtils.join(valueHolders, ",")).append(")").append(columnHolders.onDuplicateKeyUpdateString()).toString();
         } else {
 
             //这里是保护,如果其他错误的使用了update,需要更换为replace
             if (writeMode.trim().toLowerCase().startsWith("update")) {
                 writeMode = "replace";
             }
-            writeDataSqlTemplate = new StringBuilder().append(writeMode)
-                    .append(" INTO %s (").append(columnHolders.getCols()) //StringUtils.join(columnHolders, ",")
-                    .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
-                    .append(")").toString();
+            writeDataSqlTemplate =
+                    new StringBuilder().append(writeMode).append(" INTO %s (").append(columnHolders.getCols())
+                    //StringUtils.join(columnHolders, ",")
+                    .append(") VALUES(").append(StringUtils.join(valueHolders, ",")).append(")").toString();
         }
 
         return writeDataSqlTemplate;
     }
 
     public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type, IDBReservedKeys escapeChar) {
-//        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
-//        Configuration connConf = Configuration.from(conns.get(0).toString());
-//        String table = connConf.getList(Key.TABLE, String.class).get(0);
+        //        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        //        Configuration connConf = Configuration.from(conns.get(0).toString());
+        //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
         SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
-        List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
-                String.class);
-        List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
-                preSqls, selTab);
+        List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
+        List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, selTab);
 
         if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
-            LOG.info("Begin to preCheck preSqls:[{}].",
-                    StringUtils.join(renderedPreSqls, ";"));
+            LOG.info("Begin to preCheck preSqls:[{}].", StringUtils.join(renderedPreSqls, ";"));
             for (String sql : renderedPreSqls) {
                 try {
                     DBUtil.sqlValid(sql, type);
@@ -175,20 +165,17 @@ public final class WriterUtil {
     }
 
     public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type, IDBReservedKeys escapeChar) {
-//        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
-//        Configuration connConf = Configuration.from(conns.get(0).toString());
-//        String table = connConf.getList(Key.TABLE, String.class).get(0);
+        //        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        //        Configuration connConf = Configuration.from(conns.get(0).toString());
+        //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
         SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
-        List<String> postSqls = originalConfig.getList(Key.POST_SQL,
-                String.class);
-        List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
-                postSqls, selTab);
+        List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
+        List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, selTab);
         if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
 
-            LOG.info("Begin to preCheck postSqls:[{}].",
-                    StringUtils.join(renderedPostSqls, ";"));
+            LOG.info("Begin to preCheck postSqls:[{}].", StringUtils.join(renderedPostSqls, ";"));
             for (String sql : renderedPostSqls) {
                 try {
                     DBUtil.sqlValid(sql, type);
