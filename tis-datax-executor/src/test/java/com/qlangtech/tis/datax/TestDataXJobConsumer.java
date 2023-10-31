@@ -44,23 +44,22 @@ public class TestDataXJobConsumer extends TestCase {
 
 //        String[] args = new String[]{"192.168.28.200:2181/tis/cloud", "/datax/jobs"};
 //        DataXJobConsumer.main(args);
-
-        DataXJobConsumer consumer = DataXJobConsumer.getDataXJobConsumer("/datax/jobs", "192.168.28.200:2181/tis/cloud");
-        assertNotNull(consumer);
-
-        // dataXName:ttt,jobid:866,jobName:customer_order_relation_0.json,jobPath:/opt/data/tis/cfg_repo/tis_plugin_config/ap/ttt/dataxCfg/customer_order_relation_0.json
-
-        CuratorDataXTaskMessage msg = new CuratorDataXTaskMessage();
-        msg.setDataXName("ttt");
-       // msg.setJobPath("/opt/data/tis/cfg_repo/tis_plugin_config/ap/ttt/dataxCfg/customer_order_relation_0.json");
-        msg.setJobName("customer_order_relation_0.json");
-        msg.setJobId(866);
-        int count = 0;
-        while (count++ < 2) {
-            System.out.println("turn:" + count);
-            consumer.consumeMessage(msg);
-            Thread.sleep(3000);
-        }
+//        DataXJobConsumer consumer = DataXJobConsumer.getDataXJobConsumer("/datax/jobs", "192.168.28.200:2181/tis/cloud");
+//        assertNotNull(consumer);
+//
+//        // dataXName:ttt,jobid:866,jobName:customer_order_relation_0.json,jobPath:/opt/data/tis/cfg_repo/tis_plugin_config/ap/ttt/dataxCfg/customer_order_relation_0.json
+//
+//        CuratorDataXTaskMessage msg = new CuratorDataXTaskMessage();
+//        msg.setDataXName("ttt");
+//       // msg.setJobPath("/opt/data/tis/cfg_repo/tis_plugin_config/ap/ttt/dataxCfg/customer_order_relation_0.json");
+//        msg.setJobName("customer_order_relation_0.json");
+//        msg.setJobId(866);
+//        int count = 0;
+//        while (count++ < 2) {
+//            System.out.println("turn:" + count);
+//            consumer.consumeMessage(msg);
+//            Thread.sleep(3000);
+//        }
 
 
     }

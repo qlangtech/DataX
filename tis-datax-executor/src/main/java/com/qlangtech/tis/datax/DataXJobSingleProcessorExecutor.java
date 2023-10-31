@@ -31,6 +31,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 //import org.apache.curator.framework.CuratorFramework;
@@ -56,17 +57,18 @@ public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsume
         Integer jobId = msg.getJobId();
         String jobName = msg.getJobName();
         String dataxName = msg.getDataXName();
-        StoreResourceType resType
-                = Objects.requireNonNull(msg.getResType(), "resType can not be null");
-//        MDC.put(JobCommon.KEY_TASK_ID, String.valueOf(jobId));
-//        MDC.put(JobCommon.KEY_COLLECTION, dataxName);
+        StoreResourceType resType = Objects.requireNonNull(msg.getResType(), "resType can not be null");
+        //        MDC.put(JobCommon.KEY_TASK_ID, String.valueOf(jobId));
+        //        MDC.put(JobCommon.KEY_COLLECTION, dataxName);
         JobCommon.setMDC(jobId, dataxName);
         Integer allRowsApproximately = msg.getAllRowsApproximately();
-        logger.info("process DataX job, dataXName:{},jobid:{},jobName:{},allrows:{}", dataxName, jobId, jobName, allRowsApproximately);
+        logger.info("process DataX job, dataXName:{},jobid:{},jobName:{},allrows:{}", dataxName, jobId, jobName,
+                allRowsApproximately);
 
         // 查看当前任务是否正在进行中，如果已经终止则要退出
         if (!isCurrentJobProcessing(jobId)) {
-            logger.warn("current job id:{} jobName:{}, dataxName:{} is not processing skipping!!", jobId, jobName, dataxName);
+            logger.warn("current job id:{} jobName:{}, dataxName:{} is not processing skipping!!", jobId, jobName,
+                    dataxName);
             return;
         }
 
@@ -119,19 +121,30 @@ public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsume
 
             runningTask.computeIfAbsent(jobId, (id) -> executor.getWatchdog());
             try {
-                // 等待5个小时
-                resultHandler.waitFor(5 * 60 * 60 * 1000);
+                int timeout = 5;
 
-                if (resultHandler.hasResult()
-                        && resultHandler.getExitValue() != 0
-                        && resultHandler.getExitValue() != DataxExecutor.DATAX_THREAD_PROCESSING_CANCAL_EXITCODE) {
-                    // it was killed on purpose by the watchdog
-                    if (resultHandler.getException() != null) {
-                        logger.error("dataX:" + dataxName + ",ERROR MSG:" + resultHandler.getException().getMessage());
-                        // throw new RuntimeException(command, resultHandler.getException());
-                        throw new DataXJobSingleProcessorException("dataX:" + dataxName + ",ERROR MSG:" + resultHandler.getException().getMessage());
+                // 等待5个小时
+                resultHandler.waitFor(TimeUnit.HOURS.toMillis(5));
+
+                if (resultHandler.getExitValue() != DataxExecutor.DATAX_THREAD_PROCESSING_CANCAL_EXITCODE) {
+                    if ( //resultHandler.hasResult() &&
+                            resultHandler.getExitValue() != 0) {
+                        // it was killed on purpose by the watchdog
+                        if (resultHandler.getException() != null) {
+                            logger.error("dataX:" + dataxName + ",ERROR MSG:" + resultHandler.getException().getMessage());
+                            // throw new RuntimeException(command, resultHandler.getException());
+                            throw new DataXJobSingleProcessorException("dataX:" + dataxName + ",ERROR MSG:" + resultHandler.getException().getMessage());
+                        }
+                    }
+
+                    if (!resultHandler.hasResult()) {
+                        // 此处应该是超时了
+                        throw new DataXJobSingleProcessorException("dataX:" + dataxName + ",job execute timeout,wait "
+                                + "for " + timeout + " hours");
                     }
                 }
+
+
             } finally {
                 runningTask.remove(jobId);
             }
@@ -172,8 +185,8 @@ public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsume
      */
     protected abstract String getIncrStateCollectAddress();
 
-//    @Override
-//    public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-//        logger.warn("curator stateChanged to new Status:" + connectionState);
-//    }
+    //    @Override
+    //    public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
+    //        logger.warn("curator stateChanged to new Status:" + connectionState);
+    //    }
 }

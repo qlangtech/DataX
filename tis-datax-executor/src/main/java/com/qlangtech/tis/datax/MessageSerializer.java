@@ -30,12 +30,12 @@ public class MessageSerializer  //implements QueueSerializer<CuratorDataXTaskMes
 {
 
     //@Override
-    public byte[] serialize(CuratorDataXTaskMessage item) {
-        return JSON.toJSONString(item, false).getBytes(TisUTF8.get());
-    }
-
-   // @Override
-    public CuratorDataXTaskMessage deserialize(byte[] bytes) {
-        return JSON.parseObject(new String(bytes), CuratorDataXTaskMessage.class);
-    }
+//    public byte[] serialize(CuratorDataXTaskMessage item) {
+//        return JSON.toJSONString(item, false).getBytes(TisUTF8.get());
+//    }
+//
+//   // @Override
+//    public CuratorDataXTaskMessage deserialize(byte[] bytes) {
+//        return JSON.parseObject(new String(bytes), CuratorDataXTaskMessage.class);
+//    }
 }
