@@ -99,7 +99,6 @@ public class StandardFtpHelper extends FtpHelper {
                         throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_DISCONNECT, message, e);
                     }
                 }
-
             }
         }
     }

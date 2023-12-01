@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -41,7 +42,7 @@ public class SftpHelper extends FtpHelper {
             // 如果服务器连接不上，则抛出异常
             if (session == null) {
                 throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN,
-                        "session is null,无法通过sftp与服务器建立链接，请检查主机名和用户名是否正确.");
+                        "session is null," + "无法通过sftp" + "与服务器建立链接，请检查主机名和用户名是否正确.");
             }
 
             session.setPassword(password); // 设置密码
@@ -59,37 +60,38 @@ public class SftpHelper extends FtpHelper {
             //channelSftp.setFilenameEncoding(fileEncoding);
         } catch (JSchException e) {
 
-             throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, e.getMessage(), e);
+            throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, e.getMessage(), e);
 
-//            if (null != e.getCause()) {
-//                String message = null;
-//                String cause = e.getCause().toString();
-//                String unknownHostException = "java.net.UnknownHostException: " + host;
-//                String illegalArgumentException = "java.lang.IllegalArgumentException: port out of range:" + port;
-//                String wrongPort = "java.net.ConnectException: Connection refused";
-//                if (unknownHostException.equals(cause)) {
-//                     message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
-//                    //LOG.error(message);
-//                  //  throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-//                } else if (illegalArgumentException.equals(cause) || wrongPort.equals(cause)) {
-//                     message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
-//                    //LOG.error(message);
-//
-//                }
-//                throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-//            } else {
-//                if ("Auth fail".equals(e.getMessage())) {
-//                    String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
-//                            "message:host =" + host + ",username = " + username + ",port =" + port);
-//                   // LOG.error(message);
-//                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
-//                } else {
-//                    String message = String.format("与ftp服务器建立连接失败 : [%s]",
-//                            "message:host =" + host + ",username = " + username + ",port =" + port);
-//                   // LOG.error(message);
-//
-//                }
-//            }
+            //            if (null != e.getCause()) {
+            //                String message = null;
+            //                String cause = e.getCause().toString();
+            //                String unknownHostException = "java.net.UnknownHostException: " + host;
+            //                String illegalArgumentException = "java.lang.IllegalArgumentException: port out of
+            //                range:" + port;
+            //                String wrongPort = "java.net.ConnectException: Connection refused";
+            //                if (unknownHostException.equals(cause)) {
+            //                     message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
+            //                    //LOG.error(message);
+            //                  //  throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+            //                } else if (illegalArgumentException.equals(cause) || wrongPort.equals(cause)) {
+            //                     message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
+            //                    //LOG.error(message);
+            //
+            //                }
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+            //            } else {
+            //                if ("Auth fail".equals(e.getMessage())) {
+            //                    String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
+            //                            "message:host =" + host + ",username = " + username + ",port =" + port);
+            //                   // LOG.error(message);
+            //                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
+            //                } else {
+            //                    String message = String.format("与ftp服务器建立连接失败 : [%s]",
+            //                            "message:host =" + host + ",username = " + username + ",port =" + port);
+            //                   // LOG.error(message);
+            //
+            //                }
+            //            }
         }
 
     }
@@ -107,17 +109,18 @@ public class SftpHelper extends FtpHelper {
     @Override
     public boolean isDirExist(String directoryPath) {
         try {
-            SftpATTRS sftpATTRS = channelSftp.lstat(directoryPath);
+            SftpATTRS sftpATTRS =
+                    Objects.requireNonNull(channelSftp, "channelSftp can not be null").lstat(directoryPath);
             return sftpATTRS.isDir();
         } catch (SftpException e) {
-            if (e.getMessage().toLowerCase().equals("no such file")) {
-                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", directoryPath);
-                LOG.error(message);
-                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
-            }
-            String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常", directoryPath);
-            LOG.error(message);
-            throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+            //            if (e.getMessage().toLowerCase().equals("no such file")) {
+            //                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", directoryPath);
+            //                LOG.error(message);
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+            //            }
+            //            String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常", directoryPath);
+            //            LOG.error(message);
+            throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, e.getMessage(), e);
         }
     }
 
@@ -130,15 +133,17 @@ public class SftpHelper extends FtpHelper {
                 isExitFlag = true;
             }
         } catch (SftpException e) {
-            if (e.getMessage().toLowerCase().equals("no such file")) {
-                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", filePath);
-                LOG.error(message);
-                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
-            } else {
-                String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", filePath);
-                LOG.error(message);
-                throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
-            }
+            throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, e.getMessage(), e);
+            //            if (e.getMessage().toLowerCase().equals("no such file")) {
+            //                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", filePath);
+            //                LOG.error(message);
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+            //            } else {
+            //                String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", filePath);
+            //                LOG.error(message);
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION,
+            //                message, e);
+            //            }
         }
         return isExitFlag;
     }
@@ -149,15 +154,17 @@ public class SftpHelper extends FtpHelper {
             SftpATTRS sftpATTRS = channelSftp.lstat(filePath);
             return sftpATTRS.isLink();
         } catch (SftpException e) {
-            if (e.getMessage().toLowerCase().equals("no such file")) {
-                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", filePath);
-                LOG.error(message);
-                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
-            } else {
-                String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", filePath);
-                LOG.error(message);
-                throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
-            }
+            throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, e.getMessage(), e);
+            //            if (e.getMessage().toLowerCase().equals("no such file")) {
+            //                String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", filePath);
+            //                LOG.error(message);
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+            //            } else {
+            //                String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", filePath);
+            //                LOG.error(message);
+            //                throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION,
+            //                message, e);
+            //            }
         }
     }
 
@@ -265,9 +272,8 @@ public class SftpHelper extends FtpHelper {
             isDirExist = sftpATTRS.isDir();
         } catch (SftpException e) {
             if (e.getMessage().toLowerCase().equals("no such file")) {
-                LOG.warn(String.format(
-                        "您的配置项path:[%s]不存在，将尝试进行目录创建, errorMessage:%s",
-                        directoryPath, e.getMessage()), e);
+                LOG.warn(String.format("您的配置项path:[%s]不存在，将尝试进行目录创建, errorMessage:%s", directoryPath, e.getMessage())
+                        , e);
                 isDirExist = false;
             }
         }
@@ -283,14 +289,10 @@ public class SftpHelper extends FtpHelper {
                     dirPath.append(IOUtils.DIR_SEPARATOR_UNIX);
                 }
             } catch (SftpException e) {
-                String message = String
-                        .format("创建目录:%s时发生I/O异常,请确认与ftp服务器的连接正常,拥有目录创建权限, errorMessage:%s",
-                                directoryPath, e.getMessage());
+                String message = String.format("创建目录:%s时发生I/O异常,请确认与ftp服务器的连接正常,拥有目录创建权限, errorMessage:%s",
+                        directoryPath, e.getMessage());
                 LOG.error(message, e);
-                throw DataXException
-                        .asDataXException(
-                                FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION,
-                                message, e);
+                throw DataXException.asDataXException(FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
             }
         }
     }
@@ -319,10 +321,8 @@ public class SftpHelper extends FtpHelper {
         Set<String> allFilesWithPointedPrefix = new HashSet<String>();
         try {
             this.printWorkingDirectory();
-            @SuppressWarnings("rawtypes")
-            Vector allFiles = this.channelSftp.ls(dir);
-            LOG.debug(String.format("ls: %s", JSON.toJSONString(allFiles,
-                    SerializerFeature.UseSingleQuotes)));
+            @SuppressWarnings("rawtypes") Vector allFiles = this.channelSftp.ls(dir);
+            LOG.debug(String.format("ls: %s", JSON.toJSONString(allFiles, SerializerFeature.UseSingleQuotes)));
             for (int i = 0; i < allFiles.size(); i++) {
                 LsEntry le = (LsEntry) allFiles.get(i);
                 String strName = le.getFilename();
@@ -331,12 +331,10 @@ public class SftpHelper extends FtpHelper {
                 }
             }
         } catch (SftpException e) {
-            String message = String
-                    .format("获取path:[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常,拥有目录ls权限, errorMessage:%s",
-                            dir, e.getMessage());
+            String message = String.format("获取path:[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常,拥有目录ls权限, errorMessage:%s", dir
+                    , e.getMessage());
             LOG.error(message);
-            throw DataXException.asDataXException(
-                    FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+            throw DataXException.asDataXException(FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
         }
         return allFilesWithPointedPrefix;
     }
@@ -352,22 +350,18 @@ public class SftpHelper extends FtpHelper {
                 this.channelSftp.rm(each);
             }
         } catch (SftpException e) {
-            String message = String.format(
-                    "删除文件:[%s] 时发生异常,请确认指定文件有删除权限,以及网络交互正常, errorMessage:%s",
-                    eachFile, e.getMessage());
+            String message = String.format("删除文件:[%s] 时发生异常,请确认指定文件有删除权限,以及网络交互正常, errorMessage:%s", eachFile,
+                    e.getMessage());
             LOG.error(message);
-            throw DataXException.asDataXException(
-                    FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+            throw DataXException.asDataXException(FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
         }
     }
 
     private void printWorkingDirectory() {
         try {
-            LOG.info(String.format("current working directory:%s",
-                    this.channelSftp.pwd()));
+            LOG.info(String.format("current working directory:%s", this.channelSftp.pwd()));
         } catch (Exception e) {
-            LOG.warn(String.format("printWorkingDirectory error:%s",
-                    e.getMessage()));
+            LOG.warn(String.format("printWorkingDirectory error:%s", e.getMessage()));
         }
     }
 
@@ -375,27 +369,21 @@ public class SftpHelper extends FtpHelper {
     public OutputStream getOutputStream(String filePath, boolean append) {
         try {
             this.printWorkingDirectory();
-            String parentDir = filePath.substring(0,
-                    StringUtils.lastIndexOf(filePath, IOUtils.DIR_SEPARATOR));
+            String parentDir = filePath.substring(0, StringUtils.lastIndexOf(filePath, IOUtils.DIR_SEPARATOR));
             this.channelSftp.cd(parentDir);
             this.printWorkingDirectory();
-            OutputStream writeOutputStream = this.channelSftp.put(filePath,
-                    append ? ChannelSftp.APPEND : ChannelSftp.OVERWRITE);
-            String message = String.format(
-                    "打开FTP文件[%s]获取写出流时出错,请确认文件%s有权限创建，有权限写出等", filePath,
-                    filePath);
+            OutputStream writeOutputStream = this.channelSftp.put(filePath, append ? ChannelSftp.APPEND :
+                    ChannelSftp.OVERWRITE);
+            String message = String.format("打开FTP文件[%s]获取写出流时出错,请确认文件%s有权限创建，有权限写出等", filePath, filePath);
             if (null == writeOutputStream) {
-                throw DataXException.asDataXException(
-                        FtpWriterErrorCode.OPEN_FILE_ERROR, message);
+                throw DataXException.asDataXException(FtpWriterErrorCode.OPEN_FILE_ERROR, message);
             }
             return writeOutputStream;
         } catch (SftpException e) {
-            String message = String.format(
-                    "写出文件[%s] 时出错,请确认文件%s有权限写出, errorMessage:%s", filePath,
-                    filePath, e.getMessage());
+            String message = String.format("写出文件[%s] 时出错,请确认文件%s有权限写出, errorMessage:%s", filePath, filePath,
+                    e.getMessage());
             LOG.error(message);
-            throw DataXException.asDataXException(
-                    FtpWriterErrorCode.OPEN_FILE_ERROR, message);
+            throw DataXException.asDataXException(FtpWriterErrorCode.OPEN_FILE_ERROR, message);
         }
     }
 }
