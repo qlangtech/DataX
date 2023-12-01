@@ -35,10 +35,10 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.JarLoader;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.gilt.logback.flume.tis.TisFlumeLogstashV1Appender;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.qlangtech.tis.TIS;
+import com.qlangtech.tis.cloud.ITISCoordinator;
 import com.qlangtech.tis.config.ParamsConfig;
 import com.qlangtech.tis.datax.impl.DataXCfgGenerator;
 import com.qlangtech.tis.datax.impl.DataxProcessor;
@@ -60,8 +60,9 @@ import com.qlangtech.tis.realtime.transfer.TableSingleDataIndexStatus;
 import com.qlangtech.tis.realtime.utils.NetUtils;
 import com.qlangtech.tis.realtime.yarn.rpc.MasterJob;
 import com.qlangtech.tis.realtime.yarn.rpc.UpdateCounterMap;
+import com.tis.hadoop.rpc.ITISRpcService;
 import com.tis.hadoop.rpc.RpcServiceReference;
-import com.tis.hadoop.rpc.StatusRpcClient;
+import com.tis.hadoop.rpc.StatusRpcClientFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -73,6 +74,7 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -86,8 +88,18 @@ public class DataxExecutor {
     public static int DATAX_THREAD_PROCESSING_CANCAL_EXITCODE = 943;
     private static final Logger logger = LoggerFactory.getLogger(DataxExecutor.class);
 
-    public static void synchronizeDataXPluginsFromRemoteRepository(
-            String dataxName, StoreResourceType resType, DataXJobInfo jobName) {
+    public static RpcServiceReference statusRpc;// = new AtomicReference<>();
+
+    static {
+        AtomicReference<ITISRpcService> ref = new AtomicReference<>();
+        ref.set(StatusRpcClientFactory.AssembleSvcCompsite.MOCK_PRC);
+        statusRpc = new RpcServiceReference(ref, () -> {
+        });
+    }
+
+
+    public static void synchronizeDataXPluginsFromRemoteRepository(String dataxName, StoreResourceType resType,
+                                                                   DataXJobInfo jobName) {
 
         if (CenterResource.notFetchFromCenterRepository()) {
             return;
@@ -99,9 +111,9 @@ public class DataxExecutor {
                 throw new IllegalArgumentException("param dataXName can not be null");
             }
             Objects.requireNonNull(jobName, "param jobName can not be null");
-//            if (StringUtils.isBlank(jobName)) {
-//                throw new IllegalArgumentException("param jobName can not be null");
-//            }
+            //            if (StringUtils.isBlank(jobName)) {
+            //                throw new IllegalArgumentException("param jobName can not be null");
+            //            }
 
             KeyedPluginStore<DataxProcessor> processStore = IAppSource.getPluginStore(null, resType, dataxName);
             List<IRepositoryResource> keyedPluginStores = Lists.newArrayList();
@@ -119,13 +131,9 @@ public class DataxExecutor {
             ComponentMeta dataxComponentMeta = new ComponentMeta(keyedPluginStores);
             dataxComponentMeta.synchronizePluginsFromRemoteRepository();
 
-            CenterResource.copyFromRemote2Local(
-                    Config.KEY_TIS_PLUGIN_CONFIG + "/" + processStore.key.getSubDirPath()
-                            + "/" + DataxProcessor.DATAX_CFG_DIR_NAME + "/" + jobName.jobFileName, true);
+            CenterResource.copyFromRemote2Local(Config.KEY_TIS_PLUGIN_CONFIG + "/" + processStore.key.getSubDirPath() + "/" + DataxProcessor.DATAX_CFG_DIR_NAME + "/" + jobName.jobFileName, true);
 
-            CenterResource.synchronizeSubFiles(
-                    Config.KEY_TIS_PLUGIN_CONFIG + "/"
-                            + processStore.key.getSubDirPath() + "/" + DataxProcessor.DATAX_CREATE_DDL_DIR_NAME);
+            CenterResource.synchronizeSubFiles(Config.KEY_TIS_PLUGIN_CONFIG + "/" + processStore.key.getSubDirPath() + "/" + DataxProcessor.DATAX_CREATE_DDL_DIR_NAME);
 
         } finally {
             TIS.permitInitialize = true;
@@ -134,7 +142,7 @@ public class DataxExecutor {
 
     /**
      * @param args
-     * @see DataXJobConsumer
+     * @see DataxPrePostConsumer
      * @see DataXJobSingleProcessorExecutor
      * 入口开始执行
      */
@@ -165,9 +173,9 @@ public class DataxExecutor {
 
         JobCommon.setMDC(jobId, dataXName);
         Objects.requireNonNull(jobInfo, "arg 'jobName' can not be null");
-//        if () {
-//            throw new IllegalArgumentException("arg 'jobName' can not be null");
-//        }
+        //        if () {
+        //            throw new IllegalArgumentException("arg 'jobName' can not be null");
+        //        }
         if (StringUtils.isEmpty(dataXName)) {
             throw new IllegalArgumentException("arg 'dataXName' can not be null");
         }
@@ -175,19 +183,12 @@ public class DataxExecutor {
             throw new IllegalArgumentException("arg 'incrStateCollectAddress' can not be null");
         }
 
-        StatusRpcClient.AssembleSvcCompsite statusRpc = StatusRpcClient.connect2RemoteIncrStatusServer(incrStateCollectAddress);
-        Runtime.getRuntime().addShutdownHook(new Thread("dataX ShutdownHook") {
-            @Override
-            public void run() {
-                statusRpc.close();
-                // if (flumeAppendEnable) {
-                TisFlumeLogstashV1Appender.instance.stop();
-                // }
-            }
-        });
+        statusRpc = StatusRpcClientFactory.getService(ITISCoordinator.create(Optional.of(incrStateCollectAddress)));
+        DataxExecutor.statusRpc = statusRpc;
 
-        DataxExecutor dataxExecutor = new DataxExecutor(new RpcServiceReference(new AtomicReference<>(statusRpc), () -> {
-        }), execMode, allRows);
+        //  final AtomicReference<ITISRpcService> rpcRef = new AtomicReference<>(statusRpc);
+
+        DataxExecutor dataxExecutor = new DataxExecutor(execMode, allRows);
 
         if (execMode == DataXJobSubmit.InstanceType.DISTRIBUTE) {
             // 如果是分布式执行状态，需要通过RPC的方式来监听监工是否执行了客户端终止操作
@@ -200,7 +201,8 @@ public class DataxExecutor {
             dataxExecutor.reportDataXJobStatus(false, false, false, jobId, jobInfo);
             IDataxProcessor dataxProcessor = DataxProcessor.load(null, resType, dataXName);
             //  File jobPath = jobInfo.getJobPath(dataxProcessor.getDataxCfgDir(null));
-            DataXJobArgs jobArgs = DataXJobArgs.createJobArgs(dataxProcessor, jobId, jobInfo, taskSerializeNum, execEpochMilli);
+            DataXJobArgs jobArgs = DataXJobArgs.createJobArgs(dataxProcessor, jobId, jobInfo, taskSerializeNum,
+                    execEpochMilli);
 
             dataxExecutor.exec(jobInfo, dataxProcessor, jobArgs);
             dataxExecutor.reportDataXJobStatus(false, jobId, jobInfo);
@@ -214,26 +216,29 @@ public class DataxExecutor {
 
             }
             System.exit(1);
+            return;
         }
         logger.info("dataX:" + dataXName + ",taskid:" + jobId + " finished");
         System.exit(0);
     }
 
-    private static Thread monitorDistributeCommand(Integer jobId, DataXJobInfo jobInfo, String dataXName
-            , StatusRpcClient.AssembleSvcCompsite statusRpc, DataxExecutor dataxExecutor) {
+    private static Thread monitorDistributeCommand(Integer jobId, DataXJobInfo jobInfo, String dataXName,
+                                                   RpcServiceReference statusRpc, DataxExecutor dataxExecutor) {
         Thread overseerListener = new Thread() {
             @Override
             public void run() {
                 UpdateCounterMap status = new UpdateCounterMap();
                 status.setFrom(NetUtils.getHost());
-                logger.info("start to listen the dataX job taskId:{},jobName:{},dataXName:{} overseer cancel", jobId, jobInfo, dataXName);
+                logger.info("start to listen the dataX job taskId:{},jobName:{},dataXName:{} overseer cancel", jobId,
+                        jobInfo, dataXName);
                 TableSingleDataIndexStatus dataXStatus = new TableSingleDataIndexStatus();
                 dataXStatus.setUUID(jobInfo.jobFileName);
                 status.addTableCounter(IAppSourcePipelineController.DATAX_FULL_PIPELINE + dataXName, dataXStatus);
 
                 while (true) {
                     status.setUpdateTime(System.currentTimeMillis());
-                    MasterJob masterJob = statusRpc.reportStatus(status);
+                    MasterJob masterJob =
+                            ((StatusRpcClientFactory.AssembleSvcCompsite) statusRpc.get()).reportStatus(status);
                     if (masterJob != null && masterJob.isStop()) {
                         logger.info("datax job:{},taskid:{} has received an CANCEL signal", jobInfo, jobId);
                         dataxExecutor.reportDataXJobStatus(true, jobId, jobInfo);
@@ -266,16 +271,16 @@ public class DataxExecutor {
      * @param dataxProcessor
      * @throws Exception
      */
-    public void exec(final JarLoader uberClassLoader, DataXJobInfo jobName
-            , IDataxProcessor dataxProcessor, DataXJobArgs jobArgs) throws Exception {
+    public void exec(final JarLoader uberClassLoader, DataXJobInfo jobName, IDataxProcessor dataxProcessor,
+                     DataXJobArgs jobArgs) throws Exception {
         if (uberClassLoader == null) {
             throw new IllegalArgumentException("param uberClassLoader can not be null");
         }
-//        if (StringUtils.isEmpty(dataxName)) {
-//            throw new IllegalArgumentException("param dataXName can not be null");
-//        }
+        //        if (StringUtils.isEmpty(dataxName)) {
+        //            throw new IllegalArgumentException("param dataXName can not be null");
+        //        }
         boolean success = false;
-        JobCommon.setMDC(jobArgs.jobId);
+        JobCommon.setMDC(jobArgs.jobId, dataxProcessor.identityValue());
         try {
             logger.info("process DataX job,jobid:{},jobName:{}", jobArgs.jobId, jobName);
             //KeyedPluginStore.StoreResourceType resType = null;
@@ -303,14 +308,15 @@ public class DataxExecutor {
     private IDataXPluginMeta.DataXMeta writerMeta;
 
 
-    private final RpcServiceReference statusRpc;
+    // private final RpcServiceReference statusRpc;
     //private final JarLoader uberClassLoader;
     private DataXJobSubmit.InstanceType execMode;
     private final int allRowsApproximately;
     private final long[] allReadApproximately = new long[1];
 
-    public DataxExecutor(RpcServiceReference statusRpc, DataXJobSubmit.InstanceType execMode, int allRows) {
-        this.statusRpc = statusRpc;
+    public DataxExecutor(DataXJobSubmit.InstanceType execMode, int allRows) {
+        //this.statusRpc = statusRpc;
+        Objects.requireNonNull(statusRpc, "statusRpc can not be null");
         this.execMode = execMode;
         this.allRowsApproximately = allRows;
     }
@@ -322,9 +328,8 @@ public class DataxExecutor {
      * @throws IOException
      * @throws Exception
      */
-    public void startWork(DataXJobInfo jobName
-            , IDataxProcessor dataxProcessor
-            , final JarLoader uberClassLoader, DataXJobArgs jobArgs) throws IOException, Exception {
+    public void startWork(DataXJobInfo jobName, IDataxProcessor dataxProcessor, final JarLoader uberClassLoader,
+                          DataXJobArgs jobArgs) throws IOException, Exception {
         try {
 
             final String processName = dataxProcessor.identityValue();
@@ -346,7 +351,8 @@ public class DataxExecutor {
             Objects.requireNonNull(readerMeta, "readerMeta can not be null");
             Objects.requireNonNull(writerMeta, "writerMeta can not be null");
 
-            initializeClassLoader(Sets.newHashSet(this.getPluginReaderKey(), this.getPluginWriterKey()), uberClassLoader);
+            initializeClassLoader(Sets.newHashSet(this.getPluginReaderKey(), this.getPluginWriterKey()),
+                    uberClassLoader);
 
 
             entry(jobArgs, jobName, dataxProcessor.getResType());
@@ -360,13 +366,13 @@ public class DataxExecutor {
     }
 
     public static void initializeClassLoader(Set<String> pluginKeys, JarLoader classLoader) throws IllegalAccessException {
-//        Map<String, JarLoader> jarLoaderCenter = (Map<String, JarLoader>) jarLoaderCenterField.get(null);
-//        jarLoaderCenter.clear();
-//
-//        for (String pluginKey : pluginKeys) {
-//            jarLoaderCenter.put(pluginKey, classLoader);
-//        }
-//        Objects.requireNonNull(jarLoaderCenter, "jarLoaderCenter can not be null");
+        //        Map<String, JarLoader> jarLoaderCenter = (Map<String, JarLoader>) jarLoaderCenterField.get(null);
+        //        jarLoaderCenter.clear();
+        //
+        //        for (String pluginKey : pluginKeys) {
+        //            jarLoaderCenter.put(pluginKey, classLoader);
+        //        }
+        //        Objects.requireNonNull(jarLoaderCenter, "jarLoaderCenter can not be null");
         LoadUtil.initializeJarClassLoader(pluginKeys, classLoader);
     }
 
@@ -374,12 +380,13 @@ public class DataxExecutor {
         reportDataXJobStatus(faild, true, false, taskId, jobName);
     }
 
-    public void reportDataXJobStatus(boolean faild, boolean complete, boolean waiting, Integer taskId, DataXJobInfo jobName) {
-        StatusRpcClient.AssembleSvcCompsite svc = statusRpc.get();
+    public void reportDataXJobStatus(boolean faild, boolean complete, boolean waiting, Integer taskId,
+                                     DataXJobInfo jobName) {
+        StatusRpcClientFactory.AssembleSvcCompsite svc = statusRpc.get();
         int readed = (int) allReadApproximately[0];
         boolean success = (complete && !faild);
-        svc.reportDumpJobStatus(faild, complete, waiting, taskId, jobName.jobFileName
-                , readed, (success ? readed : this.allRowsApproximately));
+        svc.reportDumpJobStatus(faild, complete, waiting, taskId, jobName.jobFileName, readed, (success ? readed :
+                this.allRowsApproximately));
     }
 
     public static class DataXJobArgs {
@@ -388,21 +395,23 @@ public class DataxExecutor {
         private final String runtimeMode;
         private final int taskSerializeNum;
         private final long execEpochMilli;
-//        private final String execTimeStamp;
+        //        private final String execTimeStamp;
 
-        public DataXJobArgs(File jobPath, Integer jobId, String runtimeMode, int taskSerializeNum, long execEpochMilli) {
+        public DataXJobArgs(File jobPath, Integer jobId, String runtimeMode, int taskSerializeNum,
+                            long execEpochMilli) {
             this.jobPath = jobPath;
             this.jobId = jobId;
             this.runtimeMode = runtimeMode;
             this.taskSerializeNum = taskSerializeNum;
             this.execEpochMilli = execEpochMilli;
-//            if (StringUtils.isEmpty(execTimeStamp)) {
-//                throw new IllegalArgumentException("param execTimeStamp can not be empty");
-//            }
-//            this.execTimeStamp = execTimeStamp;
+            //            if (StringUtils.isEmpty(execTimeStamp)) {
+            //                throw new IllegalArgumentException("param execTimeStamp can not be empty");
+            //            }
+            //            this.execTimeStamp = execTimeStamp;
         }
 
-        public static DataXJobArgs createJobArgs(IDataxProcessor dataxProcessor, Integer jobId, DataXJobInfo jobInfo, final int taskSerializeNum, final long execEpochMilli) {
+        public static DataXJobArgs createJobArgs(IDataxProcessor dataxProcessor, Integer jobId, DataXJobInfo jobInfo,
+                                                 final int taskSerializeNum, final long execEpochMilli) {
             File jobPath = jobInfo.getJobPath(dataxProcessor.getDataxCfgDir(null));
             DataXJobArgs jobArgs = new DataXJobArgs(jobPath, jobId, "standalone", taskSerializeNum, execEpochMilli);
             return jobArgs;
@@ -418,11 +427,7 @@ public class DataxExecutor {
 
         @Override
         public String toString() {
-            return "{" +
-                    "jobPath=" + jobPath.getAbsolutePath() +
-                    ", jobId=" + jobId +
-                    ", runtimeMode='" + runtimeMode + '\'' +
-                    '}';
+            return "{" + "jobPath=" + jobPath.getAbsolutePath() + ", jobId=" + jobId + ", runtimeMode='" + runtimeMode + '\'' + '}';
         }
     }
 
@@ -435,7 +440,8 @@ public class DataxExecutor {
 
         boolean isStandAloneMode = "standalone".equalsIgnoreCase(args.runtimeMode);
         if (!isStandAloneMode && args.jobId == -1L) {
-            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 standalone 模式必须在 URL 中提供有效的 jobId.");
+            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                    "非 standalone 模式必须在 URL 中提供有效的 " + "jobId.");
         }
 
         VMInfo vmInfo = VMInfo.getVmInfo();
@@ -462,10 +468,10 @@ public class DataxExecutor {
         setAllReadApproximately(dataXContainer.getContainerCommunicator().collect());
     }
 
-//    public static final String connectKeyParameter = "parameter";
-//
-//    static final String readerKeyPrefix = "job.content[0].reader." + connectKeyParameter + ".";
-//    static final String writerKeyPrefix = "job.content[0].writer." + connectKeyParameter + ".";
+    //    public static final String connectKeyParameter = "parameter";
+    //
+    //    static final String readerKeyPrefix = "job.content[0].reader." + connectKeyParameter + ".";
+    //    static final String writerKeyPrefix = "job.content[0].writer." + connectKeyParameter + ".";
 
     private class TISDataXJobContainer extends JobContainer {
         private final Integer jobId;
@@ -473,7 +479,8 @@ public class DataxExecutor {
         private final DataXJobArgs jobArgs;
         private final IDataXNameAware dataXName;
 
-        public TISDataXJobContainer(IDataXNameAware dataXName, Configuration configuration, DataXJobArgs args, DataXJobInfo jobName) {
+        public TISDataXJobContainer(IDataXNameAware dataXName, Configuration configuration, DataXJobArgs args,
+                                    DataXJobInfo jobName) {
             super(configuration);
             this.jobArgs = args;
             this.jobId = args.jobId;
@@ -528,7 +535,8 @@ public class DataxExecutor {
     /**
      * 指定Job配置路径，ConfigParser会解析Job、Plugin、Core全部信息，并以Configuration返回
      */
-    private Pair<Configuration, IDataXNameAware> parse(DataXJobArgs args, StoreResourceType resType, DataXJobInfo jobName) {
+    private Pair<Configuration, IDataXNameAware> parse(DataXJobArgs args, StoreResourceType resType,
+                                                       DataXJobInfo jobName) {
         final String jobPath = args.jobPath.getAbsolutePath();
         Configuration configuration = ConfigParser.parseJobConfig(jobPath);
 
@@ -547,15 +555,15 @@ public class DataxExecutor {
         }
 
 
-//        configuration.set(readerKeyPrefix + DataxUtils.DATAX_NAME, dataxName);
-//        configuration.set(writerKeyPrefix + DataxUtils.DATAX_NAME, dataxName);
+        //        configuration.set(readerKeyPrefix + DataxUtils.DATAX_NAME, dataxName);
+        //        configuration.set(writerKeyPrefix + DataxUtils.DATAX_NAME, dataxName);
 
         final String readerDbFactoryId = jobName.getDbFactoryId().identityValue();
         configuration.set(IDataXCfg.readerKeyPrefix + DataxUtils.DATASOURCE_FACTORY_IDENTITY, readerDbFactoryId);
 
         setResType(configuration, resType);
-//        configuration.set(readerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
-//        configuration.set(writerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
+        //        configuration.set(readerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
+        //        configuration.set(writerKeyPrefix + StoreResourceType.KEY_STORE_RESOURCE_TYPE, resType.getType());
 
 
         //KeyedPluginStore.StoreResourceType.
@@ -611,8 +619,8 @@ public class DataxExecutor {
     public static Configuration filterSensitiveConfiguration(Configuration configuration) {
         Set<String> keys = configuration.getKeys();
         for (final String key : keys) {
-            boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
-                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
+            boolean isSensitive =
+                    StringUtils.endsWithIgnoreCase(key, "password") || StringUtils.endsWithIgnoreCase(key, "accessKey");
             if (isSensitive && configuration.get(key) instanceof String) {
                 configuration.set(key, configuration.getString(key).replaceAll(".", "*"));
             }

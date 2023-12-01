@@ -103,6 +103,26 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public Integer getTaskId() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getJobName() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getDataXName() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getExecEpochMilli() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * jobContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
      * post以及destroy和statistics

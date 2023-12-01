@@ -36,7 +36,8 @@ public class TestDataXExecutorWithMysql2Elastic extends BasicDataXExecutorTestCa
 
     private boolean hasExecuteStartEngine;
     final Integer jobId = 123;
-    final DataXJobInfo jobName = DataXJobInfo.create("instancedetail_0.json", DBIdentity.parseId(""), Collections.emptyList());
+    final DataXJobInfo jobName = DataXJobInfo.create("instancedetail_0.json", DBIdentity.parseId(""),
+            Collections.emptyList());
     final String dataxName = "mysql_elastic";
 
     @Override
@@ -51,8 +52,8 @@ public class TestDataXExecutorWithMysql2Elastic extends BasicDataXExecutorTestCa
     public void testResourceSync() throws Exception {
         IDataxProcessor dataxProcessor = DataxProcessor.load(null, StoreResourceType.DataApp, dataxName);
 
-        DataxExecutor.DataXJobArgs jobArgs
-                = DataxExecutor.DataXJobArgs.createJobArgs(dataxProcessor, jobId, jobName, 0, TimeFormat.getCurrentTimeStamp());
+        DataxExecutor.DataXJobArgs jobArgs = DataxExecutor.DataXJobArgs.createJobArgs(dataxProcessor, jobId, jobName,
+                0, TimeFormat.getCurrentTimeStamp());
         this.executor.exec(jobName, dataxProcessor, jobArgs);
         assertTrue("hasExecuteStartEngine", hasExecuteStartEngine);
     }
@@ -70,14 +71,15 @@ public class TestDataXExecutorWithMysql2Elastic extends BasicDataXExecutorTestCa
     }
 
     protected DataxExecutor createExecutor() {
-        return new DataxExecutor(statusRpc, DataXJobSubmit.InstanceType.LOCAL, 300) {
+        return new DataxExecutor(DataXJobSubmit.InstanceType.LOCAL, 300) {
 
             @Override
-            protected void startEngine(Pair<Configuration, IDataXNameAware> cfg, DataXJobArgs args, DataXJobInfo jobName) {
+            protected void startEngine(Pair<Configuration, IDataXNameAware> cfg, DataXJobArgs args,
+                                       DataXJobInfo jobName) {
 
                 //  make skip the ex
-                int jobSleepIntervalInMillSec = cfg.getLeft().getInt(
-                        CoreConstant.DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL, 10000);
+                int jobSleepIntervalInMillSec =
+                        cfg.getLeft().getInt(CoreConstant.DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL, 10000);
                 assertEquals(3000, jobSleepIntervalInMillSec);
                 hasExecuteStartEngine = true;
             }

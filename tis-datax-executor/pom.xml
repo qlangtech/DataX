@@ -44,10 +44,10 @@
             <version>1.3</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.apache.curator</groupId>-->
-<!--            <artifactId>curator-recipes</artifactId>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.curator</groupId>-->
+        <!--            <artifactId>curator-recipes</artifactId>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.qlangtech.tis</groupId>
@@ -61,24 +61,30 @@
             <version>${tis.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.qlangtech.tis</groupId>
-            <artifactId>tis-logback-flume-appender</artifactId>
-            <classifier>shaded</classifier>
-            <version>${tis.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.qlangtech.tis</groupId>-->
+        <!--            <artifactId>tis-logback-flume-appender</artifactId>-->
+        <!--            <classifier>shaded</classifier>-->
+        <!--            <version>${tis.version}</version>-->
+        <!--            <exclusions>-->
+        <!--                <exclusion>-->
+        <!--                    <groupId>*</groupId>-->
+        <!--                    <artifactId>*</artifactId>-->
+        <!--                </exclusion>-->
+        <!--            </exclusions>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-core</artifactId>
             <version>${datax-project-version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-common</artifactId>
+        </dependency>
+
         <!--        <dependency>-->
         <!--            <groupId>com.alibaba.datax</groupId>-->
         <!--            <artifactId>plugin-unstructured-storage-util</artifactId>-->
@@ -113,6 +119,11 @@
                 <!--                </exclusion>-->
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
@@ -141,7 +152,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.qlangtech.tis.datax.DataXJobConsumer</mainClass>
+                            <mainClass>com.qlangtech.tis.datax.DataxPrePostConsumer</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
                             <useUniqueVersions>true</useUniqueVersions>
@@ -150,10 +161,10 @@
                             <class-path>conf/</class-path>
                         </manifestEntries>
                     </archive>
-                    <excludes combine.self="override" />
-<!--                    <includes>-->
-<!--                        <include>logback-datax.xml</include>-->
-<!--                    </includes>-->
+                    <excludes combine.self="override"/>
+                    <!--                    <includes>-->
+                    <!--                        <include>logback-datax.xml</include>-->
+                    <!--                    </includes>-->
                 </configuration>
             </plugin>
         </plugins>

@@ -57,6 +57,16 @@
     </fileSets>
     <dependencySets>
         <dependencySet>
+            <scope>provided</scope>
+            <includes>
+                <include>com.qlangtech.tis:tis-plugin</include>
+                <include>com.alibaba.datax:datax-common</include>
+            </includes>
+            <outputDirectory>/lib</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+        </dependencySet>
+        <dependencySet>
             <scope>runtime</scope>
             <!-- http://maven.apache.org/plugins/maven-assembly-plugin/assembly.html -->
             <excludes>

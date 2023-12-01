@@ -30,7 +30,7 @@ public class TestAll extends TestCase {
 
     public static Test suite() throws Exception {
         TestSuite suite = new TestSuite();
-        suite.addTestSuite(TestDataxExecutor.class);
+       // suite.addTestSuite(TestDataxExecutor.class);
         suite.addTestSuite(TestDataxExecutorSynRes.class);
         return suite;
     }

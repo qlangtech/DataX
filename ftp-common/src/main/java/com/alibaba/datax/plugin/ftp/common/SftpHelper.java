@@ -58,33 +58,38 @@ public class SftpHelper extends FtpHelper {
             //String fileEncoding = System.getProperty("file.encoding");
             //channelSftp.setFilenameEncoding(fileEncoding);
         } catch (JSchException e) {
-            if (null != e.getCause()) {
-                String cause = e.getCause().toString();
-                String unknownHostException = "java.net.UnknownHostException: " + host;
-                String illegalArgumentException = "java.lang.IllegalArgumentException: port out of range:" + port;
-                String wrongPort = "java.net.ConnectException: Connection refused";
-                if (unknownHostException.equals(cause)) {
-                    String message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
-                    LOG.error(message);
-                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-                } else if (illegalArgumentException.equals(cause) || wrongPort.equals(cause)) {
-                    String message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
-                    LOG.error(message);
-                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-                }
-            } else {
-                if ("Auth fail".equals(e.getMessage())) {
-                    String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
-                            "message:host =" + host + ",username = " + username + ",port =" + port);
-                    LOG.error(message);
-                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
-                } else {
-                    String message = String.format("与ftp服务器建立连接失败 : [%s]",
-                            "message:host =" + host + ",username = " + username + ",port =" + port);
-                    LOG.error(message);
-                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-                }
-            }
+
+             throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, e.getMessage(), e);
+
+//            if (null != e.getCause()) {
+//                String message = null;
+//                String cause = e.getCause().toString();
+//                String unknownHostException = "java.net.UnknownHostException: " + host;
+//                String illegalArgumentException = "java.lang.IllegalArgumentException: port out of range:" + port;
+//                String wrongPort = "java.net.ConnectException: Connection refused";
+//                if (unknownHostException.equals(cause)) {
+//                     message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
+//                    //LOG.error(message);
+//                  //  throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+//                } else if (illegalArgumentException.equals(cause) || wrongPort.equals(cause)) {
+//                     message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
+//                    //LOG.error(message);
+//
+//                }
+//                throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+//            } else {
+//                if ("Auth fail".equals(e.getMessage())) {
+//                    String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
+//                            "message:host =" + host + ",username = " + username + ",port =" + port);
+//                   // LOG.error(message);
+//                    throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
+//                } else {
+//                    String message = String.format("与ftp服务器建立连接失败 : [%s]",
+//                            "message:host =" + host + ",username = " + username + ",port =" + port);
+//                   // LOG.error(message);
+//
+//                }
+//            }
         }
 
     }

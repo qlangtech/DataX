@@ -21,22 +21,21 @@ package com.qlangtech.tis.datax;
 import com.qlangtech.tis.job.common.JobCommon;
 import com.qlangtech.tis.manage.common.Config;
 import com.qlangtech.tis.offline.DataxUtils;
-import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.web.start.TisAppLaunch;
-import org.apache.commons.exec.*;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-//import org.apache.curator.framework.CuratorFramework;
-//import org.apache.curator.framework.recipes.queue.QueueConsumer;
-//import org.apache.curator.framework.state.ConnectionState;
 
 /**
  * 独立进程中执行DataX任务，这样可以有效避免每次执行DataX任务由于ClassLoader的冲突导致的错误
@@ -44,35 +43,37 @@ import java.util.stream.Collectors;
  * @author: 百岁（baisui@qlangtech.com）
  * @create: 2021-08-29 10:19
  **/
-public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsumer<CuratorDataXTaskMessage>
-{
+public abstract class DataXJobSingleProcessorExecutor<T extends IDataXTaskRelevant> {
     private static final Logger logger = LoggerFactory.getLogger(DataXJobSingleProcessorExecutor.class);
 
     // 记录当前正在执行的任务<taskid,ExecuteWatchdog>
     public final ConcurrentHashMap<Integer, ExecuteWatchdog> runningTask = new ConcurrentHashMap<>();
 
     // @Override
-    public void consumeMessage(CuratorDataXTaskMessage msg) throws Exception {
+    public void consumeMessage(T msg) throws Exception {
         //MDC.put();
-        Integer jobId = msg.getJobId();
+        Integer taskId = msg.getTaskId();
         String jobName = msg.getJobName();
         String dataxName = msg.getDataXName();
-        StoreResourceType resType = Objects.requireNonNull(msg.getResType(), "resType can not be null");
+        //  StoreResourceType resType = Objects.requireNonNull(msg.getResType(), "resType can not be null");
         //        MDC.put(JobCommon.KEY_TASK_ID, String.valueOf(jobId));
         //        MDC.put(JobCommon.KEY_COLLECTION, dataxName);
-        JobCommon.setMDC(jobId, dataxName);
-        Integer allRowsApproximately = msg.getAllRowsApproximately();
-        logger.info("process DataX job, dataXName:{},jobid:{},jobName:{},allrows:{}", dataxName, jobId, jobName,
-                allRowsApproximately);
+        JobCommon.setMDC(taskId, dataxName);
+
 
         // 查看当前任务是否正在进行中，如果已经终止则要退出
+        execSystemTask(msg, taskId, jobName, dataxName);
+    }
+
+    protected void execSystemTask(T msg, Integer jobId, String jobName, String dataxName) throws IOException,
+            InterruptedException, DataXJobSingleProcessorException {
         if (!isCurrentJobProcessing(jobId)) {
             logger.warn("current job id:{} jobName:{}, dataxName:{} is not processing skipping!!", jobId, jobName,
                     dataxName);
             return;
         }
 
-        synchronized (DataXJobConsumer.class) {
+        synchronized (DataxPrePostConsumer.class) {
             //exec(msg);
             CommandLine cmdLine = new CommandLine("java");
             cmdLine.addArgument("-D" + Config.KEY_DATA_DIR + "=" + Config.getDataDir().getAbsolutePath());
@@ -88,23 +89,7 @@ public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsume
             cmdLine.addArgument("-classpath");
             cmdLine.addArgument(getClasspath());
             cmdLine.addArgument(getMainClassName());
-            cmdLine.addArgument(String.valueOf(jobId));
-            cmdLine.addArgument(jobName);
-            // 需要一个占位
-            cmdLine.addArgument(dataxName);
-            //  cmdLine.addArgument(jobPath, true);
-            cmdLine.addArgument(getIncrStateCollectAddress());
-            // 执行模式
-            cmdLine.addArgument(getExecMode().literia);
-            // 估计 总记录数目
-            cmdLine.addArgument(String.valueOf(allRowsApproximately));
-            // 当前批次的执行时间戳
-            // cmdLine.addArgument(msg.getExecTimeStamp());
-            // 存储资源类型
-            cmdLine.addArgument(resType.getType());
-
-            cmdLine.addArgument(String.valueOf(msg.getTaskSerializeNum()));
-            cmdLine.addArgument(String.valueOf(msg.getExecEpochMilli()));
+            addMainClassParams(msg, jobId, jobName, dataxName, cmdLine);
 
             DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
 
@@ -150,6 +135,12 @@ public abstract class DataXJobSingleProcessorExecutor  //implements QueueConsume
             }
         }
     }
+
+
+    protected abstract void addMainClassParams(T msg, Integer taskId, String jobName, String dataxName,
+                                      CommandLine cmdLine) ;
+
+
 
     protected boolean isCurrentJobProcessing(Integer jobId) {
         return true;
