@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 
 /**
+ * used by com.qlangtech.tis.plugin.datax.TaskExec
+ *
  * @author 百岁 (baisui@qlangtech.com)
  * @date 2023/11/18
  */
@@ -32,10 +34,10 @@ public abstract class DataxSplitTabSyncConsumer extends DataXJobSingleProcessorE
         return false;
     }
 
-//    @Override
-//    protected String[] getExtraJavaSystemPrams() {
-//        return new String[]{"-D" + CenterResource.KEY_notFetchFromCenterRepository + "=true"};
-//    }
+    //    @Override
+    //    protected String[] getExtraJavaSystemPrams() {
+    //        return new String[]{"-D" + CenterResource.KEY_notFetchFromCenterRepository + "=true"};
+    //    }
 
     @Override
     protected final String getIncrStateCollectAddress() {
@@ -69,5 +71,6 @@ public abstract class DataxSplitTabSyncConsumer extends DataXJobSingleProcessorE
 
         cmdLine.addArgument(String.valueOf(msg.getTaskSerializeNum()));
         cmdLine.addArgument(String.valueOf(msg.getExecEpochMilli()));
+        //  cmdLine.addArgument(msg.)
     }
 }

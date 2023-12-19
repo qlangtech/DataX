@@ -1,8 +1,7 @@
 mvn clean install -Dmaven.test.skip=true \
 -Ptis-repo \
 -pl  \
-tis-datax-executor\
-,hbase20xsqlreader\
+hbase20xsqlreader\
 ,plugin-unstructured-storage-util\
 ,odpswriter\
 ,elasticsearchwriter\
@@ -27,6 +26,8 @@ tis-datax-executor\
 ,cassandrareader\
 ,cassandrawriter\
 ,mongodbreader\
-,mongodbwriter \
+,mongodbwriter\
+,kingbaseesreader\
+,kingbaseeswriter \
 -am -fn
 

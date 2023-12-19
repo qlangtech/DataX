@@ -94,8 +94,13 @@ public class DataxPrePostExecutor {
             IDataXBatchPost batchPost =
                     IDataxWriter.castBatchPost(Objects.requireNonNull(dataxProcessor.getWriter(null), "dataXName" +
                             ":" + dataXName + " relevant dataXWriter can not be null"));
-
-            DefaultExecContext execContext = new DefaultExecContext(dataXName, execEpochMilli);
+            DefaultExecContext execContext = new DefaultExecContext(dataXName, execEpochMilli){
+                @Override
+                public IDataxProcessor getProcessor() {
+                    return dataxProcessor;
+                }
+            };
+            execContext.setResType(resType);
 
             if (IDataXBatchPost.KEY_POST.equalsIgnoreCase(lifecycleHookName)) {
                 hookTrigger = batchPost.createPostTask(execContext, tab, dataxProcessor.getDataxCfgFileNames(null));

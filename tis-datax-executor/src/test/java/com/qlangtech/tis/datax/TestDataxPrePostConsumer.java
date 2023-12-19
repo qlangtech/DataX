@@ -1,5 +1,8 @@
 package com.qlangtech.tis.datax;
 
+import com.qlangtech.tis.datax.impl.DataxProcessor;
+import com.qlangtech.tis.manage.biz.dal.pojo.Application;
+import com.qlangtech.tis.plugin.StoreResourceType;
 import junit.framework.TestCase;
 
 import java.util.Objects;
@@ -25,10 +28,34 @@ public class TestDataxPrePostConsumer extends TestCase {
         prePostConsumer.consumeMessage(lifecycleHookMsg);
     }
 
+
     private DataXLifecycleHookMsg createHookMsg(IDataXBatchPost.LifeCycleHook lifeCycleHook) {
+
+        IDataxProcessor processor = new DataxProcessor() {
+            @Override
+            public Application buildApp() {
+                return null;
+            }
+
+            @Override
+            public IDataxGlobalCfg getDataXGlobalCfg() {
+                return null;
+            }
+
+            @Override
+            public String identityValue() {
+                return dataXName;
+            }
+
+            @Override
+            public StoreResourceType getResType() {
+                return StoreResourceType.DataApp;
+            }
+        };
+
         Objects.requireNonNull(lifeCycleHook, "lifeCycleHook can not be null");
-        return DataXLifecycleHookMsg.createDataXLifecycleHookMsg(this.dataXName, tableName, taskId,IDataXBatchPost.KEY_PREP + tableName ,currentTimeStamp
-                , lifeCycleHook);
+        return DataXLifecycleHookMsg.createDataXLifecycleHookMsg(processor, tableName, taskId,
+                IDataXBatchPost.KEY_PREP + tableName, currentTimeStamp, lifeCycleHook, false);
     }
 
     public void testConsumePostExecMessage() throws Exception {

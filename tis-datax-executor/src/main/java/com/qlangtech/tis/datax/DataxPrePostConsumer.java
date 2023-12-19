@@ -35,9 +35,6 @@ import java.util.Objects;
  * @create: 2021-05-06 14:57
  **/
 public class DataxPrePostConsumer extends DataXJobSingleProcessorExecutor<DataXLifecycleHookMsg> {
-    //  private static final Logger logger = LoggerFactory.getLogger(DataXJobConsumer.class);
-    //  private final CuratorFramework curatorClient;
-    //  private final ITISCoordinator coordinator;
 
     private final DataXJobRunEnvironmentParamsSetter.ExtraJavaSystemPramsSuppiler extraJavaSystemPramsSuppiler;
 
@@ -92,15 +89,15 @@ public class DataxPrePostConsumer extends DataXJobSingleProcessorExecutor<DataXL
         //
         //        StoreResourceType resType = StoreResourceType.parse(args[5]);
         //        final long execEpochMilli = Long.parseLong(args[6]);
-        if (StringUtils.isEmpty(msg.getTableName())) {
-            throw new IllegalArgumentException("param table name can not be empty");
-        }
+        //        if (StringUtils.isEmpty(msg.getTableName())) {
+        //            throw new IllegalArgumentException("param table name can not be empty");
+        //        }
         if (StringUtils.isEmpty(dataxName)) {
             throw new IllegalArgumentException("param dataxName can not be empty");
         }
-        if (StringUtils.isEmpty(msg.getTableName())) {
-            throw new IllegalArgumentException("param getTableName can not be empty");
-        }
+        //        if (StringUtils.isEmpty(msg.getTableName())) {
+        //            throw new IllegalArgumentException("param getTableName can not be empty");
+        //        }
         if (StringUtils.isEmpty(msg.getJobName())) {
             throw new IllegalArgumentException("param getJobName can not be empty");
         }
@@ -148,6 +145,10 @@ public class DataxPrePostConsumer extends DataXJobSingleProcessorExecutor<DataXL
     }
 
     public File getWorkingDirectory() {
+        return getDataXExecutorDir();
+    }
+
+    public static File getDataXExecutorDir() {
         File workDir = new File("/opt/tis/tis-datax-executor");
         if (!workDir.exists()) {
             throw new IllegalStateException("workDir is not exist:" + workDir.getAbsolutePath());
@@ -155,8 +156,10 @@ public class DataxPrePostConsumer extends DataXJobSingleProcessorExecutor<DataXL
         return workDir;
     }
 
+    public static final String DEFAULT_CLASSPATH = "./lib/*:./tis-datax-executor.jar:./conf/";
+
     public String getClasspath() {
-        return "./lib/*:./tis-datax-executor.jar:./conf/";
+        return DEFAULT_CLASSPATH;
     }
 
 }
