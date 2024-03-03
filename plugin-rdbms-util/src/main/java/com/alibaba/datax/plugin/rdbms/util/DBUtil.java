@@ -364,7 +364,7 @@ public final class DBUtil {
                                                    String url, String user, String pass, String socketTimeout) {
 
         try {
-            return dataBaseType.getDataSourceFactory().getConnection(url).getConnection();
+            return dataBaseType.getDataSourceFactory().getConnection(url,false).getConnection();
         } catch (SQLException e) {
             throw new RuntimeException("jdbcUrl:" + url, e);
         }
