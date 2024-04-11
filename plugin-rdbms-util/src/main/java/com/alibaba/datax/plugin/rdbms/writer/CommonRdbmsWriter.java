@@ -15,7 +15,6 @@ import com.alibaba.datax.plugin.rdbms.writer.util.*;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
-import com.qlangtech.tis.web.start.TisAppLaunch;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -582,36 +581,6 @@ public class CommonRdbmsWriter {
                         preparedStatement = fillPreparedStatement(preparedStatement, record);
                         preparedStatement.execute();
                     } catch (SQLException e) {
-
-                        if (TisAppLaunch.isTestMock()) {
-                            //                            // 试图找到哪一列有问题
-                            //                            final int allCols = this.columnNumber;
-                            //                            for (int tryColNumer = allCols; tryColNumer > 0;
-                            //                            tryColNumer--) {
-                            //                                try {
-                            //                                    preparedStatement = connection.prepareStatement
-                            //                                    (this.writeRecordSql);
-                            //                                    preparedStatement = fillPreparedStatement
-                            //                                    (preparedStatement, record);
-                            //
-                            //                                    for (int startNullIndex = (tryColNumer);
-                            //                                    startNullIndex < allCols; startNullIndex++) {
-                            //                                        preparedStatement.setNull(startNullIndex + 1,
-                            //                                        this.resultSetMetaData.get(startNullIndex)
-                            //                                        .getLeft().getType().type);
-                            //                                    }
-                            //                                    preparedStatement.execute();
-                            //                                    LOG.info("success columnNumber:" + columnNumber +
-                            //                                    "," + this.resultSetMetaData.get(columnNumber)
-                            //                                    .getLeft());
-                            //                                    break;
-                            //                                } catch (Throwable ex) {
-                            //                                    // ex.printStackTrace();
-                            //                                } finally {
-                            //                                    //  this.columnNumber--;
-                            //                                }
-                            //                            }
-                        }
                         LOG.debug(e.toString());
 
                         this.taskPluginCollector.collectDirtyRecord(record, e);
