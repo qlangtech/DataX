@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.unstructuredstorage.writer;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.Record;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -38,7 +39,21 @@ public abstract class BasicPainWriter implements UnstructuredWriter {
                 if (null != column.getRawData()) {
                     boolean isDateColumn = column instanceof DateColumn;
                     if (!isDateColumn) {
-                        splitedRows.add(column.asString());
+                        switch (column.getType()) {
+                            case INT:
+                            case BOOL:
+                            case LONG:
+                            case DOUBLE:
+                            case DATE: {
+                                splitedRows.add(column.asString());
+                                break;
+                            }
+                            default: {
+                                splitedRows.add(StringUtils.replaceChars(column.asString(), "\r\n", StringUtils.EMPTY));
+                            }
+                        }
+
+
                     } else {
                         if (null != dateParse) {
                             splitedRows.add(dateParse.format(column
