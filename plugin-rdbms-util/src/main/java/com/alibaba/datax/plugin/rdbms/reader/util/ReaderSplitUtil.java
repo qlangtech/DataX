@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
@@ -12,13 +13,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class ReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(ReaderSplitUtil.class);
 
-    public static List<Configuration> doSplit(IDataSourceFactoryGetter dataSourceFactoryGetter,
+    public static List<Configuration> doSplit(IJobContainerContext containerContext,
                                               Configuration originalSliceConfig, int adviceNumber) {
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int eachTableShouldSplittedNumber = -1;
@@ -30,6 +32,7 @@ public final class ReaderSplitUtil {
         }
 
         String column = originalSliceConfig.getString(Key.COLUMN);
+        List<String> cols = originalSliceConfig.getList(Key.COLUMN_LIST, String.class);
         String where = originalSliceConfig.getString(Key.WHERE, null);
 
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
@@ -63,48 +66,53 @@ public final class ReaderSplitUtil {
                 boolean needSplitTable = eachTableShouldSplittedNumber > 1
                         && StringUtils.isNotBlank(splitPk);
                 if (needSplitTable) {
-                    if (tables.size() == 1) {
-                        //原来:如果是单表的，主键切分num=num*2+1
-                        // splitPk is null这类的情况的数据量本身就比真实数据量少很多, 和channel大小比率关系时，不建议考虑
-                        //eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 2 + 1;// 不应该加1导致长尾
-
-                        //考虑其他比率数字?(splitPk is null, 忽略此长尾)
-                        //eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 5;
-
-                        //为避免导入hive小文件 默认基数为5，可以通过 splitFactor 配置基数
-                        // 最终task数为(channel/tableNum)向上取整*splitFactor
-                        Integer splitFactor = originalSliceConfig.getInt(Key.SPLIT_FACTOR, Constant.SPLIT_FACTOR);
-                        eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * splitFactor;
-                    }
-                    // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
-                    for (String table : tables) {
-                        tempSlice = sliceConfig.clone();
-                        tempSlice.set(Key.TABLE, table);
-
-                        List<Configuration> splittedSlices = SingleTableSplitUtil
-                                .splitSingleTable(dataSourceFactoryGetter, tempSlice, eachTableShouldSplittedNumber);
-
-                        splittedConfigs.addAll(splittedSlices);
-                    }
+                    throw new UnsupportedOperationException("split table is not supported");
+//                    if (tables.size() == 1) {
+//                        //原来:如果是单表的，主键切分num=num*2+1
+//                        // splitPk is null这类的情况的数据量本身就比真实数据量少很多, 和channel大小比率关系时，不建议考虑
+//                        //eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 2 + 1;// 不应该加1导致长尾
+//
+//                        //考虑其他比率数字?(splitPk is null, 忽略此长尾)
+//                        //eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 5;
+//
+//                        //为避免导入hive小文件 默认基数为5，可以通过 splitFactor 配置基数
+//                        // 最终task数为(channel/tableNum)向上取整*splitFactor
+//                        Integer splitFactor = originalSliceConfig.getInt(Key.SPLIT_FACTOR, Constant.SPLIT_FACTOR);
+//                        eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * splitFactor;
+//                    }
+//                    // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
+//                    for (String table : tables) {
+//                        tempSlice = sliceConfig.clone();
+//                        tempSlice.set(Key.TABLE, table);
+//
+//                        List<Configuration> splittedSlices = SingleTableSplitUtil
+//                                .splitSingleTable(dataSourceFactoryGetter, tempSlice, eachTableShouldSplittedNumber);
+//
+//                        splittedConfigs.addAll(splittedSlices);
+//                    }
                 } else {
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
                         String queryColumn = HintUtil.buildQueryColumn(jdbcUrl, table, column);
-                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil.buildQuerySql(queryColumn, table, where));
+                        QuerySql querySql = SingleTableSplitUtil.buildQuerySql(containerContext, queryColumn, cols, table, where);
+
+                        querySql.write(tempSlice);
+
                         splittedConfigs.add(tempSlice);
                     }
                 }
             } else {
                 // 说明是配置的 querySql 方式
-                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
-
-                // TODO 是否check 配置为多条语句？？
-                for (String querySql : sqls) {
-                    tempSlice = sliceConfig.clone();
-                    tempSlice.set(Key.QUERY_SQL, querySql);
-                    splittedConfigs.add(tempSlice);
-                }
+//                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
+//
+//                // TODO 是否check 配置为多条语句？？
+//                for (String querySql : sqls) {
+//                    tempSlice = sliceConfig.clone();
+//                    tempSlice.set(Key.QUERY_SQL, querySql);
+//                    splittedConfigs.add(tempSlice);
+//                }
+                throw new UnsupportedOperationException("norTableMode is not support");
             }
 
         }
@@ -112,19 +120,20 @@ public final class ReaderSplitUtil {
         return splittedConfigs;
     }
 
-    public static Configuration doPreCheckSplit(Configuration originalSliceConfig) {
+    public static Configuration doPreCheckSplit(IJobContainerContext containerContext,Configuration originalSliceConfig) {
         Configuration queryConfig = originalSliceConfig.clone();
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
 
         String splitPK = originalSliceConfig.getString(Key.SPLIT_PK);
         String column = originalSliceConfig.getString(Key.COLUMN);
+        List<String> cols = originalSliceConfig.getList(Key.COLUMN_LIST, String.class);
         String where = originalSliceConfig.getString(Key.WHERE, null);
 
         List<Object> conns = queryConfig.getList(Constant.CONN_MARK, Object.class);
 
         for (int i = 0, len = conns.size(); i < len; i++) {
             Configuration connConf = Configuration.from(conns.get(i).toString());
-            List<String> querys = new ArrayList<String>();
+            List<QuerySql> querys = new ArrayList<>();
             List<String> splitPkQuerys = new ArrayList<String>();
             String connPath = String.format("connection[%d]", i);
             // 说明是配置的 table 方式
@@ -133,7 +142,7 @@ public final class ReaderSplitUtil {
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
                 Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
                 for (String table : tables) {
-                    querys.add(SingleTableSplitUtil.buildQuerySql(column, table, where));
+                    querys.add(SingleTableSplitUtil.buildQuerySql(containerContext,column, cols, table, where));
                     if (splitPK != null && !splitPK.isEmpty()) {
                         splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK.trim(), table, where));
                     }
@@ -141,17 +150,22 @@ public final class ReaderSplitUtil {
                 if (!splitPkQuerys.isEmpty()) {
                     connConf.set(Key.SPLIT_PK_SQL, splitPkQuerys);
                 }
-                connConf.set(Key.QUERY_SQL, querys);
+                for (QuerySql querySql : querys) {
+                    querySql.write(connConf);
+
+//                    connConf.set(Key.QUERY_SQL, Collections.singletonList(querySql.getQuerySql()));
+//                    connConf.set(Key.COLS_2_INDEX, querySql.getCol2Index());
+                }
                 queryConfig.set(connPath, connConf);
             } else {
                 // 说明是配置的 querySql 方式
-                List<String> sqls = connConf.getList(Key.QUERY_SQL,
-                        String.class);
-                for (String querySql : sqls) {
-                    querys.add(querySql);
-                }
-                connConf.set(Key.QUERY_SQL, querys);
-                queryConfig.set(connPath, connConf);
+//                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
+//                for (String querySql : sqls) {
+//                    querys.add(querySql);
+//                }
+//                connConf.set(Key.QUERY_SQL, querys);
+//                queryConfig.set(connPath, connConf);
+                throw new UnsupportedOperationException("norTableMode is not support");
             }
         }
         return queryConfig;

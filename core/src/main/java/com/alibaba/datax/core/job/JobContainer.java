@@ -28,8 +28,6 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
-import com.qlangtech.tis.datax.IDataXNameAware;
-import com.qlangtech.tis.datax.IDataXTaskRelevant;
 import com.qlangtech.tis.datax.TimeFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -39,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -82,10 +81,17 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
     private ErrorRecordChecker errorLimit;
 
+    private Optional<ITransformerBuildInfo> transformerBuildInfo;
+
     public JobContainer(Configuration configuration) {
         super(configuration);
 
         errorLimit = new ErrorRecordChecker(configuration);
+    }
+
+    @Override
+    public Optional<ITransformerBuildInfo> getTransformerBuildCfg() {
+        return this.transformerBuildInfo;
     }
 
     @Override
@@ -111,6 +117,11 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     @Override
     public String getJobName() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getCollectionName() {
+        return this.getDataXName();
     }
 
     @Override
@@ -314,6 +325,14 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         Thread.currentThread().setName("job-" + this.jobId);
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(this.getContainerCommunicator());
+
+        Optional<Configuration> transformerList =
+                Optional.ofNullable(this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER));
+
+        this.transformerBuildInfo = transformerList.map((transformerCfg) -> {
+            return TransformerUtil.buildTransformerInfo(JobContainer.this, transformerCfg);
+        });
+
         //必须先Reader ，后Writer
         this.jobReader = this.initJobReader(jobPluginCollector);
         this.jobWriter = this.initJobWriter(jobPluginCollector);
@@ -399,10 +418,12 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         int taskNumber = readerTaskConfigs.size();
         List<Configuration> writerTaskConfigs = this.doWriterSplit(taskNumber);
 
-        List<Configuration> transformerList =
-                this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
+        Optional<Configuration> transformerList =
+                Optional.ofNullable(this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER));
+        transformerList.ifPresent((t) -> {
+            LOG.debug("transformer configuration: " + t);
+        });
 
-        LOG.debug("transformer configuration: " + JSON.toJSONString(transformerList));
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
@@ -721,7 +742,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
     private List<Configuration> mergeReaderAndWriterTaskConfigs(List<Configuration> readerTasksConfigs,
                                                                 List<Configuration> writerTasksConfigs,
-                                                                List<Configuration> transformerConfigs) {
+                                                                Optional<Configuration> transformerConfigs) {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR, String.format("reader切分的task"
                     + "数目[%d]不等于writer切分的task数目[%d].", readerTasksConfigs.size(), writerTasksConfigs.size()));
@@ -735,9 +756,12 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
             taskConfig.set(CoreConstant.JOB_WRITER_NAME, this.writerPluginName);
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER, writerTasksConfigs.get(i));
 
-            if (transformerConfigs != null && transformerConfigs.size() > 0) {
-                taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);
-            }
+//            if (transformerConfigs != null && transformerConfigs.size() > 0) {
+//
+//            }
+            transformerConfigs.ifPresent((transformerCfg) -> {
+                taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerCfg);
+            });
 
             taskConfig.set(CoreConstant.TASK_ID, i);
             contentConfigs.add(taskConfig);

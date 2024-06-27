@@ -9,7 +9,7 @@ import java.util.Map;
  * Created by liqiang on 16/3/3.
  */
 public abstract class ComplexTransformer {
-    //transformerName的唯一性在datax中检查，或者提交到插件中心检查。
+    // transformerName的唯一性在datax中检查，或者提交到插件中心检查。
     private String transformerName;
 
 

@@ -40,6 +40,7 @@ public class DrdsReader extends Reader {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
+
             return DrdsReaderSplitUtil.doSplit(commonRdbmsReaderJob.dataSourceFactoryGetter, this.originalConfig, adviceNumber);
         }
 

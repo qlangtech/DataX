@@ -1,12 +1,12 @@
 /**
- *  (C) 2010-2013 Alibaba Group Holding Limited.
- *
+ * (C) 2010-2013 Alibaba Group Holding Limited.
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,15 +18,22 @@ package com.alibaba.datax.common.plugin;
 
 import com.alibaba.datax.common.element.Record;
 
+import java.util.Collections;
+import java.util.Map;
+
 public interface RecordSender {
 
-	public Record createRecord();
+    public default Record createRecord() {
+        return this.createRecord(Collections.emptyMap());
+    }
 
-	public void sendToWriter(Record record);
+    public Record createRecord(Map<String, Integer> mapper);
 
-	public void flush();
+    public void sendToWriter(Record record);
 
-	public void terminate();
+    public void flush();
 
-	public void shutdown();
+    public void terminate();
+
+    public void shutdown();
 }

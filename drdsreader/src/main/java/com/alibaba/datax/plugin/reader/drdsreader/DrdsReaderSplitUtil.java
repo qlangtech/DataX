@@ -2,8 +2,10 @@ package com.alibaba.datax.plugin.reader.drdsreader;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.reader.util.QuerySql;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
@@ -21,7 +23,7 @@ public class DrdsReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(DrdsReaderSplitUtil.class);
 
-    public static List<Configuration> doSplit(IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig,
+    public static List<Configuration> doSplit(IJobContainerContext containerContext, IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig,
                                               int adviceNumber) {
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int tableNumber = originalSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
@@ -37,13 +39,14 @@ public class DrdsReaderSplitUtil {
             originalSliceConfig.set(Key.JDBC_URL, DataBaseType.DRDS.appendJDBCSuffixForReader(jdbcUrl));
 
             originalSliceConfig.remove(Constant.CONN_MARK);
-            return doDrdsReaderSplit(dataBaseType, originalSliceConfig);
+            return doDrdsReaderSplit(containerContext, dataBaseType, originalSliceConfig);
         } else {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR, "您的配置信息中的表(table)的配置有误. 因为Drdsreader 只需要读取一张逻辑表,后台会通过DRDS Proxy自动获取实际对应物理表的数据. 请检查您的配置并作出修改.");
         }
     }
 
-    private static List<Configuration> doDrdsReaderSplit(IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig) {
+    private static List<Configuration> doDrdsReaderSplit(IJobContainerContext containerContext //
+            , IDataSourceFactoryGetter dataBaseType, Configuration originalSliceConfig) {
         List<Configuration> splittedConfigurations = new ArrayList<Configuration>();
 
         Map<String, List<String>> topology = getTopology(dataBaseType, originalSliceConfig);
@@ -52,11 +55,11 @@ public class DrdsReaderSplitUtil {
                     "获取 drds 表拓扑结构失败, 拓扑结构不能为空.");
         } else {
             String table = originalSliceConfig.getString(Key.TABLE).trim();
-            String column = originalSliceConfig.getString(Key.COLUMN).trim();
+            String column = originalSliceConfig.getString(Key.COLUMN);
+            List<String> cols = originalSliceConfig.getList(Key.COLUMN_LIST, String.class);
             String where = originalSliceConfig.getString(Key.WHERE, null);
             // 不能带英语分号结尾
-            String sql = SingleTableSplitUtil
-                    .buildQuerySql(column, table, where);
+            QuerySql sql = SingleTableSplitUtil.buildQuerySql(containerContext, column, cols, table, where);
             // 根据拓扑拆分任务
             for (Map.Entry<String, List<String>> entry : topology.entrySet()) {
                 String group = entry.getKey();
@@ -74,7 +77,7 @@ public class DrdsReaderSplitUtil {
                     }
                 }
                 sqlbuilder.append("]})*/");
-                sqlbuilder.append(sql);
+                sqlbuilder.append(sql.getQuerySql());
                 Configuration param = originalSliceConfig.clone();
                 param.set(Key.QUERY_SQL, sqlbuilder.toString());
                 splittedConfigurations.add(param);

@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class DirtyRecord implements Record {
 	private List<Column> columns = new ArrayList<Column>();
@@ -22,6 +23,12 @@ public class DirtyRecord implements Record {
 		}
 
 		return result;
+	}
+
+	@Override
+	public void setCol2Index(Map<String, Integer> mapper) {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
@@ -37,6 +44,24 @@ public class DirtyRecord implements Record {
 
 	@Override
 	public void setColumn(int i, Column column) {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
+
+	@Override
+	public void setString(String field, String val) {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
+
+	@Override
+	public void setColumn(String field, Column column) {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
+
+	@Override
+	public Column getColumn(String field) {
 		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 				"该方法不支持!");
 	}

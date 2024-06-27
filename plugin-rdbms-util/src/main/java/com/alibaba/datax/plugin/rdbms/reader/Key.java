@@ -30,6 +30,7 @@ public final class Key {
     public final static String SAMPLE_PERCENTAGE = "samplePercentage";
 
     public final static String QUERY_SQL = "querySql";
+    public final static String COLS_2_INDEX = "cols2Idx";
 
     public final static String SPLIT_PK_SQL = "splitPkSql";
 

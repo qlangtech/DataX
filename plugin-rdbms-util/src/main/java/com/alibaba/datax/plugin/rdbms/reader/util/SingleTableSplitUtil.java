@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
+import com.alibaba.datax.core.job.ITransformerBuildInfo;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.*;
@@ -17,6 +19,7 @@ import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class SingleTableSplitUtil {
     private static final Logger LOG = LoggerFactory.getLogger(SingleTableSplitUtil.class);
@@ -26,101 +29,103 @@ public class SingleTableSplitUtil {
     private SingleTableSplitUtil() {
     }
 
-    public static List<Configuration> splitSingleTable(IDataSourceFactoryGetter dataSourceFactoryGetter,
-                                                       Configuration configuration, int adviceNum) {
-        List<Configuration> pluginParams = new ArrayList<Configuration>();
-        List<String> rangeList;
-        String splitPkName = configuration.getString(Key.SPLIT_PK);
-        String column = configuration.getString(Key.COLUMN);
-        String table = configuration.getString(Key.TABLE);
-        String where = configuration.getString(Key.WHERE, null);
-        boolean hasWhere = StringUtils.isNotBlank(where);
+//    public static List<Configuration> splitSingleTable(IDataSourceFactoryGetter dataSourceFactoryGetter,
+//                                                       Configuration configuration, int adviceNum) {
+//        List<Configuration> pluginParams = new ArrayList<Configuration>();
+//        List<String> rangeList;
+//        String splitPkName = configuration.getString(Key.SPLIT_PK);
+//        String column = configuration.getString(Key.COLUMN);
+//
+//        List<String> cols = configuration.getList(Key.COLUMN_LIST, String.class);
+//        String table = configuration.getString(Key.TABLE);
+//        String where = configuration.getString(Key.WHERE, null);
+//        boolean hasWhere = StringUtils.isNotBlank(where);
+//
+//        //String splitMode = configuration.getString(Key.SPLIT_MODE, "");
+//        //if (Constant.SPLIT_MODE_RANDOMSAMPLE.equals(splitMode) && DATABASE_TYPE == DataBaseType.Oracle) {
+//        if (DATABASE_TYPE == DataBaseType.Oracle) {
+//            rangeList = genSplitSqlForOracle(dataSourceFactoryGetter, splitPkName, table, where,
+//                    configuration, adviceNum);
+//            // warn: mysql etc to be added...
+//        } else {
+//            Pair<Object, Object> minMaxPK = getPkRange(dataSourceFactoryGetter, configuration);
+//            if (null == minMaxPK) {
+//                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+//                        "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
+//            }
+//
+//            configuration.set(Key.QUERY_SQL, buildQuerySql(column, cols, table, where));
+//            if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
+//                // 切分后获取到的start/end 有 Null 的情况
+//                pluginParams.add(configuration);
+//                return pluginParams;
+//            }
+//
+//            boolean isStringType = Constant.PK_TYPE_STRING.equals(configuration
+//                    .getString(Constant.PK_TYPE));
+//            boolean isLongType = Constant.PK_TYPE_LONG.equals(configuration
+//                    .getString(Constant.PK_TYPE));
+//
+//
+//            if (isStringType) {
+//                rangeList = RdbmsRangeSplitWrap.splitAndWrap(
+//                        String.valueOf(minMaxPK.getLeft()),
+//                        String.valueOf(minMaxPK.getRight()), adviceNum,
+//                        splitPkName, "'", DATABASE_TYPE);
+//            } else if (isLongType) {
+//                rangeList = RdbmsRangeSplitWrap.splitAndWrap(
+//                        new BigInteger(minMaxPK.getLeft().toString()),
+//                        new BigInteger(minMaxPK.getRight().toString()),
+//                        adviceNum, splitPkName);
+//            } else {
+//                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+//                        "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
+//            }
+//        }
+//        String tempQuerySql;
+//        List<String> allQuerySql = new ArrayList<String>();
+//
+//        if (null != rangeList && !rangeList.isEmpty()) {
+//            for (String range : rangeList) {
+//                Configuration tempConfig = configuration.clone();
+//
+//                tempQuerySql = buildQuerySql(column, cols, table, where).getQuerySql()
+//                        + (hasWhere ? " and " : " where ") + range;
+//
+//                allQuerySql.add(tempQuerySql);
+//                tempConfig.set(Key.QUERY_SQL, tempQuerySql);
+//                pluginParams.add(tempConfig);
+//            }
+//        } else {
+//            //pluginParams.add(configuration); // this is wrong for new & old split
+//            Configuration tempConfig = configuration.clone();
+//            tempQuerySql = buildQuerySql(column, cols, table, where).getQuerySql()
+//                    + (hasWhere ? " and " : " where ")
+//                    + String.format(" %s IS NOT NULL", splitPkName);
+//            allQuerySql.add(tempQuerySql);
+//            tempConfig.set(Key.QUERY_SQL, tempQuerySql);
+//            pluginParams.add(tempConfig);
+//        }
+//
+//        // deal pk is null
+//        Configuration tempConfig = configuration.clone();
+//        tempQuerySql = buildQuerySql(column, cols, table, where).getQuerySql()
+//                + (hasWhere ? " and " : " where ")
+//                + String.format(" %s IS NULL", splitPkName);
+//
+//        allQuerySql.add(tempQuerySql);
+//
+//        LOG.info("After split(), allQuerySql=[\n{}\n].",
+//                StringUtils.join(allQuerySql, "\n"));
+//
+//        tempConfig.set(Key.QUERY_SQL, tempQuerySql);
+//        pluginParams.add(tempConfig);
+//
+//        return pluginParams;
+//    }
 
-        //String splitMode = configuration.getString(Key.SPLIT_MODE, "");
-        //if (Constant.SPLIT_MODE_RANDOMSAMPLE.equals(splitMode) && DATABASE_TYPE == DataBaseType.Oracle) {
-        if (DATABASE_TYPE == DataBaseType.Oracle) {
-            rangeList = genSplitSqlForOracle(dataSourceFactoryGetter, splitPkName, table, where,
-                    configuration, adviceNum);
-            // warn: mysql etc to be added...
-        } else {
-            Pair<Object, Object> minMaxPK = getPkRange(dataSourceFactoryGetter, configuration);
-            if (null == minMaxPK) {
-                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                        "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
-            }
-
-            configuration.set(Key.QUERY_SQL, buildQuerySql(column, table, where));
-            if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
-                // 切分后获取到的start/end 有 Null 的情况
-                pluginParams.add(configuration);
-                return pluginParams;
-            }
-
-            boolean isStringType = Constant.PK_TYPE_STRING.equals(configuration
-                    .getString(Constant.PK_TYPE));
-            boolean isLongType = Constant.PK_TYPE_LONG.equals(configuration
-                    .getString(Constant.PK_TYPE));
-
-
-            if (isStringType) {
-                rangeList = RdbmsRangeSplitWrap.splitAndWrap(
-                        String.valueOf(minMaxPK.getLeft()),
-                        String.valueOf(minMaxPK.getRight()), adviceNum,
-                        splitPkName, "'", DATABASE_TYPE);
-            } else if (isLongType) {
-                rangeList = RdbmsRangeSplitWrap.splitAndWrap(
-                        new BigInteger(minMaxPK.getLeft().toString()),
-                        new BigInteger(minMaxPK.getRight().toString()),
-                        adviceNum, splitPkName);
-            } else {
-                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                        "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
-            }
-        }
-        String tempQuerySql;
-        List<String> allQuerySql = new ArrayList<String>();
-
-        if (null != rangeList && !rangeList.isEmpty()) {
-            for (String range : rangeList) {
-                Configuration tempConfig = configuration.clone();
-
-                tempQuerySql = buildQuerySql(column, table, where)
-                        + (hasWhere ? " and " : " where ") + range;
-
-                allQuerySql.add(tempQuerySql);
-                tempConfig.set(Key.QUERY_SQL, tempQuerySql);
-                pluginParams.add(tempConfig);
-            }
-        } else {
-            //pluginParams.add(configuration); // this is wrong for new & old split
-            Configuration tempConfig = configuration.clone();
-            tempQuerySql = buildQuerySql(column, table, where)
-                    + (hasWhere ? " and " : " where ")
-                    + String.format(" %s IS NOT NULL", splitPkName);
-            allQuerySql.add(tempQuerySql);
-            tempConfig.set(Key.QUERY_SQL, tempQuerySql);
-            pluginParams.add(tempConfig);
-        }
-
-        // deal pk is null
-        Configuration tempConfig = configuration.clone();
-        tempQuerySql = buildQuerySql(column, table, where)
-                + (hasWhere ? " and " : " where ")
-                + String.format(" %s IS NULL", splitPkName);
-
-        allQuerySql.add(tempQuerySql);
-
-        LOG.info("After split(), allQuerySql=[\n{}\n].",
-                StringUtils.join(allQuerySql, "\n"));
-
-        tempConfig.set(Key.QUERY_SQL, tempQuerySql);
-        pluginParams.add(tempConfig);
-
-        return pluginParams;
-    }
-
-    public static String buildQuerySql(String column, String table,
-                                       String where) {
+    public static QuerySql buildQuerySql(IJobContainerContext containerContext, String column, List<String> cols, String table,
+                                         String where) {
         String querySql;
 
         if (StringUtils.isBlank(where)) {
@@ -130,8 +135,8 @@ public class SingleTableSplitUtil {
             querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
                     table, where);
         }
-
-        return querySql;
+        Optional<ITransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
+        return new QuerySql(querySql, cols, transformerBuildCfg);
     }
 
     @SuppressWarnings("resource")

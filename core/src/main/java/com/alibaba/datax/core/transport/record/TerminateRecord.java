@@ -3,6 +3,8 @@ package com.alibaba.datax.core.transport.record;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 
+import java.util.Map;
+
 /**
  * 作为标示 生产者已经完成生产的标志
  * 
@@ -13,12 +15,32 @@ public class TerminateRecord implements Record {
 	private TerminateRecord() {
 	}
 
+	@Override
+	public void setCol2Index(Map<String, Integer> mapper) {
+
+	}
+
 	public static TerminateRecord get() {
 		return SINGLE;
 	}
 
 	@Override
 	public void addColumn(Column column) {
+	}
+
+	@Override
+	public void setString(String field, String val) {
+
+	}
+
+	@Override
+	public void setColumn(String field, Column column) {
+
+	}
+
+	@Override
+	public Column getColumn(String field) {
+		return null;
 	}
 
 	@Override

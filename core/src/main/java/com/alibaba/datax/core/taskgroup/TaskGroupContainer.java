@@ -11,6 +11,7 @@ import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.job.IJobContainerContext;
+import com.alibaba.datax.core.job.ITransformerBuildInfo;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.StandaloneTGContainerCommunicator;
@@ -21,15 +22,16 @@ import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordTransformerExchanger;
-import com.alibaba.datax.core.transport.transformer.TransformerExecution;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.TransformerUtil;
+import com.alibaba.datax.core.util.TransformerBuildInfo;
+import com.alibaba.datax.core.job.TransformerUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
 import com.qlangtech.tis.job.common.JobCommon;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,7 +229,8 @@ public class TaskGroupContainer extends AbstractContainer {
                         }
                     }
                     Configuration taskConfigForRun = taskMaxRetryTimes > 1 ? taskConfig.clone() : taskConfig;
-                    TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
+
+                    TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount, this.containerContext);
                     taskStartTimeMap.put(taskId, System.currentTimeMillis());
                     taskExecutor.doStart();
 
@@ -373,7 +376,7 @@ public class TaskGroupContainer extends AbstractContainer {
         private ReaderRunner readerRunner;
 
         private WriterRunner writerRunner;
-
+        private final IJobContainerContext containerContext;
         /**
          * 该处的taskCommunication在多处用到：
          * 1. channel
@@ -382,10 +385,12 @@ public class TaskGroupContainer extends AbstractContainer {
          */
         private Communication taskCommunication;
 
-        public TaskExecutor(Configuration taskConf, int attemptCount) {
+        public TaskExecutor(Configuration taskConf, int attemptCount, IJobContainerContext containerContext) {
             // 获取该taskExecutor的配置
             this.taskConfig = taskConf;
-            Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER) && null != this.taskConfig.getConfiguration(CoreConstant.JOB_WRITER), "[reader|writer]的插件参数不能为空!");
+            this.containerContext = Objects.requireNonNull(containerContext);
+            Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER)
+                    && null != this.taskConfig.getConfiguration(CoreConstant.JOB_WRITER), "[reader|writer]的插件参数不能为空!");
 
             // 得到taskId
             this.taskId = this.taskConfig.getInt(CoreConstant.TASK_ID);
@@ -403,8 +408,8 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 获取transformer的参数
              */
-
-            List<TransformerExecution> transformerInfoExecs = TransformerUtil.buildTransformerInfo(taskConfig);
+            Optional<TransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
+            // TransformerBuildInfo transformerInfoExecs = TransformerUtil.buildTransformerInfo(this.containerContext, taskConfig);
 
             /**
              * 生成writerThread
@@ -425,7 +430,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成readerThread
              */
-            readerRunner = (ReaderRunner) generateRunner(PluginType.READER, transformerInfoExecs);
+            readerRunner = (ReaderRunner) generateRunner(PluginType.READER, transformerBuildCfg);
             this.readerThread = new Thread(readerRunner, String.format("%d-%d-%d-reader", jobId, taskGroupId,
                     this.taskId)) {
                 @Override
@@ -472,7 +477,7 @@ public class TaskGroupContainer extends AbstractContainer {
             return generateRunner(pluginType, null);
         }
 
-        private AbstractRunner generateRunner(PluginType pluginType, List<TransformerExecution> transformerInfoExecs) {
+        private AbstractRunner generateRunner(PluginType pluginType, Optional<TransformerBuildInfo> transformerBuildCfg) {
             AbstractRunner newRunner = null;
             TaskPluginCollector pluginCollector;
 
@@ -485,13 +490,19 @@ public class TaskGroupContainer extends AbstractContainer {
                     pluginCollector = ClassUtil.instantiate(taskCollectorClass, AbstractTaskPluginCollector.class,
                             configuration, this.taskCommunication, PluginType.READER);
 
-                    RecordSender recordSender;
-                    if (transformerInfoExecs != null && transformerInfoExecs.size() > 0) {
-                        recordSender = new BufferedRecordTransformerExchanger(taskGroupId, this.taskId, this.channel,
-                                this.taskCommunication, pluginCollector, transformerInfoExecs);
-                    } else {
-                        recordSender = new BufferedRecordExchanger(this.channel, pluginCollector);
-                    }
+
+                    RecordSender recordSender = transformerBuildCfg.map((transformerInfoExecs) -> {
+                        return (RecordSender) (new BufferedRecordTransformerExchanger(taskGroupId, this.taskId, this.channel,
+                                this.taskCommunication, pluginCollector, transformerInfoExecs.getExecutions()));
+                    }).orElseGet(() -> {
+                        return new BufferedRecordExchanger(this.channel, pluginCollector);
+                    });
+
+//                    if (transformerInfoExecs != null && CollectionUtils.isNotEmpty(transformerInfoExecs.getExecutions())) {
+//
+//                    } else {
+//                        recordSender = new BufferedRecordExchanger(this.channel, pluginCollector);
+//                    }
 
                     ((ReaderRunner) newRunner).setRecordSender(recordSender);
 

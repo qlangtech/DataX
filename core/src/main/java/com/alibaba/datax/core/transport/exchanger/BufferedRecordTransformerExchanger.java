@@ -17,6 +17,7 @@ import org.apache.commons.lang.Validate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BufferedRecordTransformerExchanger extends TransformerExchanger implements RecordSender, RecordReceiver {
@@ -72,9 +73,11 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
     }
 
     @Override
-    public Record createRecord() {
+    public Record createRecord(Map<String,Integer> col2Mapper) {
         try {
-            return BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
+            Record record =  BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
+             record.setCol2Index(col2Mapper);
+             return record;
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.CONFIG_ERROR, e);

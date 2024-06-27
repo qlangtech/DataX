@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class OriginalConfPretreatmentUtil {
     private static final Logger LOG = LoggerFactory
@@ -218,7 +219,10 @@ public final class OriginalConfPretreatmentUtil {
 //                        }
                     }
 
-                    originalConfig.set(Key.COLUMN_LIST, quotedColumns);
+                    originalConfig.set(Key.COLUMN_LIST
+                            , quotedColumns.stream().map((col)-> dataSourceFactoryGetter.getDBReservedKeys().removeEscapeChar(col))
+                                    .collect(Collectors.toList()));
+
                     originalConfig.set(Key.COLUMN,
                             StringUtils.join(quotedColumns, ","));
                     if (StringUtils.isNotBlank(splitPk)) {

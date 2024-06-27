@@ -10,6 +10,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
+import com.alibaba.datax.plugin.rdbms.reader.util.QuerySql;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -69,7 +70,7 @@ public class CommonRdbmsReader {
 
         public void preCheck(Configuration originalConfig, DataBaseType dataBaseType) {
             /*检查每个表是否有读权限，以及querySql跟splik Key是否正确*/
-            Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConfig);
+            Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(this.containerContext, originalConfig);
             String splitPK = queryConf.getString(Key.SPLIT_PK);
             List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
             String username = queryConf.getString(Key.USERNAME);
@@ -110,7 +111,8 @@ public class CommonRdbmsReader {
 
 
         public List<Configuration> split(Configuration originalConfig, int adviceNumber) {
-            return ReaderSplitUtil.doSplit(this.dataSourceFactoryGetter, originalConfig, adviceNumber);
+
+            return ReaderSplitUtil.doSplit(this.containerContext, originalConfig, adviceNumber);
         }
 
         public void post(Configuration originalConfig) {
@@ -186,22 +188,25 @@ public class CommonRdbmsReader {
         public void startRead(Configuration readerSliceConfig, RecordSender recordSender,
                               TaskPluginCollector taskPluginCollector //, int fetchSize this param seems as useless
         ) {
-            String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
+
+            final QuerySql query = QuerySql.from(readerSliceConfig);
+
+//            String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
             String table = readerSliceConfig.getString(Key.TABLE);
             if (StringUtils.isEmpty(table)) {
-                Matcher m = PATTERN_FROM_TABLE.matcher(querySql);
+                Matcher m = PATTERN_FROM_TABLE.matcher(query.getQuerySql());
                 if (m.find()) {
                     table = readerDataSourceFactoryGetter.getDataSourceFactory().removeEscapeChar(m.group(1));
                     // table = StringUtils.remove(m.group(1), readerDataSourceFactoryGetter.getDataSourceFactory()
                     // .getEscapeChar());
                 } else {
-                    throw new IllegalStateException("can not find table name from query sql:" + querySql);
+                    throw new IllegalStateException("can not find table name from query sql:" + query);
                 }
             }
 
             PerfTrace.getInstance().addTaskDetails(taskId, table + "," + basicMsg);
 
-            LOG.info("Begin to read record by Sql: [{}\n] {}.", querySql, basicMsg);
+            LOG.info("Begin to read record by Sql: [{}\n] {}.", query, basicMsg);
             PerfRecord queryPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.SQL_QUERY);
             queryPerfRecord.start();
 
@@ -232,7 +237,7 @@ public class CommonRdbmsReader {
                 if (rowFetchSize == null) {
                     throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
                 }
-                statResult = DBUtil.query(conn, querySql, rowFetchSize, this.readerDataSourceFactoryGetter);
+                statResult = DBUtil.query(conn, query.getQuerySql(), rowFetchSize, this.readerDataSourceFactoryGetter);
                 rs = statResult.getRight();
                 statement = statResult.getKey();
                 queryPerfRecord.end();
@@ -254,17 +259,17 @@ public class CommonRdbmsReader {
                 long lastTime = System.nanoTime();
                 while (rs.next()) {
                     rsNextUsedTime += (System.nanoTime() - lastTime);
-                    this.transportOneRecord(recordSender, rs, cols, columnNumber, mandatoryEncoding,
+                    this.transportOneRecord(query, recordSender, rs, cols, columnNumber, mandatoryEncoding,
                             taskPluginCollector);
                     lastTime = System.nanoTime();
                 }
 
                 allResultPerfRecord.end(rsNextUsedTime);
                 //目前大盘是依赖这个打印，而之前这个Finish read record是包含了sql查询和result next的全部时间
-                LOG.info("Finished read record by Sql: [{}\n] {}.", querySql, basicMsg);
+                LOG.info("Finished read record by Sql: [{}\n] {}.", query, basicMsg);
 
             } catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, query.getQuerySql(), table, username);
             } finally {
                 DBUtil.closeDBResources(statement, conn);
             }
@@ -278,18 +283,18 @@ public class CommonRdbmsReader {
             // do nothing
         }
 
-        protected Record transportOneRecord(RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
+        protected Record transportOneRecord(final QuerySql query, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
                                             int columnNumber, String mandatoryEncoding,
                                             TaskPluginCollector taskPluginCollector) {
-            Record record = buildRecord(recordSender, rs, cols, columnNumber, mandatoryEncoding, taskPluginCollector);
+            Record record = buildRecord(query, recordSender, rs, cols, columnNumber, mandatoryEncoding, taskPluginCollector);
             recordSender.sendToWriter(record);
             return record;
         }
 
-        protected Record buildRecord(RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
+        protected Record buildRecord(final QuerySql query, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
                                      int columnNumber, String mandatoryEncoding,
                                      TaskPluginCollector taskPluginCollector) {
-            Record record = recordSender.createRecord();
+            Record record = recordSender.createRecord(query.getCol2Index());
             ColumnMetaData cm = null;
             try {
                 for (int i = 1; i <= columnNumber; i++) {
