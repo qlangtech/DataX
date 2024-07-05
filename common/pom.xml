@@ -53,6 +53,10 @@
             <artifactId>commons-math3</artifactId>
             <version>3.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.qlangtech.tis</groupId>
+            <artifactId>tis-plugin</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

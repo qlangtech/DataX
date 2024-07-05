@@ -17,17 +17,15 @@
 package com.alibaba.datax.common.plugin;
 
 import com.alibaba.datax.common.element.Record;
-
-import java.util.Collections;
-import java.util.Map;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 
 public interface RecordSender {
 
-    public default Record createRecord() {
-        return this.createRecord(Collections.emptyMap());
-    }
+//    public default Record createRecord() {
+//        return this.createRecord(Collections.emptyMap());
+//    }
 
-    public Record createRecord(Map<String, Integer> mapper);
+    public Record createRecord(DataXCol2Index mapper);
 
     public void sendToWriter(Record record);
 

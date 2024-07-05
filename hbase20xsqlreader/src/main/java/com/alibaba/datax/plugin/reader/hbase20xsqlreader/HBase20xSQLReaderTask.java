@@ -16,7 +16,7 @@ public class HBase20xSQLReaderTask {
 
     private Configuration readerConfig;
     private int taskGroupId = -1;
-    private int taskId=-1;
+    private int taskId = -1;
 
     public HBase20xSQLReaderTask(Configuration config, int taskGroupId, int taskId) {
         this.readerConfig = config;
@@ -37,7 +37,7 @@ public class HBase20xSQLReaderTask {
             long lastTime = System.nanoTime();
             statement = conn.createStatement();
             // 统计查询时间
-            PerfRecord queryPerfRecord = new PerfRecord(taskGroupId,taskId, PerfRecord.PHASE.SQL_QUERY);
+            PerfRecord queryPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.SQL_QUERY);
             queryPerfRecord.start();
 
             resultSet = statement.executeQuery(querySql);
@@ -48,7 +48,7 @@ public class HBase20xSQLReaderTask {
             allResultPerfRecord.start();
 
             while (resultSet.next()) {
-                Record record = recordSender.createRecord();
+                Record record = recordSender.createRecord(null);
                 rsNextUsedTime += (System.nanoTime() - lastTime);
                 for (int i = 1; i <= columnNum; i++) {
                     Column column = this.convertPhoenixValueToDataxColumn(meta.getColumnType(i), resultSet.getObject(i));
@@ -98,7 +98,7 @@ public class HBase20xSQLReaderTask {
                 column = new DoubleColumn((Float.valueOf(value.toString())));
                 break;
             case Types.DECIMAL:
-                column = new DoubleColumn((BigDecimal)value);
+                column = new DoubleColumn((BigDecimal) value);
                 break;
             case Types.DOUBLE:
                 column = new DoubleColumn((Double) value);

@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.qlangtech.tis.lang.TisException;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import com.qlangtech.tis.util.IPluginContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,11 +63,14 @@ public class TransformerUtil {
             public List<TransformerExecution> getExecutions() {
                 return result;
             }
-
             @Override
-            public List<String> relevantOutterColKeys() {
-                return relevantKeys;
+            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteCols(List<T> sourceCols) {
+                return transformers.overwriteCols(sourceCols);
             }
+//            @Override
+//            public List<String> relevantOutterColKeys() {
+//                return relevantKeys;
+//            }
         };
     }
 }

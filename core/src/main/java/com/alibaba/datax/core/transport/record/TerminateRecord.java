@@ -1,7 +1,9 @@
 package com.alibaba.datax.core.transport.record;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 
 import java.util.Map;
 
@@ -16,7 +18,7 @@ public class TerminateRecord implements Record {
 	}
 
 	@Override
-	public void setCol2Index(Map<String, Integer> mapper) {
+	public void setCol2Index(ICol2Index mapper) {
 
 	}
 
@@ -34,12 +36,12 @@ public class TerminateRecord implements Record {
 	}
 
 	@Override
-	public void setColumn(String field, Column column) {
+	public void setColumn(String field, Object column) {
 
 	}
 
 	@Override
-	public Column getColumn(String field) {
+	public Object getColumn(String field) {
 		return null;
 	}
 

@@ -135,8 +135,8 @@ public class SingleTableSplitUtil {
             querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
                     table, where);
         }
-        Optional<ITransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
-        return new QuerySql(querySql, cols, transformerBuildCfg);
+       // Optional<ITransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
+        return new QuerySql(querySql );//, cols, transformerBuildCfg);
     }
 
     @SuppressWarnings("resource")

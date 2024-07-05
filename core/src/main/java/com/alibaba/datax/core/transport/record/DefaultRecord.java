@@ -1,11 +1,14 @@
 package com.alibaba.datax.core.transport.record;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.ClassSize;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.plugin.rdbms.reader.util.ColumnBiFunction;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.fastjson.JSON;
 
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ import java.util.Objects;
 public class DefaultRecord implements Record {
 
     private static final int RECORD_AVERGAE_COLUMN_NUMBER = 16;
-    private Map<String, Integer> col2Idx;
+    private DataXCol2Index col2Idx;
     private List<Column> columns;
 
     private int byteSize;
@@ -35,9 +38,10 @@ public class DefaultRecord implements Record {
 
 
     @Override
-    public void setCol2Index(Map<String, Integer> mapper) {
-        this.col2Idx = Objects.requireNonNull(mapper, "param mapper can not be null");
+    public void setCol2Index(ICol2Index mapper) {
+        this.col2Idx = Objects.requireNonNull((DataXCol2Index) mapper, "param mapper can not be null");
     }
+
 
     @Override
     public void addColumn(Column column) {
@@ -47,28 +51,23 @@ public class DefaultRecord implements Record {
 
     @Override
     public void setString(String field, String val) {
-        this.setColumn(field, new StringColumn(val));
+        this.setColumn(field, (val));
     }
 
     @Override
-    public void setColumn(String field, Column column) {
-        final Integer idx = this.getColIdx(field);
-        this.setColumn(idx, column);
-    }
-
-    private Integer getColIdx(String field) {
-        Integer idx = this.col2Idx.get(field);
-        if (idx == null) {
-            throw new IllegalStateException("field:'" + field
-                    + "' relevant offset index can not be null,exist cols:"
-                    + String.join(",", this.col2Idx.keySet()));
+    public void setColumn(String field, Object obj) {
+        if (obj != null) {
+            ColumnBiFunction colIndex = this.col2Idx.get(field);
+            this.setColumn(colIndex.getColumnIndex(), colIndex.toColumn(obj));
         }
-        return idx;
     }
 
+
     @Override
-    public Column getColumn(String field) {
-        return getColumn(getColIdx(field));
+    public Object getColumn(String field) {
+        ColumnBiFunction colIndex = this.col2Idx.get(field);
+        Column val = getColumn(colIndex.getColumnIndex());
+        return val != null ? colIndex.toInternal(val) : null;
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJo
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -81,7 +82,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
     private ErrorRecordChecker errorLimit;
 
-    private Optional<ITransformerBuildInfo> transformerBuildInfo;
+    private Optional<TransformerBuildInfo> transformerBuildInfo;
 
     public JobContainer(Configuration configuration) {
         super(configuration);
@@ -90,7 +91,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     @Override
-    public Optional<ITransformerBuildInfo> getTransformerBuildCfg() {
+    public Optional<TransformerBuildInfo> getTransformerBuildCfg() {
         return this.transformerBuildInfo;
     }
 

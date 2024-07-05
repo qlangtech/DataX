@@ -203,7 +203,7 @@ public class UnstructuredStorageReaderUtil {
 
     public static Record transportOneRecord(RecordSender recordSender,
                                             List<ColumnEntry> columnConfigs, String[] sourceLine, TaskPluginCollector taskPluginCollector) {
-        Record record = recordSender.createRecord();
+        Record record = recordSender.createRecord(null);
         //  Column columnGenerated = null;
         String val = null;
         for (ColumnEntry colMeta : columnConfigs) {

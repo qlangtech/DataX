@@ -2,11 +2,13 @@ package com.alibaba.datax.plugin.reader.mongodbreader;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.reader.mongodbreader.util.CollectionSplitUtil;
 import com.alibaba.datax.plugin.reader.mongodbreader.util.IMongoTable;
 import com.alibaba.datax.plugin.reader.mongodbreader.util.IMongoTableFinder;
@@ -17,10 +19,9 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import com.qlangtech.tis.datax.IDataxProcessor;
 import com.qlangtech.tis.datax.IDataxReader;
-import com.qlangtech.tis.datax.impl.DataxProcessor;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.ISelectedTab;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 
@@ -104,6 +105,8 @@ public class MongoDBReader extends Reader {
         private Object lowerBound = null;
         private Object upperBound = null;
         private boolean isObjectId = true;
+        private DataXCol2Index col2IndexMapper;
+
 
         @Override
         public void startRead(RecordSender recordSender) {
@@ -119,95 +122,14 @@ public class MongoDBReader extends Reader {
 
             MongoCursor<Document> dbCursor = null;
             Document filter = mongoTable.getCollectionQueryFilter();// new Document();
-            //            if (lowerBound.equals("min")) {
-            //                if (!upperBound.equals("max")) {
-            //                    filter.append(KeyConstant.MONGO_PRIMARY_ID, new Document("$lt", isObjectId ?
-            //                            new ObjectId(upperBound.toString()) : upperBound));
-            //                }
-            //            } else if (upperBound.equals("max")) {
-            //                filter.append(KeyConstant.MONGO_PRIMARY_ID, new Document("$gte", isObjectId ?
-            //                        new ObjectId(lowerBound.toString()) : lowerBound));
-            //            } else {
-            //                filter.append(KeyConstant.MONGO_PRIMARY_ID, new Document("$gte", isObjectId ?
-            //                        new ObjectId(lowerBound.toString()) : lowerBound).append("$lt", isObjectId ?
-            //                        new ObjectId(upperBound.toString()) : upperBound));
-            //            }
-            //            if (!Strings.isNullOrEmpty(query)) {
-            //                Document queryFilter = Document.parse(query);
-            //                filter = new Document("$and", Arrays.asList(filter, queryFilter));
-            //            }
-
-            //   List<IMongoCol> cols = this.mongoTable.getMongoPresentCols();
 
             dbCursor = col.find(filter).iterator();
             Document item = null;
             // Record record = null;
+            Objects.requireNonNull(this.col2IndexMapper, "col2IndexMapper can not be null");
             while (dbCursor.hasNext()) {
                 item = dbCursor.next();
-                // record = ;
-                // Iterator columnItera = mongodbColumnMeta.iterator();
-                // 遍历所有的列 name,type,splitter
-
-                recordSender.sendToWriter(this.mongoTable.convert2RecordByItem(recordSender.createRecord(), item));
-
-                //                for (IMongoCol column : cols) {
-                //                    column
-                //                }
-                //                while (columnItera.hasNext()) {
-                //                    JSONObject column = (JSONObject) columnItera.next();
-                //                    Object tempCol = item.get(column.getString(KeyConstant.COLUMN_NAME));
-                //                    if (tempCol == null) {
-                //                        if (KeyConstant.isDocumentType(column.getString(KeyConstant.COLUMN_TYPE))) {
-                //                            String[] name = column.getString(KeyConstant.COLUMN_NAME).split("\\.");
-                //                            if (name.length > 1) {
-                //                                Object obj;
-                //                                Document nestedDocument = item;
-                //                                for (String str : name) {
-                //                                    obj = nestedDocument.get(str);
-                //                                    if (obj instanceof Document) {
-                //                                        nestedDocument = (Document) obj;
-                //                                    }
-                //                                }
-                //
-                //                                if (null != nestedDocument) {
-                //                                    Document doc = nestedDocument;
-                //                                    tempCol = doc.get(name[name.length - 1]);
-                //                                }
-                //                            }
-                //                        }
-                //                    }
-                //                    if (tempCol == null) {
-                //                        //continue; 这个不能直接continue会导致record到目的端错位
-                //                        record.addColumn(new StringColumn(null));
-                //                    } else if (tempCol instanceof Double) {
-                //                        //TODO deal with Double.isNaN()
-                //                        record.addColumn(new DoubleColumn((Double) tempCol));
-                //                    } else if (tempCol instanceof Boolean) {
-                //                        record.addColumn(new BoolColumn((Boolean) tempCol));
-                //                    } else if (tempCol instanceof Date) {
-                //                        record.addColumn(new DateColumn((Date) tempCol));
-                //                    } else if (tempCol instanceof Integer) {
-                //                        record.addColumn(new LongColumn((Integer) tempCol));
-                //                    } else if (tempCol instanceof Long) {
-                //                        record.addColumn(new LongColumn((Long) tempCol));
-                //                    } else {
-                //                        if (KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
-                //                            String splitter = column.getString(KeyConstant.COLUMN_SPLITTER);
-                //                            if (Strings.isNullOrEmpty(splitter)) {
-                //                                throw DataXException.asDataXException(MongoDBReaderErrorCode
-                //                                .ILLEGAL_VALUE,
-                //                                        MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
-                //                            } else {
-                //                                ArrayList array = (ArrayList) tempCol;
-                //                                String tempArrayStr = Joiner.on(splitter).join(array);
-                //                                record.addColumn(new StringColumn(tempArrayStr));
-                //                            }
-                //                        } else {
-                //                            record.addColumn(new StringColumn(tempCol.toString()));
-                //                        }
-                //                    }
-                //                }
-                //                recordSender.sendToWriter(record);
+                recordSender.sendToWriter(this.mongoTable.convert2RecordByItem(recordSender.createRecord(this.col2IndexMapper), item));
             }
         }
 
@@ -237,8 +159,10 @@ public class MongoDBReader extends Reader {
             this.isObjectId = readerSliceConfig.getBool(KeyConstant.IS_OBJECTID);
 
 
-            IDataxProcessor dataxProcessor = DataxProcessor.load(null, this.containerContext.getTISDataXName());
-            IDataxReader dataxReader = dataxProcessor.getReader(null);
+            IDataxReader dataxReader = this.loadDataXReader();
+            ISelectedTab selectedTab = dataxReader.getSelectedTab(this.collection);
+            this.col2IndexMapper = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), selectedTab.getCols());
+
 
             if (!(dataxReader instanceof IMongoTableFinder)) {
                 throw new IllegalStateException("dataReader:" + dataxReader.getClass().getName() + " must be type of "
@@ -256,6 +180,8 @@ public class MongoDBReader extends Reader {
 
 
         }
+
+
 
         @Override
         public void destroy() {

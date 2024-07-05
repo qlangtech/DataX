@@ -2,6 +2,7 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.core.job.ITransformerBuildInfo;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 
 import java.util.List;
 

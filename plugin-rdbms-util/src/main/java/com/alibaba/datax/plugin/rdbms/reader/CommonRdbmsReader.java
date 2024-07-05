@@ -8,6 +8,7 @@ import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.IJobContainerContext;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
 import com.alibaba.datax.plugin.rdbms.reader.util.QuerySql;
@@ -254,12 +255,12 @@ public class CommonRdbmsReader {
                 //这个统计干净的result_Next时间
                 PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
                 allResultPerfRecord.start();
-
+                DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), cols);
                 long rsNextUsedTime = 0;
                 long lastTime = System.nanoTime();
                 while (rs.next()) {
                     rsNextUsedTime += (System.nanoTime() - lastTime);
-                    this.transportOneRecord(query, recordSender, rs, cols, columnNumber, mandatoryEncoding,
+                    this.transportOneRecord(col2Index, recordSender, rs, cols, columnNumber, mandatoryEncoding,
                             taskPluginCollector);
                     lastTime = System.nanoTime();
                 }
@@ -283,18 +284,20 @@ public class CommonRdbmsReader {
             // do nothing
         }
 
-        protected Record transportOneRecord(final QuerySql query, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
+        protected Record transportOneRecord(final DataXCol2Index col2Index, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
                                             int columnNumber, String mandatoryEncoding,
                                             TaskPluginCollector taskPluginCollector) {
-            Record record = buildRecord(query, recordSender, rs, cols, columnNumber, mandatoryEncoding, taskPluginCollector);
+            Record record = buildRecord(col2Index, recordSender, rs, cols, columnNumber, mandatoryEncoding, taskPluginCollector);
             recordSender.sendToWriter(record);
             return record;
         }
 
-        protected Record buildRecord(final QuerySql query, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
+        protected Record buildRecord(final DataXCol2Index col2Index, RecordSender recordSender, ResultSet rs, List<ColumnMetaData> cols,
                                      int columnNumber, String mandatoryEncoding,
                                      TaskPluginCollector taskPluginCollector) {
-            Record record = recordSender.createRecord(query.getCol2Index());
+
+
+            Record record = recordSender.createRecord(col2Index);
             ColumnMetaData cm = null;
             try {
                 for (int i = 1; i <= columnNumber; i++) {

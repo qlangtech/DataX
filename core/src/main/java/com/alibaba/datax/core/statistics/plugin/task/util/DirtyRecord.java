@@ -1,9 +1,11 @@
 package com.alibaba.datax.core.statistics.plugin.task.util;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.fastjson.JSON;
 
 import java.math.BigDecimal;
@@ -26,7 +28,7 @@ public class DirtyRecord implements Record {
 	}
 
 	@Override
-	public void setCol2Index(Map<String, Integer> mapper) {
+	public void setCol2Index(ICol2Index mapper) {
 		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 				"该方法不支持!");
 	}
@@ -55,7 +57,7 @@ public class DirtyRecord implements Record {
 	}
 
 	@Override
-	public void setColumn(String field, Column column) {
+	public void setColumn(String field, Object column) {
 		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 				"该方法不支持!");
 	}

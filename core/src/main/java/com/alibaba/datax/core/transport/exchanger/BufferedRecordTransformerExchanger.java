@@ -13,6 +13,7 @@ import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import org.apache.commons.lang.Validate;
 
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
     }
 
     @Override
-    public Record createRecord(Map<String,Integer> col2Mapper) {
+    public Record createRecord(DataXCol2Index col2Mapper) {
         try {
             Record record =  BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
              record.setCol2Index(col2Mapper);

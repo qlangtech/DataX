@@ -16,6 +16,7 @@
 
 package com.alibaba.datax.core.transport.exchanger;
 
+import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
@@ -29,6 +30,7 @@ import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 
 import java.util.List;
 import java.util.Map;
@@ -70,7 +72,7 @@ public class RecordExchanger extends TransformerExchanger implements RecordSende
     }
 
     @Override
-    public Record createRecord(Map<String, Integer> mapper) {
+    public Record createRecord(DataXCol2Index mapper) {
         try {
             Record record = RECORD_CLASS.newInstance();
             record.setCol2Index(mapper);

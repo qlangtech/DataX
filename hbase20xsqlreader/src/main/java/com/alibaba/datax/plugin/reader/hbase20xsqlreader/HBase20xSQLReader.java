@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.reader.hbase20xsqlreader;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.qlangtech.tis.datax.IDataxReader;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class HBase20xSQLReader extends Reader {
         @Override
         public void init() {
             this.readerConfig = super.getPluginJobConf();
+            IDataxReader dataxReader = this.loadDataXReader();
             hbase20xSQLReaderTask = new HBase20xSQLReaderTask(readerConfig, super.getTaskGroupId(), super.getTaskId());
         }
 
