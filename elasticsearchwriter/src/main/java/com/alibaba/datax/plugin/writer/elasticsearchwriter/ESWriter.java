@@ -11,6 +11,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.qlangtech.tis.datax.IDataxProcessor;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.Bulk;
 import io.searchbox.core.BulkResult;
@@ -40,6 +41,9 @@ public class ESWriter extends Writer {
 
         @Override
         public void prepare() {
+
+            IInitialElasticSearchIndex initialElasticSearchIndex = (IInitialElasticSearchIndex) this.loadDataXWriter();
+
             /**
              * 注意：此方法仅执行一次。
              * 最佳实践：如果 Job 中有需要进行数据同步之前的处理，可以在此处完成，如果没有必要则可以直接去掉。
@@ -68,9 +72,10 @@ public class ESWriter extends Writer {
                     esClient.deleteIndex(indexName);
                 }
                 // 强制创建,内部自动忽略已存在的情况
-                if (!esClient.createIndex(indexName, typeName, mappings, settings, dynamic)) {
-                    throw new IOException("create index or mapping failed");
-                }
+                initialElasticSearchIndex.initialIndex(this.loadProcessor());
+//                if (!esClient.createIndex(indexName, typeName, mappings, settings, dynamic)) {
+//                    throw new IOException("create index or mapping failed");
+//                }
             } catch (Exception ex) {
                 throw DataXException.asDataXException(ESWriterErrorCode.ES_MAPPINGS, ex.toString());
             }

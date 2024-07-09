@@ -7,6 +7,7 @@ import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -104,15 +105,18 @@ public final class ReaderSplitUtil {
                 }
             } else {
                 // 说明是配置的 querySql 方式
-//                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
-//
-//                // TODO 是否check 配置为多条语句？？
-//                for (String querySql : sqls) {
-//                    tempSlice = sliceConfig.clone();
-//                    tempSlice.set(Key.QUERY_SQL, querySql);
-//                    splittedConfigs.add(tempSlice);
-//                }
-                throw new UnsupportedOperationException("norTableMode is not support");
+                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
+                if (CollectionUtils.isEmpty(sqls)) {
+                    throw new IllegalStateException("property " + Key.QUERY_SQL + " can not be null");
+                }
+                // TODO 是否check 配置为多条语句？？
+                for (String querySql : sqls) {
+                    tempSlice = sliceConfig.clone();
+                    (new QuerySql(querySql)).write(tempSlice);
+                    //  tempSlice.set(Key.QUERY_SQL, querySql);
+                    splittedConfigs.add(tempSlice);
+                }
+                // throw new UnsupportedOperationException("norTableMode is not support");
             }
 
         }
@@ -120,7 +124,7 @@ public final class ReaderSplitUtil {
         return splittedConfigs;
     }
 
-    public static Configuration doPreCheckSplit(IJobContainerContext containerContext,Configuration originalSliceConfig) {
+    public static Configuration doPreCheckSplit(IJobContainerContext containerContext, Configuration originalSliceConfig) {
         Configuration queryConfig = originalSliceConfig.clone();
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
 
@@ -142,7 +146,7 @@ public final class ReaderSplitUtil {
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
                 Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
                 for (String table : tables) {
-                    querys.add(SingleTableSplitUtil.buildQuerySql(containerContext,column, cols, table, where));
+                    querys.add(SingleTableSplitUtil.buildQuerySql(containerContext, column, cols, table, where));
                     if (splitPK != null && !splitPK.isEmpty()) {
                         splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK.trim(), table, where));
                     }

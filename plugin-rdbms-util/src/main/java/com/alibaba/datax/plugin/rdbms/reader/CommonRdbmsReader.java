@@ -310,6 +310,7 @@ public class CommonRdbmsReader {
                         case Types.LONGVARCHAR:
                         case Types.NVARCHAR:
                         case Types.LONGNVARCHAR:
+                        case Types.OTHER:
                             String rawData;
                             if (StringUtils.isBlank(mandatoryEncoding)) {
                                 rawData = rs.getString(i);
