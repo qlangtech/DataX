@@ -29,6 +29,7 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Maps;
 import com.qlangtech.tis.datax.TimeFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -38,6 +39,8 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -81,6 +84,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     private int totalStage = 1;
 
     private ErrorRecordChecker errorLimit;
+
+    private final Map<Class<?>, Object> customizeAttrs = Maps.newHashMap();
 
     private Optional<TransformerBuildInfo> transformerBuildInfo;
 
@@ -133,6 +138,16 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     @Override
     public long getExecEpochMilli() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> void setAttr(Class<T> key, Object val) {
+        customizeAttrs.put(key, val);
+    }
+
+    @Override
+    public <T> T getAttr(Class<T> key) {
+        return (T) Objects.requireNonNull(customizeAttrs.get(key), "key:" + key + " relevant attribute can not be null");
     }
 
     /**

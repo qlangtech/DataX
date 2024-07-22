@@ -15,6 +15,7 @@ import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,11 @@ public class DataXCol2Index implements ICol2Index {
 
     public DataXCol2Index(Map<String, ColumnBiFunction> mapper) {
         this.mapper = mapper;
+    }
+
+    @Override
+    public Map<String, Integer> getCol2Index() {
+        return mapper.entrySet().stream().collect(Collectors.toMap((e) -> e.getKey(), (e) -> e.getValue().getColumnIndex()));
     }
 
     public static <T extends IColMetaGetter> DataXCol2Index getCol2Index(
