@@ -36,6 +36,10 @@ public class DefaultRecord implements Record {
         this.columns = new ArrayList<Column>(RECORD_AVERGAE_COLUMN_NUMBER);
     }
 
+    @Override
+    public ICol2Index getCol2Index() {
+        return Objects.requireNonNull(this.col2Idx, "col2Idx can not be null");
+    }
 
     @Override
     public void setCol2Index(ICol2Index mapper) {

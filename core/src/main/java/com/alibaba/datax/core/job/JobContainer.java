@@ -756,7 +756,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         return mergeReaderAndWriterTaskConfigs(readerTasksConfigs, writerTasksConfigs, null);
     }
 
-    private List<Configuration> mergeReaderAndWriterTaskConfigs(List<Configuration> readerTasksConfigs,
+    protected List<Configuration> mergeReaderAndWriterTaskConfigs(List<Configuration> readerTasksConfigs,
                                                                 List<Configuration> writerTasksConfigs,
                                                                 Optional<Configuration> transformerConfigs) {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
