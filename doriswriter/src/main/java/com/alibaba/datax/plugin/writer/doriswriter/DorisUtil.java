@@ -22,14 +22,15 @@ import java.util.List;
 public class DorisUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DorisUtil.class);
 
-    private DorisUtil() {}
+    private DorisUtil() {
+    }
 
-    public static List<String> getDorisTableColumns( Connection conn, String databaseName, String tableName) {
+    public static List<String> getDorisTableColumns(Connection conn, String databaseName, String tableName) {
         String currentSql = String.format("SELECT COLUMN_NAME FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = '%s' AND `TABLE_NAME` = '%s' ORDER BY `ORDINAL_POSITION` ASC;", databaseName, tableName);
-        List<String> columns = new ArrayList<> ();
+        List<String> columns = new ArrayList<>();
         ResultSet rs = null;
         try {
-            rs = DBUtil.query(conn, currentSql);
+            rs = DBUtil.query(conn, currentSql, null);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String colName = rs.getString("COLUMN_NAME");
                 columns.add(colName);
@@ -48,7 +49,7 @@ public class DorisUtil {
         }
         List<String> renderedSqls = new ArrayList<>();
         for (String sql : preOrPostSqls) {
-            if (! Strings.isNullOrEmpty(sql)) {
+            if (!Strings.isNullOrEmpty(sql)) {
                 renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
             }
         }
@@ -71,7 +72,7 @@ public class DorisUtil {
         }
     }
 
-    public static void preCheckPrePareSQL( Keys options) {
+    public static void preCheckPrePareSQL(Keys options) {
         String table = options.getTable();
         List<String> preSqls = options.getPreSqlList();
         List<String> renderedPreSqls = DorisUtil.renderPreOrPostSqls(preSqls, table);
@@ -80,24 +81,24 @@ public class DorisUtil {
             for (String sql : renderedPreSqls) {
                 try {
                     DBUtil.sqlValid(sql, DataBaseType.MySql);
-                } catch ( ParserException e) {
-                    throw RdbmsException.asPreSQLParserException(DataBaseType.MySql,e,sql);
+                } catch (ParserException e) {
+                    throw RdbmsException.asPreSQLParserException(DataBaseType.MySql, e, sql);
                 }
             }
         }
     }
 
-    public static void preCheckPostSQL( Keys options) {
+    public static void preCheckPostSQL(Keys options) {
         String table = options.getTable();
         List<String> postSqls = options.getPostSqlList();
         List<String> renderedPostSqls = DorisUtil.renderPreOrPostSqls(postSqls, table);
         if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
             LOG.info("Begin to preCheck postSqls:[{}].", String.join(";", renderedPostSqls));
-            for(String sql : renderedPostSqls) {
+            for (String sql : renderedPostSqls) {
                 try {
                     DBUtil.sqlValid(sql, DataBaseType.MySql);
-                } catch (ParserException e){
-                    throw RdbmsException.asPostSQLParserException(DataBaseType.MySql,e,sql);
+                } catch (ParserException e) {
+                    throw RdbmsException.asPostSQLParserException(DataBaseType.MySql, e, sql);
                 }
             }
         }

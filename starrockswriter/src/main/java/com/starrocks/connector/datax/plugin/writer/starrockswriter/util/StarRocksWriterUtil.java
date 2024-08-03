@@ -19,14 +19,15 @@ import java.util.*;
 public final class StarRocksWriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(StarRocksWriterUtil.class);
 
-    private StarRocksWriterUtil() {}
+    private StarRocksWriterUtil() {
+    }
 
     public static List<String> getStarRocksColumns(Connection conn, String databaseName, String tableName) {
         String currentSql = String.format("SELECT COLUMN_NAME FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = '%s' AND `TABLE_NAME` = '%s' ORDER BY `ORDINAL_POSITION` ASC;", databaseName, tableName);
         List<String> columns = new ArrayList<>();
         ResultSet rs = null;
         try {
-            rs = DBUtil.query(conn, currentSql);
+            rs = DBUtil.query(conn, currentSql, null);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String colName = rs.getString("COLUMN_NAME");
                 columns.add(colName);
@@ -78,7 +79,7 @@ public final class StarRocksWriterUtil {
                 try {
                     DBUtil.sqlValid(sql, DataBaseType.MySql);
                 } catch (ParserException e) {
-                    throw RdbmsException.asPreSQLParserException(DataBaseType.MySql,e,sql);
+                    throw RdbmsException.asPreSQLParserException(DataBaseType.MySql, e, sql);
                 }
             }
         }
@@ -90,11 +91,11 @@ public final class StarRocksWriterUtil {
         List<String> renderedPostSqls = StarRocksWriterUtil.renderPreOrPostSqls(postSqls, table);
         if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
             LOG.info("Begin to preCheck postSqls:[{}].", String.join(";", renderedPostSqls));
-            for(String sql : renderedPostSqls) {
+            for (String sql : renderedPostSqls) {
                 try {
                     DBUtil.sqlValid(sql, DataBaseType.MySql);
-                } catch (ParserException e){
-                    throw RdbmsException.asPostSQLParserException(DataBaseType.MySql,e,sql);
+                } catch (ParserException e) {
+                    throw RdbmsException.asPostSQLParserException(DataBaseType.MySql, e, sql);
                 }
             }
         }

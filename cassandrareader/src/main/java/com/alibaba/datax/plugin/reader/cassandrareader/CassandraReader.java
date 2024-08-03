@@ -14,6 +14,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 import com.qlangtech.tis.datax.IDataxReader;
 import com.qlangtech.tis.plugin.ds.ISelectedTab;
+import com.qlangtech.tis.plugin.ds.RunningContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,7 +115,8 @@ public class CassandraReader extends Reader {
             IDataxReader dataxReader = this.loadDataXReader();
             ISelectedTab selectedTab = dataxReader.getSelectedTab(table);
 
-            DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), selectedTab.getCols());
+            DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), new RunningContext() {
+            }, selectedTab.getCols());
 
         }
 

@@ -8,17 +8,25 @@ import com.alibaba.datax.core.util.TISComplexTransformer;
 import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.TransformerConstant;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.lang.TisException;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
+import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules.OverwriteColsWithContextParams;
+import com.qlangtech.tis.plugin.ds.ContextParamConfig;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
+import com.qlangtech.tis.plugin.ds.RunningContext;
 import com.qlangtech.tis.util.IPluginContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * no comments.
@@ -39,8 +47,9 @@ public class TransformerUtil {
         List<TransformerExecution> result = Lists.newArrayList();
         TransformerInfo transformerInfo = null;
         TransformerExecution texec = null;
+        IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName());
         RecordTransformerRules transformers = RecordTransformerRules.loadTransformerRules(
-                IPluginContext.namedContext(containerContext.getCollectionName()), tabRelevantTransformer);
+                pluginContext, tabRelevantTransformer);
         if (CollectionUtils.isEmpty(transformers.rules)) {
             throw new IllegalStateException("transformer:" + tabRelevantTransformer + " can not be empty");
         }
@@ -58,19 +67,46 @@ public class TransformerUtil {
                     + "\n is not equla with key build from plugin:" + String.join(",", fromPlugnKeys)
                     + "\n Please regenerate the DataX Config Files then reTrigger pipeline again!!!");
         }
+
+        DataxReader dataxReader = Objects.requireNonNull(DataxReader.load(pluginContext, containerContext.getCollectionName())
+                , "dataX:" + containerContext.getCollectionName() + " relevant DataXReader can not be null");
+
         return new TransformerBuildInfo() {
+            OverwriteColsWithContextParams overwriteColsWithContextParams;
+
             @Override
             public List<TransformerExecution> getExecutions() {
                 return result;
             }
+
             @Override
-            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteCols(List<T> sourceCols) {
-                return transformers.overwriteCols(sourceCols);
+            public boolean containContextParams() {
+                return this.overwriteColsWithContextParams != null
+                        && CollectionUtils.isNotEmpty(overwriteColsWithContextParams.getContextParams());
+            }
+
+            @Override
+            public Map<String, Object> contextParamVals(RunningContext runningContext) {
+                if (!containContextParams()) {
+                    throw new IllegalStateException("must containContextParams");
+                }
+                Map<String, Object> contextParamVals = Maps.newHashMap();
+                List<ContextParamConfig> contextParms = overwriteColsWithContextParams.getContextParams();
+                for (ContextParamConfig contextParam : contextParms) {
+                    contextParamVals.put(contextParam.getKeyName(), contextParam.valGetter().apply(runningContext));
+                }
+                return contextParamVals;
             }
 //            @Override
-//            public List<String> relevantOutterColKeys() {
-//                return relevantKeys;
+//            public List<ContextParamConfig> getContextParms() {
+//                return overwriteColsWithContextParams.getContextParams();
 //            }
+
+            @Override
+            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteCols(List<T> sourceCols) {
+                overwriteColsWithContextParams = transformers.overwriteCols(sourceCols).appendSourceContextParams(dataxReader);
+                return overwriteColsWithContextParams.getCols();
+            }
         };
     }
 }

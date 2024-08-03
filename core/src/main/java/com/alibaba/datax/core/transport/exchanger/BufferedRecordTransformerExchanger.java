@@ -76,9 +76,10 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
     @Override
     public Record createRecord(DataXCol2Index col2Mapper) {
         try {
-            Record record =  BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
-             record.setCol2Index(col2Mapper);
-             return record;
+            Record record = BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
+            return col2Mapper.fill(record);
+//             record.setCol2Index(col2Mapper);
+//             return record;
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.CONFIG_ERROR, e);
@@ -95,7 +96,7 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
 
         record = doTransformer(record);
 
-        if(record == null){
+        if (record == null) {
             return;
         }
 

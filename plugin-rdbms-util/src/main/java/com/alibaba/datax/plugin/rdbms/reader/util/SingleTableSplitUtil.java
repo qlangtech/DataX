@@ -135,12 +135,12 @@ public class SingleTableSplitUtil {
             querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
                     table, where);
         }
-       // Optional<ITransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
-        return new QuerySql(querySql );//, cols, transformerBuildCfg);
+        // Optional<ITransformerBuildInfo> transformerBuildCfg = containerContext.getTransformerBuildCfg();
+        return new QuerySql(querySql);//, cols, transformerBuildCfg);
     }
 
     @SuppressWarnings("resource")
-    private static Pair<Object, Object> getPkRange(IDataSourceFactoryGetter dataSourceFactoryGetter, Configuration configuration) {
+    private static Pair<Object, Object> getPkRange(IDataSourceFactoryGetter dataSourceFactoryGetter, IJobContainerContext containerContex, Configuration configuration) {
         String pkRangeSQL = genPKRangeSQL(configuration);
 
         int fetchSize = configuration.getInt(Constant.FETCH_SIZE);
@@ -150,14 +150,15 @@ public class SingleTableSplitUtil {
         String table = configuration.getString(Key.TABLE);
 
         Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcURL, username, password);
-        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, conn, pkRangeSQL, fetchSize, table, username, configuration);
+        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, containerContex, conn, pkRangeSQL, fetchSize, table, username, configuration);
         DBUtil.closeDBResources(null, null, conn);
         return minMaxPK;
     }
 
-    public static void precheckSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter, Connection conn, String pkRangeSQL, int fetchSize,
+    public static void precheckSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter
+            , IJobContainerContext containerContex, Connection conn, String pkRangeSQL, int fetchSize,
                                        String table, String username) {
-        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, conn, pkRangeSQL, fetchSize, table, username, null);
+        Pair<Object, Object> minMaxPK = checkSplitPk(dataSourceFactoryGetter, containerContex, conn, pkRangeSQL, fetchSize, table, username, null);
         if (null == minMaxPK) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
@@ -168,7 +169,8 @@ public class SingleTableSplitUtil {
      * 检测splitPk的配置是否正确。
      * configuration为null, 是precheck的逻辑，不需要回写PK_TYPE到configuration中
      */
-    private static Pair<Object, Object> checkSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter, Connection conn, String pkRangeSQL, int fetchSize, String table,
+    private static Pair<Object, Object> checkSplitPk(IDataSourceFactoryGetter dataSourceFactoryGetter, IJobContainerContext containerContex
+            , Connection conn, String pkRangeSQL, int fetchSize, String table,
                                                      String username, Configuration configuration) {
         LOG.info("split pk [sql={}] is running... ", pkRangeSQL);
         ResultSet rs = null;
@@ -177,7 +179,7 @@ public class SingleTableSplitUtil {
         try {
             try {
 
-                Pair<Statement, ResultSet> p = DBUtil.query(conn, pkRangeSQL, fetchSize, dataSourceFactoryGetter);
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, pkRangeSQL, fetchSize, dataSourceFactoryGetter, containerContex);
                 rs = p.getRight();
                 statement = p.getKey();
             } catch (Exception e) {
@@ -295,7 +297,7 @@ public class SingleTableSplitUtil {
     /**
      * support Number and String split
      */
-    public static List<String> genSplitSqlForOracle(IDataSourceFactoryGetter dataSourceFactoryGetter, String splitPK,
+    public static List<String> genSplitSqlForOracle(IDataSourceFactoryGetter dataSourceFactoryGetter, IJobContainerContext containerContex, String splitPK,
                                                     String table, String where, Configuration configuration,
                                                     int adviceNum) {
         if (adviceNum < 1) {
@@ -326,7 +328,7 @@ public class SingleTableSplitUtil {
         List<Pair<Object, Integer>> splitedRange = new ArrayList<Pair<Object, Integer>>();
         try {
             try {
-                Pair<Statement, ResultSet> p = DBUtil.query(conn, splitSql, fetchSize, dataSourceFactoryGetter);
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, splitSql, fetchSize, dataSourceFactoryGetter, containerContex);
                 rs = p.getRight();
                 statement = p.getKey();
             } catch (Exception e) {

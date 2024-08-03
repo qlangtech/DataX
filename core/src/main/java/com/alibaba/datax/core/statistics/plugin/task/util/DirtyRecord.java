@@ -34,6 +34,12 @@ public class DirtyRecord implements Record {
 	}
 
 	@Override
+	public ICol2Index getCol2Index() {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
+
+	@Override
 	public void addColumn(Column column) {
 		this.columns.add(
                 DirtyColumn.asDirtyColumn(column, this.columns.size()));

@@ -21,7 +21,9 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.DataSourceMeta;
+import com.qlangtech.tis.plugin.ds.DataSourceMeta.JDBCConnection;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.RdbmsRunningContext;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.collections.MapUtils;
@@ -87,7 +89,7 @@ public class CommonRdbmsReader {
                 Configuration connConf = Configuration.from(connList.get(i).toString());
 
                 PreCheckTask t = new PreCheckTask(this.dataSourceFactoryGetter, username, password, connConf,
-                        dataBaseType, splitPK);
+                        dataBaseType, splitPK, this.containerContext);
                 taskList.add(t);
             }
             List<Future<Boolean>> results = Lists.newArrayList();
@@ -211,11 +213,12 @@ public class CommonRdbmsReader {
             PerfRecord queryPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.SQL_QUERY);
             queryPerfRecord.start();
 
-            Connection conn = DBUtil.getConnection(this.readerDataSourceFactoryGetter, jdbcUrl, username, password);
+            JDBCConnection conn =
+                    new JDBCConnection(DBUtil.getConnection(this.readerDataSourceFactoryGetter, jdbcUrl, username, password), jdbcUrl);
             Map<String, ColumnMetaData> tabCols = null;
             try {
                 tabCols = ColumnMetaData.toMap(this.readerDataSourceFactoryGetter.getDataSourceFactory() //
-                        .getTableMetadata(new DataSourceMeta.JDBCConnection(conn, jdbcUrl), false,
+                        .getTableMetadata(conn, false,
                                 EntityName.parse(table, true)));
 
             } catch (TableNotFoundException e) {
@@ -227,7 +230,7 @@ public class CommonRdbmsReader {
             List<ColumnMetaData> cols = Lists.newArrayList();
 
             // session config .etc related
-            DBUtil.dealWithSessionConfig(conn, readerSliceConfig, this.dataBaseType, basicMsg);
+            DBUtil.dealWithSessionConfig(conn.getConnection(), readerSliceConfig, this.dataBaseType, basicMsg);
 
             int columnNumber = 0;
             Pair<Statement, ResultSet> statResult = null;
@@ -238,7 +241,7 @@ public class CommonRdbmsReader {
                 if (rowFetchSize == null) {
                     throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
                 }
-                statResult = DBUtil.query(conn, query.getQuerySql(), rowFetchSize, this.readerDataSourceFactoryGetter);
+                statResult = DBUtil.query(conn.getConnection(), query.getQuerySql(), rowFetchSize, this.readerDataSourceFactoryGetter, this.containerContext);
                 rs = statResult.getRight();
                 statement = statResult.getKey();
                 queryPerfRecord.end();
@@ -255,7 +258,8 @@ public class CommonRdbmsReader {
                 //这个统计干净的result_Next时间
                 PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
                 allResultPerfRecord.start();
-                DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), cols);
+                DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg()
+                        , new RdbmsRunningContext(conn, readerDataSourceFactoryGetter.getDBReservedKeys().removeEscapeChar(table)), cols);
                 long rsNextUsedTime = 0;
                 long lastTime = System.nanoTime();
                 while (rs.next()) {
@@ -272,7 +276,7 @@ public class CommonRdbmsReader {
             } catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType, e, query.getQuerySql(), table, username);
             } finally {
-                DBUtil.closeDBResources(statement, conn);
+                DBUtil.closeDBResources(statement, conn.getConnection());
             }
         }
 

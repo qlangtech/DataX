@@ -1,8 +1,12 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.alibaba.datax.common.element.DataXResultPreviewOrderByCols;
+import com.alibaba.datax.common.element.QueryCriteria;
+import com.alibaba.datax.common.element.ThreadLocalRows;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
@@ -195,7 +199,7 @@ public final class DBUtil {
 
         Connection connection = connect(dataBaseType, jdbcURL, userName, password);
         try {
-            ResultSet rs = query(connection, "SHOW GRANTS FOR " + userName);
+            ResultSet rs = query(connection, "SHOW GRANTS FOR " + userName, null);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String grantRecord = rs.getString("Grants for " + userName + "@%");
                 String[] params = grantRecord.split("\\`");
@@ -364,7 +368,7 @@ public final class DBUtil {
                                                    String url, String user, String pass, String socketTimeout) {
 
         try {
-            return dataBaseType.getDataSourceFactory().getConnection(url,false).getConnection();
+            return dataBaseType.getDataSourceFactory().getConnection(url, false).getConnection();
         } catch (SQLException e) {
             throw new RuntimeException("jdbcUrl:" + url, e);
         }
@@ -415,10 +419,11 @@ public final class DBUtil {
      * @return a {@link ResultSet}
      * @throws SQLException if occurs SQLException.
      */
-    public static Pair<Statement, ResultSet> query(Connection conn, String sql, int fetchSize, IDataSourceFactoryGetter readerDataSourceFactoryGetter)
+    public static Pair<Statement, ResultSet> query(Connection conn, String sql
+            , int fetchSize, IDataSourceFactoryGetter readerDataSourceFactoryGetter, IJobContainerContext containerContext)
             throws SQLException {
         // 默认3600 s 的query Timeout
-        return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND, readerDataSourceFactoryGetter);
+        return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND, readerDataSourceFactoryGetter, containerContext);
     }
 
     /**
@@ -432,7 +437,7 @@ public final class DBUtil {
      * @throws SQLException
      */
     public static Pair<Statement, ResultSet> query(Connection conn, String sql
-            , int fetchSize, int queryTimeout, IDataSourceFactoryGetter readerDataSourceFactoryGetter)
+            , int fetchSize, int queryTimeout, IDataSourceFactoryGetter readerDataSourceFactoryGetter, IJobContainerContext containerContext)
             throws SQLException {
         // make sure autocommit is off
         conn.setAutoCommit(false);
@@ -442,7 +447,7 @@ public final class DBUtil {
         DataSourceFactory dsFactory = readerDataSourceFactoryGetter.getDataSourceFactory();
         dsFactory.setReaderStatement(stmt);
         //readerDataSourceFactoryGetter.setReaderStatement(stmt);
-        return Pair.of(stmt, query(stmt, sql));
+        return Pair.of(stmt, query(stmt, sql, containerContext));
     }
 
     /**
@@ -453,9 +458,21 @@ public final class DBUtil {
      * @return a {@link ResultSet}
      * @throws SQLException if occurs SQLException.
      */
-    public static ResultSet query(Statement stmt, String sql)
+    public static ResultSet query(Statement stmt, String sql, IJobContainerContext containerContext)
             throws SQLException {
-        return stmt.executeQuery(sql);
+
+        if (containerContext != null && containerContext.containAttr(ThreadLocalRows.class)) {
+            ThreadLocalRows attr = containerContext.getAttr(ThreadLocalRows.class);
+            QueryCriteria criteria = attr.getQuery();
+            DataXResultPreviewOrderByCols pagerOffsetPointCols = attr.getPagerOffsetPointCols();
+            if (pagerOffsetPointCols != null) {
+                sql += pagerOffsetPointCols.createWhereAndOrderByStatment(criteria.isNextPakge());
+            }
+            return PreviewRowsResultSet.wrap(stmt.executeQuery(sql), criteria.getPageSize());
+        } else {
+            return stmt.executeQuery(sql);
+        }
+
     }
 
     public static void executeSqlWithoutResultSet(Statement stmt, String sql)
@@ -670,7 +687,7 @@ public final class DBUtil {
             connection = connect(dataBaseType, url, user, pass);
             if (null != connection) {
                 for (String pre : preSql) {
-                    if (doPreCheck(connection, pre) == false) {
+                    if (doPreCheck(connection, pre, null) == false) {
                         LOG.warn("doPreCheck failed.");
                         return false;
                     }
@@ -715,18 +732,18 @@ public final class DBUtil {
         return false;
     }
 
-    public static ResultSet query(Connection conn, String sql)
+    public static ResultSet query(Connection conn, String sql, IJobContainerContext containerContext)
             throws SQLException {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         //默认3600 seconds
         stmt.setQueryTimeout(Constant.SOCKET_TIMEOUT_INSECOND);
-        return query(stmt, sql);
+        return query(stmt, sql, containerContext);
     }
 
-    private static boolean doPreCheck(Connection conn, String pre) {
+    private static boolean doPreCheck(Connection conn, String pre, IJobContainerContext containerContext) {
         ResultSet rs = null;
         try {
-            rs = query(conn, pre);
+            rs = query(conn, pre, containerContext);
 
             int checkResult = -1;
             if (DBUtil.asyncResultSetNext(rs)) {
@@ -861,7 +878,6 @@ public final class DBUtil {
                     e);
         }
     }
-
 
 
 //    public static IDataSourceFactoryGetter getReaderDataSourceFactoryGetter(Configuration config, IJobContainerContext containerContext) {

@@ -150,6 +150,11 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         return (T) Objects.requireNonNull(customizeAttrs.get(key), "key:" + key + " relevant attribute can not be null");
     }
 
+    @Override
+    public <T> boolean containAttr(Class<T> key) {
+        return customizeAttrs.get(key) != null;
+    }
+
     /**
      * jobContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
      * post以及destroy和statistics
@@ -757,8 +762,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     protected List<Configuration> mergeReaderAndWriterTaskConfigs(List<Configuration> readerTasksConfigs,
-                                                                List<Configuration> writerTasksConfigs,
-                                                                Optional<Configuration> transformerConfigs) {
+                                                                  List<Configuration> writerTasksConfigs,
+                                                                  Optional<Configuration> transformerConfigs) {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR, String.format("reader切分的task"
                     + "数目[%d]不等于writer切分的task数目[%d].", readerTasksConfigs.size(), writerTasksConfigs.size()));

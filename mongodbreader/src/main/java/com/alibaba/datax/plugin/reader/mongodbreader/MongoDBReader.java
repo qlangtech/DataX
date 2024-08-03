@@ -22,6 +22,7 @@ import com.mongodb.client.MongoDatabase;
 import com.qlangtech.tis.datax.IDataxReader;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.ISelectedTab;
+import com.qlangtech.tis.plugin.ds.RunningContext;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 
@@ -161,7 +162,8 @@ public class MongoDBReader extends Reader {
 
             IDataxReader dataxReader = this.loadDataXReader();
             ISelectedTab selectedTab = dataxReader.getSelectedTab(this.collection);
-            this.col2IndexMapper = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), selectedTab.getCols());
+            this.col2IndexMapper = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), new RunningContext() {
+            }, selectedTab.getCols());
 
 
             if (!(dataxReader instanceof IMongoTableFinder)) {

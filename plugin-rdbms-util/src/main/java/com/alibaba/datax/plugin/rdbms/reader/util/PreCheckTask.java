@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
@@ -29,18 +30,21 @@ public class PreCheckTask implements Callable<Boolean> {
     private Configuration connection;
     private DataBaseType dataBaseType;
     private final IDataSourceFactoryGetter dataSourceFactoryGetter;
+    private final IJobContainerContext containerContext;
 
     public PreCheckTask(IDataSourceFactoryGetter dataSourceFactoryGetter, String userName,
                         String password,
                         Configuration connection,
                         DataBaseType dataBaseType,
-                        String splitPkId) {
+                        String splitPkId,
+                        IJobContainerContext containerContext) {
         this.connection = connection;
         this.userName = userName;
         this.password = password;
         this.dataBaseType = dataBaseType;
         this.splitPkId = splitPkId;
         this.dataSourceFactoryGetter = dataSourceFactoryGetter;
+        this.containerContext = containerContext;
     }
 
     @Override
@@ -72,7 +76,7 @@ public class PreCheckTask implements Callable<Boolean> {
                 try {
                     DBUtil.sqlValid(querySql, dataBaseType);
                     if (i == 0) {
-                        Pair<Statement, ResultSet> stat = DBUtil.query(conn, querySql, fetchSize, dataSourceFactoryGetter);
+                        Pair<Statement, ResultSet> stat = DBUtil.query(conn, querySql, fetchSize, dataSourceFactoryGetter, this.containerContext);
                         statement = stat.getLeft();
                         rs = stat.getRight();
                     }
@@ -89,7 +93,8 @@ public class PreCheckTask implements Callable<Boolean> {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql, dataBaseType);
                         if (i == 0) {
-                            SingleTableSplitUtil.precheckSplitPk(dataSourceFactoryGetter, conn, splitPkSql, fetchSize, table, userName);
+                            SingleTableSplitUtil.precheckSplitPk(
+                                    dataSourceFactoryGetter, containerContext, conn, splitPkSql, fetchSize, table, userName);
                         }
                     }
                 } catch (ParserException e) {

@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.transport.exchanger;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.CommonErrorCode;
@@ -14,6 +15,7 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.plugin.rdbms.reader.util.ColumnBiFunction;
 import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.Validate;
 
 import java.util.ArrayList;
@@ -75,8 +77,8 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
     public Record createRecord(DataXCol2Index col2Idx) {
         try {
             Record record = BufferedRecordExchanger.RECORD_CLASS.newInstance();
-            record.setCol2Index(col2Idx);
-            return record;
+            // record.setCol2Index(col2Idx);
+            return col2Idx.fill(record);
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.CONFIG_ERROR, e);

@@ -31,8 +31,10 @@ public class DefaultRecord implements Record {
 
     // 首先是Record本身需要的内存
     private int memorySize = ClassSize.DefaultRecordHead;
+    int colIdx;
 
     public DefaultRecord() {
+        this.colIdx = 0;
         this.columns = new ArrayList<Column>(RECORD_AVERGAE_COLUMN_NUMBER);
     }
 
@@ -49,8 +51,9 @@ public class DefaultRecord implements Record {
 
     @Override
     public void addColumn(Column column) {
-        columns.add(column);
-        incrByteSize(column);
+//        columns.add(column);
+//        incrByteSize(column);
+        this.setColumn(colIdx++, column);
     }
 
     @Override

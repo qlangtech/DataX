@@ -17,7 +17,19 @@ public abstract class ColumnBiFunction {
         return this.colIndex;
     }
 
+    /**
+     * 将简单值装箱封装成Column
+     *
+     * @param val
+     * @return
+     */
     public abstract Column toColumn(Object val);
 
+    /**
+     * 将Column中的原始值拆箱
+     *
+     * @param col
+     * @return
+     */
     public abstract Object toInternal(Column col);
 }
