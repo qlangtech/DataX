@@ -22,6 +22,11 @@ public class TerminateRecord implements Record {
     }
 
     @Override
+    public String getString(String field, boolean origin) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ICol2Index getCol2Index() {
         throw new UnsupportedOperationException();
     }

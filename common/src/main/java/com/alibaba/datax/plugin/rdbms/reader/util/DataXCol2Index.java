@@ -35,6 +35,12 @@ public class DataXCol2Index implements ICol2Index {
     private final Map<String, ColumnBiFunction> mapper;
 
     private final Map<String, Object> contextParamVals;
+    final int contextParamValsCount;
+
+    @Override
+    public int contextParamValsCount() {
+        return this.contextParamValsCount;
+    }
 
     /**
      * @param mapper
@@ -43,6 +49,7 @@ public class DataXCol2Index implements ICol2Index {
     public DataXCol2Index(Map<String, ColumnBiFunction> mapper, Map<String, Object> contextParamVals) {
         this.mapper = mapper;
         this.contextParamVals = Objects.requireNonNull(contextParamVals, "contextParamVals can not be null");
+        this.contextParamValsCount = this.contextParamVals.size();
     }
 
     public Map<String, Object> getContextParamVals() {
@@ -64,8 +71,9 @@ public class DataXCol2Index implements ICol2Index {
     }
 
     @Override
-    public Map<String, Integer> getCol2Index() {
-        return mapper.entrySet().stream().collect(Collectors.toMap((e) -> e.getKey(), (e) -> e.getValue().getColumnIndex()));
+    public Map<String, ICol2Index.Col> getCol2Index() {
+        return mapper.entrySet().stream().collect(Collectors.toMap((e) -> e.getKey() //
+                , (e) -> new ICol2Index.Col(e.getValue().getColumnIndex(), e.getValue().getType())));
     }
 
     public static <T extends IColMetaGetter> DataXCol2Index getCol2Index(
@@ -82,7 +90,7 @@ public class DataXCol2Index implements ICol2Index {
                                 return colGetter.getType().accept(new TypeVisitor<ColumnBiFunction>() {
                                     @Override
                                     public ColumnBiFunction bigInt(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 if (val instanceof Long) {
@@ -105,7 +113,7 @@ public class DataXCol2Index implements ICol2Index {
 
                                     @Override
                                     public ColumnBiFunction doubleType(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 if (val instanceof Long) {
@@ -134,7 +142,7 @@ public class DataXCol2Index implements ICol2Index {
 
                                     @Override
                                     public ColumnBiFunction dateType(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 if (val instanceof Long) {
@@ -166,7 +174,7 @@ public class DataXCol2Index implements ICol2Index {
 
                                     @Override
                                     public ColumnBiFunction bitType(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 if (val instanceof Number) {
@@ -187,7 +195,7 @@ public class DataXCol2Index implements ICol2Index {
 
                                     @Override
                                     public ColumnBiFunction blobType(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 return new BytesColumn((byte[]) val);
@@ -202,7 +210,7 @@ public class DataXCol2Index implements ICol2Index {
 
                                     @Override
                                     public ColumnBiFunction varcharType(DataType type) {
-                                        return new ColumnBiFunction(idx.getAndIncrement()) {
+                                        return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
                                                 return new StringColumn(String.valueOf(val));

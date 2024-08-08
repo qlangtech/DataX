@@ -10,12 +10,14 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.plugin.rdbms.reader.util.ColumnBiFunction;
 import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -26,6 +28,11 @@ public class DefaultRecord implements Record {
     private static final int RECORD_AVERGAE_COLUMN_NUMBER = 16;
     private DataXCol2Index col2Idx;
     private List<Column> columns;
+    //
+    /**
+     * 保存被替换的值
+     */
+    private ConcurrentMap<Integer, Column> previous;
 
     private int byteSize;
 
@@ -36,6 +43,32 @@ public class DefaultRecord implements Record {
     public DefaultRecord() {
         this.colIdx = 0;
         this.columns = new ArrayList<Column>(RECORD_AVERGAE_COLUMN_NUMBER);
+    }
+
+    @Override
+    public String getString(String field, boolean origin) {
+
+        Object colVal = null;
+        if (origin) {
+            ColumnBiFunction colBiFunction = col2Idx.get(field);
+            Column replaced = this.getPrevious().get(colBiFunction.getColumnIndex());
+            if (replaced != null) {
+                colVal = colBiFunction.toInternal(replaced);
+            } else {
+                colVal = this.getColumn(field);
+            }
+        } else {
+            colVal = this.getColumn(field);
+        }
+
+        return colVal != null ? String.valueOf(colVal) : null;
+    }
+
+    private ConcurrentMap<Integer, Column> getPrevious() {
+        if (this.previous == null) {
+            this.previous = Maps.newConcurrentMap();
+        }
+        return this.previous;
     }
 
     @Override
@@ -97,7 +130,10 @@ public class DefaultRecord implements Record {
         }
 
         decrByteSize(getColumn(i));
-        this.columns.set(i, column);
+        Column preious = this.columns.set(i, column);
+        if (preious != null) {
+            getPrevious().putIfAbsent(i, preious);
+        }
         incrByteSize(getColumn(i));
     }
 
@@ -111,7 +147,7 @@ public class DefaultRecord implements Record {
 
     @Override
     public int getColumnNumber() {
-        return this.columns.size();
+        return this.columns.size() - this.col2Idx.contextParamValsCount();
     }
 
     @Override
