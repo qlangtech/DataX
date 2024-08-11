@@ -3,7 +3,6 @@ package com.alibaba.datax.core.transport.record;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.ClassSize;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
