@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * no comments.
@@ -119,16 +120,28 @@ public class TransformerUtil {
             }
 
             @Override
+            public <CONTEXT extends RunningContext> Map<String, Function<CONTEXT, Object>> contextParamValsGetter() {
+                return transformerCfg.contextParamValsGetter();
+            }
+
+            @Override
+            public List<IColMetaGetter> originColsWithContextParams() {
+                return transformerCfg.originColsWithContextParams();
+            }
+
+            @Override
             public boolean containContextParams() {
                 return transformerCfg.containContextParams();
             }
+
             @Override
             public Map<String, Object> contextParamVals(RunningContext runningContext) {
                 return transformerCfg.contextParamVals(runningContext);
             }
+
             @Override
-            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteCols(List<T> sourceCols) {
-                return transformerCfg.overwriteCols(sourceCols);
+            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteColsWithContextParams(List<T> sourceCols) {
+                return transformerCfg.overwriteColsWithContextParams(sourceCols);
             }
         };
     }

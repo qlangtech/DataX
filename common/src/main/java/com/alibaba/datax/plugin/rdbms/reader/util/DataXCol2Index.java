@@ -81,7 +81,7 @@ public class DataXCol2Index implements ICol2Index {
         //  return this.col2Index;
         AtomicInteger idx = new AtomicInteger();
         Map<String, ColumnBiFunction> result = transformerBuildCfg.map((transformer) -> {
-                    List<IColMetaGetter> overwriteCols = transformer.overwriteCols(sourceCols);
+                    List<IColMetaGetter> overwriteCols = transformer.overwriteColsWithContextParams(sourceCols);
                     return overwriteCols.stream();
                 }).orElseGet(() -> sourceCols.stream().map((c) -> c))
                 .collect(

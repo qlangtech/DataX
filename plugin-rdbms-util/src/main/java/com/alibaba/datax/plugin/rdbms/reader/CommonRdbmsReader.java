@@ -259,7 +259,7 @@ public class CommonRdbmsReader {
                 PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
                 allResultPerfRecord.start();
                 DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg()
-                        , new RdbmsRunningContext(conn, readerDataSourceFactoryGetter.getDBReservedKeys().removeEscapeChar(table)), cols);
+                        , new RdbmsRunningContext(conn.getCatalog(), readerDataSourceFactoryGetter.getDBReservedKeys().removeEscapeChar(table)), cols);
                 long rsNextUsedTime = 0;
                 long lastTime = System.nanoTime();
                 while (rs.next()) {
