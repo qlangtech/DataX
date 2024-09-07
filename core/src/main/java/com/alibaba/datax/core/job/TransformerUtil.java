@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -91,9 +92,12 @@ public class TransformerUtil {
         TransformerInfo transformerInfo = null;
         TransformerExecution texec = null;
         IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName());
-        RecordTransformerRules transformers = RecordTransformerRules.loadTransformerRules(
+        Optional<RecordTransformerRules> transformersOpt = RecordTransformerRules.loadTransformerRules(
                 pluginContext, tabRelevantTransformer);
-        if (CollectionUtils.isEmpty(transformers.rules)) {
+        RecordTransformerRules transformers = null;
+        if (transformersOpt == null
+                || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:" + tabRelevantTransformer + " relevant transformersOpt must be present"))) == null
+                || CollectionUtils.isEmpty(transformers.rules)) {
             throw new IllegalStateException("transformer:" + tabRelevantTransformer + " can not be empty");
         }
 
@@ -127,6 +131,11 @@ public class TransformerUtil {
             @Override
             public List<IColMetaGetter> originColsWithContextParams() {
                 return transformerCfg.originColsWithContextParams();
+            }
+
+            @Override
+            public List<IColMetaGetter> tranformerColsWithoutContextParams() {
+                return transformerCfg.tranformerColsWithoutContextParams();
             }
 
             @Override
