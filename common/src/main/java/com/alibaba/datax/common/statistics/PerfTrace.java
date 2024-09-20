@@ -72,15 +72,15 @@ public class PerfTrace {
      * @return
      */
     public static PerfTrace getInstance() {
-        if (instance == null) {
-            LOG.error("PerfTrace instance not be init! must have some error! ");
-            synchronized (lock) {
-                if (instance == null) {
-                    instance = new PerfTrace(false, -1111, -1111, 0, false);
-                }
-            }
-        }
-        return instance;
+     //   if (instance == null) {
+//            LOG.error("PerfTrace instance not be init! must have some error! ");
+//            synchronized (lock) {
+//                if (instance == null) {
+//                    instance = new PerfTrace(false, -1111, -1111, 0, false);
+//                }
+//            }
+       // }
+        return Objects.requireNonNull( instance , "instance can not be null");
     }
 
     private PerfTrace(boolean isJob, long jobId, int taskGroupId, int priority, boolean enable) {
