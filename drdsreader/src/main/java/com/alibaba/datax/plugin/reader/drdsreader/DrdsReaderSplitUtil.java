@@ -100,7 +100,7 @@ public class DrdsReaderSplitUtil {
         ResultSet rs = null;
         try {
             conn = DBUtil.getConnection(dataBaseType, jdbcURL, username, password);
-            rs = DBUtil.query(conn, "SHOW TOPOLOGY " + logicTable);
+            rs = DBUtil.query(conn, ( "SHOW TOPOLOGY " + logicTable));
             while (DBUtil.asyncResultSetNext(rs)) {
                 String groupName = rs.getString("GROUP_NAME");
                 String tableName = rs.getString("TABLE_NAME");

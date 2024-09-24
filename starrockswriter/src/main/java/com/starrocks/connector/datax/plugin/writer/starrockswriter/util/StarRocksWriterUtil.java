@@ -1,5 +1,6 @@
 package com.starrocks.connector.datax.plugin.writer.starrockswriter.util;
 
+import com.alibaba.datax.plugin.rdbms.reader.util.QuerySql;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
@@ -27,7 +28,7 @@ public final class StarRocksWriterUtil {
         List<String> columns = new ArrayList<>();
         ResultSet rs = null;
         try {
-            rs = DBUtil.query(conn, currentSql, null);
+            rs = DBUtil.query(conn, Optional.empty(), new QuerySql(currentSql), null);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String colName = rs.getString("COLUMN_NAME");
                 columns.add(colName);

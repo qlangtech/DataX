@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
  * Created by xiongfeng.bxf on 17/3/1.
  */
 public enum ESFieldType {
-    ID(DataType.createVarChar(100)), // STRING,
+   // ID(DataType.createVarChar(100)), // STRING,
     TEXT(DataType.getType(JDBCTypes.LONGVARCHAR)) //
     , KEYWORD(DataType.createVarChar(100)), //
     LONG(DataType.getType(JDBCTypes.BIGINT))   //

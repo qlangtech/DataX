@@ -76,7 +76,7 @@ public class PreCheckTask implements Callable<Boolean> {
                 try {
                     DBUtil.sqlValid(querySql, dataBaseType);
                     if (i == 0) {
-                        Pair<Statement, ResultSet> stat = DBUtil.query(conn, querySql, fetchSize, dataSourceFactoryGetter, this.containerContext);
+                        Pair<Statement, ResultSet> stat = DBUtil.query(conn, new QuerySql(querySql), fetchSize, dataSourceFactoryGetter, this.containerContext);
                         statement = stat.getLeft();
                         rs = stat.getRight();
                     }

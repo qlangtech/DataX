@@ -241,7 +241,7 @@ public class CommonRdbmsReader {
                 if (rowFetchSize == null) {
                     throw new IllegalStateException("param of DataXReader rowFetchSize can not be null");
                 }
-                statResult = DBUtil.query(conn.getConnection(), query.getQuerySql(), rowFetchSize, this.readerDataSourceFactoryGetter, this.containerContext);
+                statResult = DBUtil.query(conn.getConnection(), query, rowFetchSize, this.readerDataSourceFactoryGetter, this.containerContext);
                 rs = statResult.getRight();
                 statement = statResult.getKey();
                 queryPerfRecord.end();
@@ -274,7 +274,8 @@ public class CommonRdbmsReader {
                 LOG.info("Finished read record by Sql: [{}\n] {}.", query, basicMsg);
 
             } catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, query.getQuerySql(), table, username);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, StringUtils.defaultString(query.getQuerySqlRewriteWithWhere()
+                        , "has not been rewrite:" + query.getQuerySql()), table, username);
             } finally {
                 DBUtil.closeDBResources(statement, conn.getConnection());
             }

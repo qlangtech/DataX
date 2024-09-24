@@ -16,6 +16,7 @@ import io.searchbox.client.JestResult;
 import io.searchbox.core.Bulk;
 import io.searchbox.core.BulkResult;
 import io.searchbox.core.Index;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +78,7 @@ public class ESWriter extends Writer {
 //                    throw new IOException("create index or mapping failed");
 //                }
             } catch (Exception ex) {
-                throw DataXException.asDataXException(ESWriterErrorCode.ES_MAPPINGS, ex.toString());
+                throw DataXException.asDataXException(ESWriterErrorCode.ES_MAPPINGS, ex);
             }
             esClient.closeJestClient();
         }
@@ -243,6 +244,7 @@ public class ESWriter extends Writer {
         ESClient esClient = null;
         private List<ESFieldType> typeList;
         private List<ESColumn> columnList;
+        private ESColumn primaryCol;
 
         private int trySize;
         private int batchSize;
@@ -265,7 +267,17 @@ public class ESWriter extends Writer {
             typeList = new ArrayList<ESFieldType>();
 
             for (ESColumn col : columnList) {
+                if (col.isPk()) {
+                    if (this.primaryCol != null) {
+                        throw new IllegalStateException("primaryCol has been set with:"
+                                + this.primaryCol.getName() + ",can not be replace with another col:" + col.getName());
+                    }
+                    this.primaryCol = col;
+                }
                 typeList.add(col.getEsType());
+            }
+            if (this.primaryCol == null) {
+                throw new IllegalStateException("primaryCol has not been set");
             }
 
             esClient = new ESClient(ESInitialization.create(conf, Key.isMultiThread(conf), Key.getTimeout(conf),
@@ -310,36 +322,42 @@ public class ESWriter extends Writer {
         private long doBatchInsert(final List<Record> writerBuffer) {
             Map<String, Object> data = null;
             final Bulk.Builder bulkaction = new Bulk.Builder().defaultIndex(this.index).defaultType(this.type);
+            ESColumn col = null;
+            String primaryVal = null;
             for (Record record : writerBuffer) {
                 data = new HashMap<String, Object>();
-                String id = null;
+                primaryVal = record.getString(this.primaryCol.getName());
+                if (StringUtils.isEmpty(primaryVal)) {
+                    throw new IllegalStateException("primaryKey:" + this.primaryCol.getName() + " is not present in the record");
+                }
                 for (int i = 0; i < record.getColumnNumber(); i++) {
                     Column column = record.getColumn(i);
-                    String columnName = columnList.get(i).getName();
+                    col = columnList.get(i);
+                    String columnName = col.getName();
                     ESFieldType columnType = typeList.get(i);
                     //如果是数组类型，那它传入的必是字符串类型
-                    if (columnList.get(i).isArray() != null && columnList.get(i).isArray()) {
+                    if (col.isArray() != null && col.isArray()) {
                         String[] dataList = column.asString().split(splitter);
                         if (!columnType.equals(ESFieldType.DATE)) {
                             data.put(columnName, dataList);
                         } else {
                             for (int pos = 0; pos < dataList.length; pos++) {
-                                dataList[pos] = DataConvertUtils.getDateStr(columnList.get(i), column);
+                                dataList[pos] = DataConvertUtils.getDateStr(col, column);
                             }
                             data.put(columnName, dataList);
                         }
                     } else {
                         switch (columnType) {
-                            case ID:
-                                if (id != null) {
-                                    id += record.getColumn(i).asString();
-                                } else {
-                                    id = record.getColumn(i).asString();
-                                }
-                                break;
+//                            case ID:
+//                                if (id != null) {
+//                                    id += record.getColumn(i).asString();
+//                                } else {
+//                                    id = record.getColumn(i).asString();
+//                                }
+//                                break;
                             case DATE:
                                 try {
-                                    String dateStr = DataConvertUtils.getDateStr(columnList.get(i), column);
+                                    String dateStr = DataConvertUtils.getDateStr(col, column);
                                     data.put(columnName, dateStr);
                                 } catch (Exception e) {
                                     getTaskPluginCollector().collectDirtyRecord(record, String.format("时间类型解析失败 " +
@@ -385,12 +403,7 @@ public class ESWriter extends Writer {
                     }
                 }
 
-                if (id == null) {
-                    //id = UUID.randomUUID().toString();
-                    bulkaction.addAction(new Index.Builder(data).build());
-                } else {
-                    bulkaction.addAction(new Index.Builder(data).id(id).build());
-                }
+                bulkaction.addAction(new Index.Builder(data).id(primaryVal).build());
             }
 
             try {

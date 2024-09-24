@@ -8,6 +8,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.reader.util.QuerySql;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectCols;
 import com.alibaba.datax.plugin.rdbms.writer.util.SelectTable;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
@@ -199,7 +200,7 @@ public final class DBUtil {
 
         Connection connection = connect(dataBaseType, jdbcURL, userName, password);
         try {
-            ResultSet rs = query(connection, "SHOW GRANTS FOR " + userName, null);
+            ResultSet rs = query(connection, Optional.empty(), new QuerySql("SHOW GRANTS FOR " + userName), null);
             while (DBUtil.asyncResultSetNext(rs)) {
                 String grantRecord = rs.getString("Grants for " + userName + "@%");
                 String[] params = grantRecord.split("\\`");
@@ -419,7 +420,7 @@ public final class DBUtil {
      * @return a {@link ResultSet}
      * @throws SQLException if occurs SQLException.
      */
-    public static Pair<Statement, ResultSet> query(Connection conn, String sql
+    public static Pair<Statement, ResultSet> query(Connection conn, QuerySql sql
             , int fetchSize, IDataSourceFactoryGetter readerDataSourceFactoryGetter, IJobContainerContext containerContext)
             throws SQLException {
         // 默认3600 s 的query Timeout
@@ -436,7 +437,7 @@ public final class DBUtil {
      * @return
      * @throws SQLException
      */
-    public static Pair<Statement, ResultSet> query(Connection conn, String sql
+    public static Pair<Statement, ResultSet> query(Connection conn, QuerySql sql
             , int fetchSize, int queryTimeout, IDataSourceFactoryGetter readerDataSourceFactoryGetter, IJobContainerContext containerContext)
             throws SQLException {
         // make sure autocommit is off
@@ -446,8 +447,7 @@ public final class DBUtil {
         stmt.setQueryTimeout(queryTimeout);
         DataSourceFactory dsFactory = readerDataSourceFactoryGetter.getDataSourceFactory();
         dsFactory.setReaderStatement(stmt);
-        //readerDataSourceFactoryGetter.setReaderStatement(stmt);
-        return Pair.of(stmt, query(stmt, sql, containerContext));
+        return Pair.of(stmt, query(stmt, Optional.of(readerDataSourceFactoryGetter.getDBReservedKeys()), sql, containerContext));
     }
 
     /**
@@ -458,19 +458,20 @@ public final class DBUtil {
      * @return a {@link ResultSet}
      * @throws SQLException if occurs SQLException.
      */
-    public static ResultSet query(Statement stmt, String sql, IJobContainerContext containerContext)
+    public static ResultSet query(Statement stmt, Optional<IDBReservedKeys> dbReservedKeys
+            , QuerySql sql, IJobContainerContext containerContext)
             throws SQLException {
 
-        if (containerContext != null && containerContext.containAttr(ThreadLocalRows.class)) {
+        if (dbReservedKeys.isPresent()
+                && containerContext != null
+                && containerContext.containAttr(ThreadLocalRows.class)) {
             ThreadLocalRows attr = containerContext.getAttr(ThreadLocalRows.class);
             QueryCriteria criteria = attr.getQuery();
-            DataXResultPreviewOrderByCols pagerOffsetPointCols = attr.getPagerOffsetPointCols();
-            if (pagerOffsetPointCols != null) {
-                sql += pagerOffsetPointCols.createWhereAndOrderByStatment(criteria.isNextPakge());
-            }
-            return PreviewRowsResultSet.wrap(stmt.executeQuery(sql), criteria.getPageSize());
+            // sql.shallRewirte(Objects.requireNonNull(readerDataSourceFactoryGetter, "readerDataSourceFactoryGetter can not be null").getDBReservedKeys());
+            return PreviewRowsResultSet.wrap(stmt.executeQuery(
+                    sql.appendWhereCriteria(dbReservedKeys.get(), attr)), criteria.getPageSize());
         } else {
-            return stmt.executeQuery(sql);
+            return stmt.executeQuery(sql.getQuerySql());
         }
 
     }
@@ -687,7 +688,7 @@ public final class DBUtil {
             connection = connect(dataBaseType, url, user, pass);
             if (null != connection) {
                 for (String pre : preSql) {
-                    if (doPreCheck(connection, pre, null) == false) {
+                    if (doPreCheck(connection, new QuerySql(pre), null) == false) {
                         LOG.warn("doPreCheck failed.");
                         return false;
                     }
@@ -732,18 +733,19 @@ public final class DBUtil {
         return false;
     }
 
-    public static ResultSet query(Connection conn, String sql, IJobContainerContext containerContext)
+    public static ResultSet query(Connection conn, Optional<IDBReservedKeys> dbReservedKeys
+            , QuerySql sql, IJobContainerContext containerContext)
             throws SQLException {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         //默认3600 seconds
         stmt.setQueryTimeout(Constant.SOCKET_TIMEOUT_INSECOND);
-        return query(stmt, sql, containerContext);
+        return query(stmt, dbReservedKeys, sql, containerContext);
     }
 
-    private static boolean doPreCheck(Connection conn, String pre, IJobContainerContext containerContext) {
+    private static boolean doPreCheck(Connection conn, QuerySql pre, IJobContainerContext containerContext) {
         ResultSet rs = null;
         try {
-            rs = query(conn, pre, containerContext);
+            rs = query(conn, Optional.empty(), pre, containerContext);
 
             int checkResult = -1;
             if (DBUtil.asyncResultSetNext(rs)) {

@@ -41,6 +41,12 @@ public class DataConvertUtils {
     }
 
     /**
+     * 测试环境中使用
+     */
+    public static Consumer<String> esMappingConsumer = (mapping) -> {
+    };
+
+    /**
      * https://www.elastic.co/guide/en/elasticsearch/reference/current/explicit-mapping.html
      *
      * @param typeName
@@ -72,21 +78,28 @@ public class DataConvertUtils {
 
                 ESColumn columnItem = new ESColumn();
 
-                if (colName.equals(Key.PRIMARY_KEY_COLUMN_NAME)) {
-                    // 兼容已有版本
-                    colType = ESFieldType.ID;
-                    colTypeStr = "id";
-                }
+//                if (colName.equals(Key.PRIMARY_KEY_COLUMN_NAME)) {
+//                    // 兼容已有版本
+//                    colType = ESFieldType.ID;
+//                    colTypeStr = "id";
+//                }
 
                 columnItem.setName(colName);
                 columnItem.setType(colTypeStr);
                 columnItem.setPk(pk);
 
-                if (colType == ESFieldType.ID) {
-                    columnList.add(columnItem);
-                    // 如果是id,则properties为空
-                    continue;
-                }
+//                if (pk) {
+//                    // https://www.elastic.co/guide/en/elasticsearch/reference/current/copy-to.html
+//                    Map<String, Object> idField = new HashMap<>();
+//                    idField.put("type", "id");
+//                    propMap.put("id", idField);
+//                }
+
+//                if (colType == ESFieldType.ID) {
+//                    columnList.add(columnItem);
+//                    // 如果是id,则properties为空
+//                    continue;
+//                }
 
                 Boolean array = jo.getBoolean("array");
                 if (array != null) {
@@ -160,6 +173,7 @@ public class DataConvertUtils {
             throw new IllegalStateException("must have mappings");
         }
         //ESClient.log.info(mappings);
+        esMappingConsumer.accept(mappings);
         return mappings;
     }
 }

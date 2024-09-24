@@ -179,7 +179,7 @@ public class SingleTableSplitUtil {
         try {
             try {
 
-                Pair<Statement, ResultSet> p = DBUtil.query(conn, pkRangeSQL, fetchSize, dataSourceFactoryGetter, containerContex);
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, new QuerySql(pkRangeSQL), fetchSize, dataSourceFactoryGetter, containerContex);
                 rs = p.getRight();
                 statement = p.getKey();
             } catch (Exception e) {
@@ -328,7 +328,7 @@ public class SingleTableSplitUtil {
         List<Pair<Object, Integer>> splitedRange = new ArrayList<Pair<Object, Integer>>();
         try {
             try {
-                Pair<Statement, ResultSet> p = DBUtil.query(conn, splitSql, fetchSize, dataSourceFactoryGetter, containerContex);
+                Pair<Statement, ResultSet> p = DBUtil.query(conn, new QuerySql(splitSql), fetchSize, dataSourceFactoryGetter, containerContex);
                 rs = p.getRight();
                 statement = p.getKey();
             } catch (Exception e) {
