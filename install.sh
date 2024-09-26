@@ -1,4 +1,4 @@
-mvn clean install -Dmaven.test.skip=true \
+mvn clean deploy -Dmaven.test.skip=true \
 -Ptis-repo \
 -pl  \
 hbase20xsqlreader\

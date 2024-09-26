@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -580,10 +581,12 @@ public class CommonRdbmsWriter {
                     try {
                         preparedStatement = fillPreparedStatement(preparedStatement, record);
                         preparedStatement.execute();
+//                    } catch (SQLIntegrityConstraintViolationException e) {
+//                        Throwable cause = e.getCause();
+//                        this.taskPluginCollector.collectDirtyRecord(record, e, e.getMessage() + (cause != null ? ",cause:" + cause.getMessage() : StringUtils.EMPTY));
                     } catch (SQLException e) {
-                        LOG.debug(e.toString());
-
-                        this.taskPluginCollector.collectDirtyRecord(record, e);
+                        Throwable cause = e.getCause();
+                        this.taskPluginCollector.collectDirtyRecord(record, e, e.getMessage() + (cause != null ? ",cause:" + String.valueOf(cause) : StringUtils.EMPTY));
                     } finally {
                         // 最后不要忘了关闭 preparedStatement
                         preparedStatement.clearParameters();
