@@ -26,7 +26,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
-import com.qlangtech.tis.plugin.ds.DataSourceMeta.JDBCConnection;
+import com.qlangtech.tis.plugin.ds.JDBCConnection;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.RdbmsRunningContext;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;

@@ -19,6 +19,7 @@ import com.qlangtech.tis.plugin.ds.DataSourceFactory;
 import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDBReservedKeys;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.JDBCConnection;
 import com.qlangtech.tis.plugin.ds.TableNotFoundException;
 import com.qlangtech.tis.sql.parser.tuple.creator.EntityName;
 import org.apache.commons.lang3.StringUtils;
@@ -616,7 +617,7 @@ public final class DBUtil {
      * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
      */
     public static List<ColumnMetaData> getColumnMetaData(
-            Optional<DataSourceMeta.JDBCConnection> connection, boolean inSink, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
+            Optional<JDBCConnection> connection, boolean inSink, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
 
         Map<String, ColumnMetaData> colMapper = null;
         try {

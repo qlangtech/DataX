@@ -15,6 +15,7 @@ import com.alibaba.datax.plugin.rdbms.writer.util.*;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
 import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
+import com.qlangtech.tis.plugin.ds.JDBCConnection;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -462,7 +463,7 @@ public class CommonRdbmsWriter {
 
 
         public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector,
-                                             DataSourceMeta.JDBCConnection connection) {
+                                             JDBCConnection connection) {
             this.taskPluginCollector = taskPluginCollector;
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
@@ -517,7 +518,7 @@ public class CommonRdbmsWriter {
                     password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig, this.dataBaseType, BASIC_MESSAGE);
             startWriteWithConnection(recordReceiver, taskPluginCollector,
-                    new DataSourceMeta.JDBCConnection(connection, this.jdbcUrl));
+                    new JDBCConnection(connection, this.jdbcUrl));
         }
 
 
@@ -544,7 +545,7 @@ public class CommonRdbmsWriter {
         private static final int MAX_BATCH_INSERT_COUNT = 30;
         int batchInsertFaildCount = 0;
 
-        protected void doBatchInsert(DataSourceMeta.JDBCConnection conn, List<Record> buffer) throws SQLException {
+        protected void doBatchInsert(JDBCConnection conn, List<Record> buffer) throws SQLException {
             Connection connection = conn.getConnection();
             PreparedStatement preparedStatement = null;
             try {
