@@ -125,8 +125,11 @@ public final class WriterUtil {
         if (forceUseUpdate || ((dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Tddl) && writeMode.trim().toLowerCase().startsWith("update"))) {
             //update只在mysql下使用
 
+            // 添加分行符，这样在SQL执行错误时可以提供行号时候方便定位错误信息
             writeDataSqlTemplate =
-                    new StringBuilder().append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ",")).append(") VALUES(").append(StringUtils.join(valueHolders, ",")).append(")").append(columnHolders.onDuplicateKeyUpdateString()).toString();
+                    new StringBuilder().append("INSERT INTO %s (")
+                            .append(StringUtils.join(columnHolders, ",")).append(")  VALUES(")
+                            .append(StringUtils.join(valueHolders, ",")).append(")").append(columnHolders.onDuplicateKeyUpdateString()).toString();
         } else {
 
             //这里是保护,如果其他错误的使用了update,需要更换为replace
@@ -135,8 +138,8 @@ public final class WriterUtil {
             }
             writeDataSqlTemplate =
                     new StringBuilder().append(writeMode).append(" INTO %s (").append(columnHolders.getCols())
-                    //StringUtils.join(columnHolders, ",")
-                    .append(") VALUES(").append(StringUtils.join(valueHolders, ",")).append(")").toString();
+                            //StringUtils.join(columnHolders, ",")
+                            .append(") VALUES(").append(StringUtils.join(valueHolders, ",")).append(")").toString();
         }
 
         return writeDataSqlTemplate;

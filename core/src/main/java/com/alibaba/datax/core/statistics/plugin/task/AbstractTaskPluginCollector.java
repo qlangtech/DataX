@@ -1,5 +1,7 @@
 package com.alibaba.datax.core.statistics.plugin.task;
 
+import com.alibaba.datax.common.element.DirtyRecordCreator;
+import com.alibaba.datax.common.element.RecordMetrix;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.common.constant.PluginType;
@@ -50,7 +52,7 @@ public abstract class AbstractTaskPluginCollector extends TaskPluginCollector {
     }
 
     @Override
-    public void collectDirtyRecord(Record dirtyRecord, Throwable t,
+    public void collectDirtyRecord(DirtyRecordCreator dirtyRecord, Throwable t,
                                    String errorMessage) {
 
         if (null == dirtyRecord) {

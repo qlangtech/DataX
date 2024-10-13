@@ -4,6 +4,7 @@ import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.ICol2Index;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.core.util.ClassSize;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.plugin.rdbms.reader.util.ColumnBiFunction;
@@ -179,6 +180,8 @@ public class DefaultRecord implements Record {
         //内存的占用是column对象的头 再加实际大小
         memorySize = memorySize + ClassSize.ColumnHead + column.getByteSize();
     }
+
+
 
     private void expandCapacity(int totalSize) {
         if (totalSize <= 0) {

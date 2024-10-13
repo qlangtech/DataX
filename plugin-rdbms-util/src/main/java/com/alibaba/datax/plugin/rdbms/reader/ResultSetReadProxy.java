@@ -4,6 +4,7 @@ import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 
 import org.apache.commons.lang3.StringUtils;
@@ -128,7 +129,7 @@ public class ResultSetReadProxy {
 			}
 
 			//TODO 这里识别为脏数据靠谱吗？
-			taskPluginCollector.collectDirtyRecord(record, e);
+			taskPluginCollector.collectDirtyRecord(DirtyRecord.create(record), e);
 			if (e instanceof DataXException) {
 				throw (DataXException) e;
 			}

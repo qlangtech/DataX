@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -360,7 +361,7 @@ public class ESWriter extends Writer {
                                     String dateStr = DataConvertUtils.getDateStr(col, column);
                                     data.put(columnName, dateStr);
                                 } catch (Exception e) {
-                                    getTaskPluginCollector().collectDirtyRecord(record, String.format("时间类型解析失败 " +
+                                    getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), String.format("时间类型解析失败 " +
                                             "[%s:%s] exception: %s", columnName, column.toString(), e.toString()));
                                 }
                                 break;
@@ -397,7 +398,7 @@ public class ESWriter extends Writer {
                                 data.put(columnName, JSON.parse(column.asString()));
                                 break;
                             default:
-                                getTaskPluginCollector().collectDirtyRecord(record,
+                                getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record),
                                         "类型错误:不支持的类型:" + columnType + " " + columnName);
                         }
                     }
@@ -439,7 +440,7 @@ public class ESWriter extends Writer {
                             for (int idx = 0; idx < items.size(); ++idx) {
                                 BulkResult.BulkResultItem item = items.get(idx);
                                 if (item.error != null && !"".equals(item.error)) {
-                                    getTaskPluginCollector().collectDirtyRecord(writerBuffer.get(idx), String.format(
+                                    getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(writerBuffer.get(idx)), String.format(
                                             "status:[%d], error: %s", item.status, item.error));
                                 }
                             }

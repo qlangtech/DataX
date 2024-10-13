@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.statistics.plugin.task;
 
 import com.alibaba.datax.common.constant.PluginType;
+import com.alibaba.datax.common.element.DirtyRecordCreator;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -15,7 +16,7 @@ public class HttpPluginCollector extends AbstractTaskPluginCollector {
     }
 
     @Override
-    public void collectDirtyRecord(Record dirtyRecord, Throwable t,
+    public void collectDirtyRecord(DirtyRecordCreator dirtyRecord, Throwable t,
                                    String errorMessage) {
         super.collectDirtyRecord(dirtyRecord, t, errorMessage);
     }

@@ -23,6 +23,7 @@ import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.fastjson.JSON;
 
 import com.datastax.driver.core.Cluster;
@@ -403,7 +404,7 @@ public class CassandraReaderHelper {
       }
     } catch (Exception e) {
       //TODO 这里识别为脏数据靠谱吗？
-      taskPluginCollector.collectDirtyRecord(record, e);
+      taskPluginCollector.collectDirtyRecord(DirtyRecord.create(record), e);
       if (e instanceof DataXException) {
         throw (DataXException) e;
       }

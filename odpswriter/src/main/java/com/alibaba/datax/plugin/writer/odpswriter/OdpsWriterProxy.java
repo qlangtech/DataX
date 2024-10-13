@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.MessageSource;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -428,7 +429,7 @@ public class OdpsWriterProxy {
                 // ignore
             }
             String message = MESSAGE_SOURCE.message("odpswriterproxy.4", sourceIndex, dirtyColumnName);
-            this.taskPluginCollector.collectDirtyRecord(dataXRecord, e, message);
+            this.taskPluginCollector.collectDirtyRecord(DirtyRecord.create(dataXRecord), e, message);
             return null;
         }
 

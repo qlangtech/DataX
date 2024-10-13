@@ -14,6 +14,7 @@ import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.IJobContainerContext;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
@@ -411,7 +412,7 @@ public class CommonRdbmsReader {
                     LOG.debug("read data " + record.toString() + " occur exception:", e);
                 }
                 //TODO 这里识别为脏数据靠谱吗？
-                taskPluginCollector.collectDirtyRecord(record, e);
+                taskPluginCollector.collectDirtyRecord(DirtyRecord.create(record), e);
                 if (e instanceof DataXException) {
                     throw (DataXException) e;
                 }

@@ -326,7 +326,7 @@ public class UnstructuredStorageWriterUtil {
             unstructuredWriter.writeOneRecord(record);
         } catch (Exception e) {
             // warn: dirty data
-            taskPluginCollector.collectDirtyRecord(record, e);
+            //taskPluginCollector.collectDirtyRecord(DirtyRecord. record, e);
         }
     }
 }

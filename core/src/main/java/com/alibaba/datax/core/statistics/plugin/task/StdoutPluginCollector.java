@@ -1,13 +1,11 @@
 package com.alibaba.datax.core.statistics.plugin.task;
 
 import com.alibaba.datax.common.constant.PluginType;
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.DirtyRecordCreator;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.fastjson.JSON;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +36,7 @@ public class StdoutPluginCollector extends AbstractTaskPluginCollector {
                         DEFAULT_MAX_DIRTYNUM));
     }
 
-    private String formatDirty(final Record dirty, final Throwable t,
+    private String formatDirty(final DirtyRecordCreator dirty, final Throwable t,
                                final String msg) {
         Map<String, Object> msgGroup = new HashMap<String, Object>();
 
@@ -50,15 +48,15 @@ public class StdoutPluginCollector extends AbstractTaskPluginCollector {
             msgGroup.put("exception", t.getMessage());
         }
         if (null != dirty) {
-            msgGroup.put("record", DirtyRecord.asDirtyRecord(dirty)
-                    .getColumns());
+            msgGroup.put("record", dirty.createDirtyRecordDescriptor() // DirtyRecord.asDirtyRecord(dirty).getColumns()
+                    );
         }
 
         return JSON.toJSONString(msgGroup);
     }
 
     @Override
-    public void collectDirtyRecord(Record dirtyRecord, Throwable t,
+    public void collectDirtyRecord(DirtyRecordCreator dirtyRecord, Throwable t,
                                    String errorMessage) {
         int logNum = currentLogNum.getAndIncrement();
         if(logNum==0 && t!=null){

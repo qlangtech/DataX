@@ -9,6 +9,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
@@ -94,7 +95,7 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
         Validate.notNull(record, "record不能为空.");
 
         if (record.getMemorySize() > this.byteCapacity) {
-            this.pluginCollector.collectDirtyRecord(record, new Exception(String.format("单条记录超过大小限制，当前限制为:%s", this.byteCapacity)));
+            this.pluginCollector.collectDirtyRecord(DirtyRecord.create(record), new Exception(String.format("单条记录超过大小限制，当前限制为:%s", this.byteCapacity)));
             return;
         }
 

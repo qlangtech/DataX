@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.fastjson.JSON;
@@ -176,7 +177,7 @@ public class MongoDBWriter extends Writer {
                                     Integer.parseInt(
                                             String.valueOf(record.getColumn(i).getRawData())));
                         } catch (Exception e) {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, e);
+                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
                         }
                     } else if (record.getColumn(i) instanceof StringColumn) {
                         //处理ObjectId和数组类型
@@ -238,14 +239,15 @@ public class MongoDBWriter extends Writer {
                                 data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                             }
                         } catch (Exception e) {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, e);
+                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
                         }
                     } else if (record.getColumn(i) instanceof LongColumn) {
 
                         if (Column.Type.LONG.name().equalsIgnoreCase(type)) {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asLong());
                         } else {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, "record's [" + i + "] column's type should be: " + type);
+                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record)
+                                    , "record's [" + i + "] column's type should be: " + type);
                         }
 
                     } else if (record.getColumn(i) instanceof DateColumn) {
@@ -254,7 +256,8 @@ public class MongoDBWriter extends Writer {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
                                     record.getColumn(i).asDate());
                         } else {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, "record's [" + i + "] column's type should be: " + type);
+                            super.getTaskPluginCollector().collectDirtyRecord(
+                                    DirtyRecord.create(record), "record's [" + i + "] column's type should be: " + type);
                         }
 
                     } else if (record.getColumn(i) instanceof DoubleColumn) {
@@ -263,7 +266,8 @@ public class MongoDBWriter extends Writer {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
                                     record.getColumn(i).asDouble());
                         } else {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, "record's [" + i + "] column's type should be: " + type);
+                            super.getTaskPluginCollector().collectDirtyRecord(
+                                    DirtyRecord.create(record), "record's [" + i + "] column's type should be: " + type);
                         }
 
                     } else if (record.getColumn(i) instanceof BoolColumn) {
@@ -272,7 +276,8 @@ public class MongoDBWriter extends Writer {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
                                     record.getColumn(i).asBoolean());
                         } else {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, "record's [" + i + "] column's type should be: " + type);
+                            super.getTaskPluginCollector().collectDirtyRecord(
+                                    DirtyRecord.create(record), "record's [" + i + "] column's type should be: " + type);
                         }
 
                     } else if (record.getColumn(i) instanceof BytesColumn) {
@@ -281,7 +286,8 @@ public class MongoDBWriter extends Writer {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
                                     record.getColumn(i).asBytes());
                         } else {
-                            super.getTaskPluginCollector().collectDirtyRecord(record, "record's [" + i + "] column's type should be: " + type);
+                            super.getTaskPluginCollector().collectDirtyRecord(
+                                    DirtyRecord.create(record), "record's [" + i + "] column's type should be: " + type);
                         }
 
                     } else {

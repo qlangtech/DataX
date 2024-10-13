@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.datax.core.transport.transformer.TransformerErrorCode;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
@@ -118,7 +119,7 @@ public abstract class TransformerExchanger {
 
         if (failed) {
             totalFailedRecords++;
-            this.pluginCollector.collectDirtyRecord(record, errorMsg);
+            this.pluginCollector.collectDirtyRecord(DirtyRecord.create(record), errorMsg);
             return null;
         } else {
             totalSuccessRecords++;
