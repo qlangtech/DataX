@@ -13,14 +13,18 @@ import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
+import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import org.apache.commons.lang.Validate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class BufferedRecordTransformerExchanger extends TransformerExchanger implements RecordSender, RecordReceiver {
 
@@ -47,8 +51,10 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
     public BufferedRecordTransformerExchanger(final int taskGroupId, final int taskId,
                                               final Channel channel, final Communication communication,
                                               final TaskPluginCollector pluginCollector,
-                                              final List<TransformerExecution> tInfoExecs) {
-        super(taskGroupId, taskId, communication, tInfoExecs, pluginCollector);
+                                              final TransformerBuildInfo transformerBuildInfo) {
+        super(taskGroupId, taskId, communication
+                , Objects.requireNonNull(transformerBuildInfo, "transformerBuildInfo can not  be null").getExecutions()
+                , pluginCollector);
         assert null != channel;
         assert null != channel.getConfiguration();
 
@@ -78,9 +84,8 @@ public class BufferedRecordTransformerExchanger extends TransformerExchanger imp
     public Record createRecord(DataXCol2Index col2Mapper) {
         try {
             Record record = BufferedRecordTransformerExchanger.RECORD_CLASS.newInstance();
-            return col2Mapper.fill(record);
-//             record.setCol2Index(col2Mapper);
-//             return record;
+            record = col2Mapper.fill(record);
+            return record;
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.CONFIG_ERROR, e);

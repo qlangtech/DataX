@@ -11,6 +11,7 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.core.job.ITransformerBuildInfo;
 import com.google.common.collect.Maps;
+import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.ds.ContextParamConfig;
 import com.qlangtech.tis.plugin.ds.DataType;
 import com.qlangtech.tis.plugin.ds.DataType.TypeVisitor;
@@ -19,6 +20,7 @@ import com.qlangtech.tis.plugin.ds.RunningContext;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,8 @@ public class DataXCol2Index implements ICol2Index {
 
     private final Map<String, Object> contextParamVals;
     final int contextParamValsCount;
+    private final List<OutputParameter> outputVirtualParameters;
+    private Map<String, ICol2Index.Col> key2Idx;
 
     @Override
     public int contextParamValsCount() {
@@ -46,10 +50,14 @@ public class DataXCol2Index implements ICol2Index {
      * @param mapper
      * @param contextParamVals 执行上下文绑定参数
      */
-    public DataXCol2Index(Map<String, ColumnBiFunction> mapper, Map<String, Object> contextParamVals) {
+    public DataXCol2Index(Map<String, ColumnBiFunction> mapper
+            , Map<String, Object> contextParamVals
+            , List<OutputParameter> outputParameters) {
         this.mapper = mapper;
         this.contextParamVals = Objects.requireNonNull(contextParamVals, "contextParamVals can not be null");
         this.contextParamValsCount = this.contextParamVals.size();
+        this.outputVirtualParameters = Objects.requireNonNull(outputParameters, "outputParameters can not be null").stream()
+                .filter((param) -> param.isVirtual()).collect(Collectors.toUnmodifiableList());
     }
 
     public Map<String, Object> getContextParamVals() {
@@ -67,13 +75,25 @@ public class DataXCol2Index implements ICol2Index {
         for (Map.Entry<String, Object> entry : contextParamVals.entrySet()) {
             record.setColumn(entry.getKey(), entry.getValue());
         }
+
+        for (OutputParameter outParam : this.outputVirtualParameters) {
+            ICol2Index.Col colIndex = getCol2Index().get(outParam.getName());
+            if (colIndex == null) {
+                throw new NullPointerException("param key:" + outParam.getName() + " relevant colIndex can not be null");
+            }
+            record.setColumn(colIndex.getIndex(), Column.NULL);
+        }
         return record;
     }
 
     @Override
     public Map<String, ICol2Index.Col> getCol2Index() {
-        return mapper.entrySet().stream().collect(Collectors.toMap((e) -> e.getKey() //
-                , (e) -> new ICol2Index.Col(e.getValue().getColumnIndex(), e.getValue().getType())));
+        if (key2Idx == null) {
+            key2Idx = mapper.entrySet().stream().collect(Collectors.toMap((e) -> e.getKey() //
+                    , (e) -> new ICol2Index.Col(e.getValue().getColumnIndex(), e.getValue().getType())));
+        }
+        return key2Idx;
+
     }
 
     public static <T extends IColMetaGetter> DataXCol2Index getCol2Index(
@@ -81,8 +101,8 @@ public class DataXCol2Index implements ICol2Index {
         //  return this.col2Index;
         AtomicInteger idx = new AtomicInteger();
         Map<String, ColumnBiFunction> result = transformerBuildCfg.map((transformer) -> {
-                    List<IColMetaGetter> overwriteCols = transformer.overwriteColsWithContextParams(sourceCols);
-                    return overwriteCols.stream();
+                    List<OutputParameter> overwriteCols = transformer.overwriteColsWithContextParams(sourceCols);
+                    return overwriteCols.stream().map((c) -> (IColMetaGetter) c);
                 }).orElseGet(() -> sourceCols.stream().map((c) -> c))
                 .collect(
                         Collectors.toMap((colGetter) -> colGetter.getName(), (colGetter) -> {
@@ -228,12 +248,15 @@ public class DataXCol2Index implements ICol2Index {
 
         Map<String, Object> contextParamVals = Maps.newHashMap();
         ITransformerBuildInfo transformerBuildInfo = null;
-
+        List<OutputParameter> outputParameters = Collections.emptyList();
         if (transformerBuildCfg.isPresent()
                 && (transformerBuildInfo = transformerBuildCfg.get()).containContextParams()) {
             contextParamVals = transformerBuildInfo.contextParamVals(runningContext);
         }
-        return new DataXCol2Index(result, contextParamVals);
+        if (transformerBuildCfg.isPresent()) {
+            outputParameters = transformerBuildCfg.get().tranformerColsWithoutContextParams();
+        }
+        return new DataXCol2Index(result, contextParamVals, outputParameters);
     }
 
     public ColumnBiFunction get(String field) {

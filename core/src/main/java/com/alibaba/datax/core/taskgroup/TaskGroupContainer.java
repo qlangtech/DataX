@@ -493,7 +493,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
                     RecordSender recordSender = transformerBuildCfg.map((transformerInfoExecs) -> {
                         return (RecordSender) (new BufferedRecordTransformerExchanger(taskGroupId, this.taskId, this.channel,
-                                this.taskCommunication, pluginCollector, transformerInfoExecs.getExecutions()));
+                                this.taskCommunication, pluginCollector, transformerInfoExecs));
                     }).orElseGet(() -> {
                         return new BufferedRecordExchanger(this.channel, pluginCollector);
                     });

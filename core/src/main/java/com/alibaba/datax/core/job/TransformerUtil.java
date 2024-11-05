@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.lang.TisException;
+import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules.OverwriteColsWithContextParams;
@@ -134,7 +135,7 @@ public class TransformerUtil {
             }
 
             @Override
-            public List<IColMetaGetter> tranformerColsWithoutContextParams() {
+            public List<OutputParameter> tranformerColsWithoutContextParams() {
                 return transformerCfg.tranformerColsWithoutContextParams();
             }
 
@@ -149,7 +150,7 @@ public class TransformerUtil {
             }
 
             @Override
-            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteColsWithContextParams(List<T> sourceCols) {
+            public <T extends IColMetaGetter> List<OutputParameter> overwriteColsWithContextParams(List<T> sourceCols) {
                 return transformerCfg.overwriteColsWithContextParams(sourceCols);
             }
         };
