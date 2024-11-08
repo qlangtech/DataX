@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
@@ -263,6 +264,7 @@ public class HdfsReader extends Reader {
         public void startRead(RecordSender recordSender) {
 
             LOG.info("read start");
+            DataXCol2Index col2Index = null;
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
 
@@ -272,7 +274,7 @@ public class HdfsReader extends Reader {
 
                     InputStream inputStream = dfsUtil.getInputStream(sourceFile);
 
-                    UnstructuredStorageReaderUtil.readFromStream(inputStream, null, null, sourceFile, this.taskConfig,
+                    UnstructuredStorageReaderUtil.readFromStream(col2Index, inputStream, null, null, sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
                 } else if (specifiedFileType.equalsIgnoreCase(Constant.ORC)) {
 

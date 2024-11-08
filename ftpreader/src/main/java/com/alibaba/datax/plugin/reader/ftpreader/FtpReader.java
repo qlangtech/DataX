@@ -5,9 +5,14 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.ftp.common.FtpHelper;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredReader;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+import com.qlangtech.tis.plugin.ds.DataType;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
+import com.qlangtech.tis.plugin.ds.JDBCTypes;
+import com.qlangtech.tis.plugin.ds.RunningContext;
 import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -53,16 +58,6 @@ public class FtpReader extends Reader {
 
         private Set<ITDFSSession.Res> sourceFiles;
 
-        // ftp链接参数
-        //  private String protocol;
-        // private String host;
-        // private int port;
-        // private String username;
-        // private String password;
-        // private int timeout;
-        // private String connectPattern;
-        // private int maxTraversalLevel;
-
         private ITDFSSession dfsSession = null;
 
         @Override
@@ -72,57 +67,14 @@ public class FtpReader extends Reader {
 
             this.validateParameter();
             UnstructuredStorageReaderUtil.validateParameter(this.originConfig);
-            //  this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             dfsSession = createTdfsSession();
             this.path = this.getReaderPaths(this.originConfig, this.dfsSession, getEntityName(this.originConfig));
         }
 
         protected abstract ITDFSSession createTdfsSession();
-//        {
-//            return FtpHelper.createFtpClient(originConfig);
-//        }
+
 
         private void validateParameter() {
-            //todo 常量
-//            this.protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
-//            boolean ptrotocolTag = "ftp".equals(this.protocol) || "sftp".equals(this.protocol);
-//            if (!ptrotocolTag) {
-//                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
-//                        String.format("仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]", protocol));
-//            }
-//            this.host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
-//            this.username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
-//            this.password = this.originConfig.getNecessaryValue(Key.PASSWORD, FtpReaderErrorCode.REQUIRED_VALUE);
-//            this.timeout = originConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
-            //  this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
-
-            // only support connect pattern
-//            this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
-//            boolean connectPatternTag = "PORT".equals(connectPattern) || "PASV".equals(connectPattern);
-//            if (!connectPatternTag) {
-//                throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
-//                        String.format("不支持您配置的ftp传输模式: [%s]", connectPattern));
-//            } else {
-//                this.originConfig.set(Key.CONNECTPATTERN, connectPattern);
-//            }
-
-            //path check
-//            String pathInString = this.originConfig.getNecessaryValue(Key.PATH, FtpReaderErrorCode.REQUIRED_VALUE);
-//            if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
-//                path = new ArrayList<String>();
-//                path.add(pathInString);
-//            } else {
-
-
-//            for (String eachPath : path) {
-//                if (!eachPath.startsWith("/")) {
-//                    String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
-//                    LOG.error(message);
-//                    throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE, message);
-//                }
-//            }
-            //}
-
         }
 
         protected List<String> getReaderPaths(Configuration cfg, ITDFSSession dfsSession, Optional<String> entityName) {
@@ -151,10 +103,6 @@ public class FtpReader extends Reader {
             try {
                 this.dfsSession.close();
             } catch (Exception e) {
-//                String message = String.format(
-//                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
-//                        e.getMessage(), host, username, port);
-
                 String message = String.format("关闭与ftp服务器连接失败: [%s]", e.getMessage());
                 LOG.error(message, e);
             }
@@ -178,9 +126,11 @@ public class FtpReader extends Reader {
             for (List<ITDFSSession.Res> files : splitedSourceFiles) {
                 Configuration splitedConfig = this.originConfig.clone();
 
-                sourceFiles = files.stream().map((r) -> r.fullPath).filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList());
+                sourceFiles = files.stream().map((r) -> r.fullPath)
+                        .filter((f) -> !StringUtils.endsWith(f, FtpHelper.KEY_META_FILE)).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(sourceFiles)) {
-                    throw new IllegalStateException("sourceFiles can not be empty,raw sourceFiles:" + this.sourceFiles.stream().map((ff) -> ff.fullPath).collect(Collectors.joining(",")));
+                    throw new IllegalStateException("sourceFiles can not be empty,raw sourceFiles:"
+                            + this.sourceFiles.stream().map((ff) -> ff.fullPath).collect(Collectors.joining(",")));
                 }
                 splitedConfig.set(Constant.SOURCE_FILES, sourceFiles);
                 readerSplitConfigs.add(splitedConfig);
@@ -208,14 +158,6 @@ public class FtpReader extends Reader {
 
     public static abstract class Task extends Reader.Task {
         private static Logger LOG = LoggerFactory.getLogger(Task.class);
-
-//        private String host;
-//        private int port;
-//        private String username;
-//        private String password;
-//        private String protocol;
-//        private int timeout;
-//        private String connectPattern;
 
         private Configuration readerSliceConfig;
         private List<String> sourceFiles;
@@ -283,17 +225,33 @@ public class FtpReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
             LOG.debug("start read source files...");
+            DataXCol2Index col2Idx = DataXCol2Index.getCol2Index(Optional.empty(), new RunningContext() {
+            }, colsMeta.stream().map((col) -> IColMetaGetter.create(col.getColName(), DataType.getType(JDBCTypes.VARCHAR))).collect(Collectors.toUnmodifiableList()));
 
             for (String fileName : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", fileName));
 
-                InputStream inputStream = hdfsSession.getInputStream(fileName);
+                transformReocrds2Sender(col2Idx, recordSender, fileName);
 
-                UnstructuredStorageReaderUtil.readFromStream(inputStream, this.unstructuredReaderCreator, Objects.requireNonNull(colsMeta, "colsMeta can not be null"), fileName, this.readerSliceConfig, recordSender, this.getTaskPluginCollector());
                 recordSender.flush();
             }
 
             LOG.debug("end read source files...");
+        }
+
+        /**
+         * @param recordSender
+         * @param fileName     源文件
+         */
+        protected void transformReocrds2Sender(DataXCol2Index col2Idx, RecordSender recordSender, String fileName) {
+            InputStream inputStream = hdfsSession.getInputStream(fileName);
+
+            UnstructuredStorageReaderUtil.readFromStream(col2Idx, inputStream
+                    , this.unstructuredReaderCreator
+                    , Objects.requireNonNull(colsMeta, "colsMeta can not be null")
+                    , fileName
+                    , this.readerSliceConfig
+                    , recordSender, this.getTaskPluginCollector());
         }
 
     }

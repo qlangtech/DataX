@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.unstructuredstorage.Compress;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -69,7 +70,7 @@ public class UnstructuredStorageReaderUtil {
     }
 
 
-    public static void readFromStream(InputStream inputStream, Function<InputStream, UnstructuredReader> unstructuredReaderCreator
+    public static void readFromStream(DataXCol2Index col2Index, InputStream inputStream, Function<InputStream, UnstructuredReader> unstructuredReaderCreator
             , List<ColumnEntry> cols, String context,
                                       Configuration readerSliceConfig, RecordSender recordSender,
                                       TaskPluginCollector taskPluginCollector) {
@@ -77,7 +78,7 @@ public class UnstructuredStorageReaderUtil {
             throw new IllegalArgumentException("param unstructuredReaderCreator can not be null");
         }
         try {
-            UnstructuredStorageReaderUtil.doReadFromStream(unstructuredReaderCreator.apply(inputStream), cols, context,
+            UnstructuredStorageReaderUtil.doReadFromStream(col2Index, unstructuredReaderCreator.apply(inputStream), cols, context,
                     readerSliceConfig, recordSender, taskPluginCollector);
         } catch (NullPointerException e) {
             throw DataXException.asDataXException(
@@ -89,61 +90,14 @@ public class UnstructuredStorageReaderUtil {
 
     }
 
-    public static void doReadFromStream(UnstructuredReader freader, List<ColumnEntry> cols, String context,
+    public static void doReadFromStream(DataXCol2Index col2Index, UnstructuredReader freader, List<ColumnEntry> cols, String context,
                                         Configuration readerSliceConfig, RecordSender recordSender,
                                         TaskPluginCollector taskPluginCollector) {
-//        String encoding = readerSliceConfig.getString(Key.ENCODING,
-//                Constant.DEFAULT_ENCODING);
-        //  Character fieldDelimiter = null;
-//        String delimiterInStr = readerSliceConfig
-//                .getString(Key.FIELD_DELIMITER);
-//        if (null != delimiterInStr && 1 != delimiterInStr.length()) {
-//            throw DataXException.asDataXException(
-//                    UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-//                    String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
-//        }
-//        if (null == delimiterInStr) {
-//            LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
-//                    Constant.DEFAULT_FIELD_DELIMITER));
-//        }
-
-        // warn: default value ',', fieldDelimiter could be \n(lineDelimiter)
-        // for no fieldDelimiter
-//        fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
-//                Constant.DEFAULT_FIELD_DELIMITER);
-//        Boolean skipHeader = readerSliceConfig.getBool(Key.SKIP_HEADER,
-//                Constant.DEFAULT_SKIP_HEADER);
-        // warn: no default value '\N'
-        // String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT);
-
-        // warn: Configuration -> List<ColumnEntry> for performance
-        // List<Configuration> column = readerSliceConfig
-        // .getListConfiguration(Key.COLUMN);
-
-//        List<ColumnEntry> column = UnstructuredStorageReaderUtil
-//                .getListColumnEntry(readerSliceConfig, Key.COLUMN);
-
-
-        // CsvReader csvReader = null;
-
-        // every line logic
         try {
-            //  UnstructuredReader freader = UnstructuredReaderUtils.create(readerSliceConfig, reader);
-            // TODO lineDelimiter
-//            if (skipHeader) {
-//                String fetchLine = reader.readLine();
-//                LOG.info(String.format("Header line %s has been skiped.",
-//                        fetchLine));
-//            }
-//            csvReader = new CsvReader(reader);
-//            csvReader.setDelimiter(fieldDelimiter);
-//
-//            setCsvReaderConfig(csvReader);
-
             String[] parseRows = null;
             while (freader.hasNext()) {
                 parseRows = freader.next();
-                UnstructuredStorageReaderUtil.transportOneRecord(recordSender, cols, parseRows, taskPluginCollector);
+                UnstructuredStorageReaderUtil.transportOneRecord(col2Index, recordSender, cols, parseRows, taskPluginCollector);
             }
 //            while ((parseRows = UnstructuredStorageReaderUtil
 //                    .splitBufferedReader(csvReader)) != null) {
@@ -201,9 +155,9 @@ public class UnstructuredStorageReaderUtil {
 //        return transportOneRecord(recordSender, column, sourceLine, nullFormat, taskPluginCollector);
 //    }
 
-    public static Record transportOneRecord(RecordSender recordSender,
+    public static Record transportOneRecord(DataXCol2Index col2Index, RecordSender recordSender,
                                             List<ColumnEntry> columnConfigs, String[] sourceLine, TaskPluginCollector taskPluginCollector) {
-        Record record = recordSender.createRecord(null);
+        Record record = recordSender.createRecord(col2Index);
         //  Column columnGenerated = null;
         String val = null;
         for (ColumnEntry colMeta : columnConfigs) {
