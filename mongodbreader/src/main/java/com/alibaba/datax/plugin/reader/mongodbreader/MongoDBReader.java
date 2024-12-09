@@ -15,7 +15,8 @@ import com.alibaba.datax.plugin.reader.mongodbreader.util.IMongoTableFinder;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 
-import com.mongodb.MongoClient;
+//import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;

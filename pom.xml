@@ -52,7 +52,7 @@
 
         <scala.version>2.11.12</scala.version>
         <scala.binary.version>2.11</scala.binary.version>
-
+        <mongodb-driver-sync.version>4.11.2</mongodb-driver-sync.version>
     </properties>
 
     <modules>

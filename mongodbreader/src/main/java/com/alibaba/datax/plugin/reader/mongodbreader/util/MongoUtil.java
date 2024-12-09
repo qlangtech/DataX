@@ -1,18 +1,10 @@
 package com.alibaba.datax.plugin.reader.mongodbreader.util;
 
+import com.mongodb.ServerAddress;
+
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.mongodbreader.KeyConstant;
-import com.alibaba.datax.plugin.reader.mongodbreader.MongoDBReaderErrorCode;
-
-import com.mongodb.MongoClient;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
 
 /**
  * Created by jianying.wcj on 2015/3/17 0017.
