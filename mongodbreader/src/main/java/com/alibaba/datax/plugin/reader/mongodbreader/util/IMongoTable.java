@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.reader.mongodbreader.util;
 
 import com.alibaba.datax.common.element.Record;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 /**
@@ -17,6 +18,6 @@ public interface IMongoTable {
      */
     //public List<IMongoCol> getMongoPresentCols();
 
-    Record convert2RecordByItem(Record record, Document item);
+    Record convert2RecordByItem(Record record, BsonDocument item);
 
 }

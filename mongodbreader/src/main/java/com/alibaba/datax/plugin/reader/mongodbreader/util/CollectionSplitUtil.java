@@ -20,11 +20,12 @@ import java.util.List;
  * Created by jianying.wcj on 2015/3/19 0019.
  * Modified by mingyan.zc on 2016/6/13.
  * Modified by mingyan.zc on 2017/7/5.
+ * Modified by baisui(baisui@qlangtech.com) on 2024/12/10
  */
 public class CollectionSplitUtil {
 
     public static List<Configuration> doSplit(
-        Configuration originalSliceConfig, int adviceNumber, MongoClient mongoClient) {
+            Configuration originalSliceConfig, int adviceNumber, MongoClient mongoClient) {
 
         List<Configuration> confList = new ArrayList<Configuration>();
 
@@ -32,15 +33,15 @@ public class CollectionSplitUtil {
 
         String collName = originalSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
 
-        if(Strings.isNullOrEmpty(dbName) || Strings.isNullOrEmpty(collName) || mongoClient == null) {
+        if (Strings.isNullOrEmpty(dbName) || Strings.isNullOrEmpty(collName) || mongoClient == null) {
             throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,
-                MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
+                    MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
         }
 
         boolean isObjectId = isPrimaryIdObjectId(mongoClient, dbName, collName);
 
         List<Range> rangeList = doSplitCollection(adviceNumber, mongoClient, dbName, collName, isObjectId);
-        for(Range range : rangeList) {
+        for (Range range : rangeList) {
             Configuration conf = originalSliceConfig.clone();
             conf.set(KeyConstant.LOWER_BOUND, range.lowerBound);
             conf.set(KeyConstant.UPPER_BOUND, range.upperBound);
@@ -54,6 +55,9 @@ public class CollectionSplitUtil {
     private static boolean isPrimaryIdObjectId(MongoClient mongoClient, String dbName, String collName) {
         MongoDatabase database = mongoClient.getDatabase(dbName);
         MongoCollection<Document> col = database.getCollection(collName);
+        if (col.estimatedDocumentCount() < 1) {
+            throw new IllegalStateException("collection:" + collName + " have any doc ");
+        }
         Document doc = col.find().limit(1).first();
         Object id = doc.get(KeyConstant.MONGO_PRIMARY_ID);
         if (id instanceof ObjectId) {
@@ -95,31 +99,31 @@ public class CollectionSplitUtil {
         boolean supportSplitVector = true;
         try {
             database.runCommand(new Document("splitVector", dbName + "." + collName)
-                .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
-                .append("force", true));
+                    .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
+                    .append("force", true));
         } catch (MongoCommandException e) {
             if (e.getErrorCode() == KeyConstant.MONGO_UNAUTHORIZED_ERR_CODE ||
-                e.getErrorCode() == KeyConstant.MONGO_ILLEGALOP_ERR_CODE) {
+                    e.getErrorCode() == KeyConstant.MONGO_ILLEGALOP_ERR_CODE) {
                 supportSplitVector = false;
             }
         }
 
         if (supportSplitVector) {
-           final  boolean forceMedianSplit = true;
+            final boolean forceMedianSplit = true;
             int maxChunkSize = (docCount / splitPointCount - 1) * 2 * avgObjSize / (1024 * 1024);
             //int maxChunkSize = (chunkDocCount - 1) * 2 * avgObjSize / (1024 * 1024);
             if (maxChunkSize < 1) {
-               // forceMedianSplit = true;
+                // forceMedianSplit = true;
             }
             if (!forceMedianSplit) {
                 result = database.runCommand(new Document("splitVector", dbName + "." + collName)
-                    .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
-                    .append("maxChunkSize", maxChunkSize)
-                    .append("maxSplitPoints", adviceNumber - 1));
+                        .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
+                        .append("maxChunkSize", maxChunkSize)
+                        .append("maxSplitPoints", adviceNumber - 1));
             } else {
                 result = database.runCommand(new Document("splitVector", dbName + "." + collName)
-                    .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
-                    .append("force", true));
+                        .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
+                        .append("force", true));
             }
             ArrayList<Document> splitKeys = result.get("splitKeys", ArrayList.class);
 
@@ -127,7 +131,7 @@ public class CollectionSplitUtil {
                 Document splitKey = splitKeys.get(i);
                 Object id = splitKey.get(KeyConstant.MONGO_PRIMARY_ID);
                 if (isObjectId) {
-                    ObjectId oid = (ObjectId)id;
+                    ObjectId oid = (ObjectId) id;
                     splitPoints.add(oid.toHexString());
                 } else {
                     splitPoints.add(id);
@@ -141,7 +145,7 @@ public class CollectionSplitUtil {
                 Document doc = col.find().skip(skipCount).limit(chunkDocCount).first();
                 Object id = doc.get(KeyConstant.MONGO_PRIMARY_ID);
                 if (isObjectId) {
-                    ObjectId oid = (ObjectId)id;
+                    ObjectId oid = (ObjectId) id;
                     splitPoints.add(oid.toHexString());
                 } else {
                     splitPoints.add(id);

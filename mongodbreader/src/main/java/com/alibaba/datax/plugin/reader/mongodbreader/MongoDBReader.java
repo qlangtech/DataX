@@ -25,6 +25,7 @@ import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.ISelectedTab;
 import com.qlangtech.tis.plugin.ds.RunningContext;
 import org.apache.commons.lang.StringUtils;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 /**
@@ -120,13 +121,13 @@ public class MongoDBReader extends Reader {
                         MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
             }
             MongoDatabase db = mongoClient.getDatabase(database);
-            MongoCollection col = db.getCollection(this.collection);
+            MongoCollection<BsonDocument> col = db.getCollection(this.collection, BsonDocument.class);
 
-            MongoCursor<Document> dbCursor = null;
+            MongoCursor<BsonDocument> dbCursor = null;
             Document filter = mongoTable.getCollectionQueryFilter();// new Document();
 
             dbCursor = col.find(filter).iterator();
-            Document item = null;
+            BsonDocument item = null;
             // Record record = null;
             Objects.requireNonNull(this.col2IndexMapper, "col2IndexMapper can not be null");
             while (dbCursor.hasNext()) {
