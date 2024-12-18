@@ -9,6 +9,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -79,17 +82,27 @@ public class CollectionSplitUtil {
             return Arrays.asList(range);
         }
 
-        Document result = database.runCommand(new Document("collStats", collName));
-        int docCount = result.getInteger("count");
+        BsonDocument result = database.runCommand(new Document("collStats", collName), BsonDocument.class);
+        int docCount = result.getInt32("count").intValue();
+        //  int docCount = result.getInteger("count");
         if (docCount == 0) {
             return rangeList;
         }
         int avgObjSize = 1;
-        Object avgObjSizeObj = result.get("avgObjSize");
-        if (avgObjSizeObj instanceof Integer) {
-            avgObjSize = ((Integer) avgObjSizeObj).intValue();
-        } else if (avgObjSizeObj instanceof Double) {
-            avgObjSize = ((Double) avgObjSizeObj).intValue();
+        BsonValue avgObjSizeObj = result.get("avgObjSize");
+        // avgObjSize = avgObjSizeObj.asInt32().intValue();
+        if (avgObjSizeObj.isNumber()) {
+            if (avgObjSizeObj.isInt32()) {
+                avgObjSize = avgObjSizeObj.asInt32().intValue();
+            } else if (avgObjSizeObj.isInt64()) {
+                avgObjSize = avgObjSizeObj.asInt64().intValue();
+            } else if (avgObjSizeObj.isDouble()) {
+                avgObjSize = avgObjSizeObj.asDouble().intValue();
+            } else {
+                throw new IllegalStateException("illegal avgObjSizeObj value:" + avgObjSizeObj);
+            }
+        } else {
+            throw new IllegalStateException("illegal avgObjSizeObj type:" + avgObjSizeObj.getBsonType());
         }
         int splitPointCount = adviceNumber - 1;
         int chunkDocCount = docCount / adviceNumber;
@@ -119,22 +132,22 @@ public class CollectionSplitUtil {
                 result = database.runCommand(new Document("splitVector", dbName + "." + collName)
                         .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
                         .append("maxChunkSize", maxChunkSize)
-                        .append("maxSplitPoints", adviceNumber - 1));
+                        .append("maxSplitPoints", adviceNumber - 1), BsonDocument.class);
             } else {
                 result = database.runCommand(new Document("splitVector", dbName + "." + collName)
                         .append("keyPattern", new Document(KeyConstant.MONGO_PRIMARY_ID, 1))
-                        .append("force", true));
+                        .append("force", true), BsonDocument.class);
             }
-            ArrayList<Document> splitKeys = result.get("splitKeys", ArrayList.class);
+            BsonArray splitKeys = result.getArray("splitKeys");
 
             for (int i = 0; i < splitKeys.size(); i++) {
-                Document splitKey = splitKeys.get(i);
-                Object id = splitKey.get(KeyConstant.MONGO_PRIMARY_ID);
-                if (isObjectId) {
-                    ObjectId oid = (ObjectId) id;
+                BsonDocument splitKey = splitKeys.get(i).asDocument();
+                BsonValue id = splitKey.get(KeyConstant.MONGO_PRIMARY_ID);
+                if (id.isObjectId()) {
+                    ObjectId oid = id.asObjectId().getValue();
                     splitPoints.add(oid.toHexString());
-                } else {
-                    splitPoints.add(id);
+                } else if (id.isString()) {
+                    splitPoints.add(id.asString().getValue());
                 }
             }
         } else {
