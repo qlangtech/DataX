@@ -176,7 +176,8 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else if (val instanceof Date) {
                                                     return new DateColumn((Date) val);
                                                 } else {
-                                                    throw new IllegalStateException("illegal type:" + val.getClass() + ",val:" + String.valueOf(val));
+                                                    throw new IllegalStateException(
+                                                            "illegal type:" + val.getClass() + ",val:" + String.valueOf(val) + ",colIdx:" + getColumnIndex());
                                                 }
                                             }
 
