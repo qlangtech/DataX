@@ -24,7 +24,6 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,16 +42,18 @@ public class DorisWriter extends Writer {
 
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
         private Configuration originalConfig = null;
-        private Keys options;
+        private DorisWriterKeys options;
 
         private com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter dsGetter;
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            options = new Keys(super.getPluginJobConf());
+            options = new DorisWriterKeys(super.getPluginJobConf());
+            LOG.info("dorisWriter batchRows:{},batchSize:{},flushInterval:{},flushQueueLength:{}."
+                    , options.getBatchRows(), options.getBatchSize(), options.getFlushInterval(), options.getFlushQueueLength());
             options.doPretreatment();
-            this.dsGetter = IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(originalConfig,this.containerContext);
+            this.dsGetter = IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(originalConfig, this.containerContext);
         }
 
         @Override
@@ -124,12 +125,12 @@ public class DorisWriter extends Writer {
 
     public static class Task extends Writer.Task {
         private DorisWriterManager writerManager;
-        private Keys options;
+        private DorisWriterKeys options;
         private DorisCodec rowCodec;
 
         @Override
         public void init() {
-            options = new Keys(super.getPluginJobConf());
+            options = new DorisWriterKeys(super.getPluginJobConf());
             if (options.isWildcardColumn()) {
                 throw new UnsupportedOperationException("WildcardColumn not support");
 //                Connection conn = DBUtil.getConnection(DataBaseType.MySql, options.getJdbcUrl(), options.getUsername(), options.getPassword());

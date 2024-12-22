@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class DorisStreamLoadObserver {
     private static final Logger LOG = LoggerFactory.getLogger(DorisStreamLoadObserver.class);
 
-    private Keys options;
+    private DorisWriterKeys options;
 
     private long pos;
     private static final String RESULT_FAILED = "Fail";
@@ -44,7 +44,7 @@ public class DorisStreamLoadObserver {
     private static final String RESULT_LABEL_UNKNOWN = "UNKNOWN";
 
 
-    public DorisStreamLoadObserver(Keys options) {
+    public DorisStreamLoadObserver(DorisWriterKeys options) {
         this.options = options;
     }
 
@@ -124,9 +124,9 @@ public class DorisStreamLoadObserver {
     }
 
     private byte[] addRows(List<byte[]> rows, int totalBytes) {
-        if (Keys.StreamLoadFormat.CSV.equals(options.getStreamLoadFormat())) {
+        if (DorisWriterKeys.StreamLoadFormat.CSV.equals(options.getStreamLoadFormat())) {
             Map<String, Object> props = (options.getLoadProps() == null ? new HashMap<>() : options.getLoadProps());
-            byte[] lineDelimiter = DelimiterParser.parse((String) props.get(Keys.LOAD_PROPS_LINE_DELIMITER), "\n").getBytes(StandardCharsets.UTF_8);
+            byte[] lineDelimiter = DelimiterParser.parse((String) props.get(DorisWriterKeys.LOAD_PROPS_LINE_DELIMITER), "\n").getBytes(StandardCharsets.UTF_8);
             ByteBuffer bos = ByteBuffer.allocate(totalBytes + rows.size() * lineDelimiter.length);
             for (byte[] row : rows) {
                 bos.put(row);
@@ -135,7 +135,7 @@ public class DorisStreamLoadObserver {
             return bos.array();
         }
 
-        if (Keys.StreamLoadFormat.JSON.equals(options.getStreamLoadFormat())) {
+        if (DorisWriterKeys.StreamLoadFormat.JSON.equals(options.getStreamLoadFormat())) {
             ByteBuffer bos = ByteBuffer.allocate(totalBytes + (rows.isEmpty() ? 2 : rows.size() + 1));
             bos.put("[".getBytes(StandardCharsets.UTF_8));
             byte[] jsonDelimiter = ",".getBytes(StandardCharsets.UTF_8);
@@ -167,7 +167,7 @@ public class DorisStreamLoadObserver {
             httpPut.removeHeaders(HttpHeaders.CONTENT_LENGTH);
             httpPut.removeHeaders(HttpHeaders.TRANSFER_ENCODING);
             List<String> cols = options.getColumns();
-            if (null != cols && !cols.isEmpty() && Keys.StreamLoadFormat.CSV.equals(options.getStreamLoadFormat())) {
+            if (null != cols && !cols.isEmpty() && DorisWriterKeys.StreamLoadFormat.CSV.equals(options.getStreamLoadFormat())) {
                 httpPut.setHeader("columns", String.join(",", cols.stream().map(f -> String.format("`%s`", f)).collect(Collectors.toList())));
             }
 

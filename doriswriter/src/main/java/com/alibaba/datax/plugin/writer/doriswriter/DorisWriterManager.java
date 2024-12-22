@@ -21,7 +21,7 @@ public class DorisWriterManager {
     private static final Logger LOG = LoggerFactory.getLogger(DorisWriterManager.class);
 
     private final DorisStreamLoadObserver visitor;
-    private final Keys options;
+    private final DorisWriterKeys options;
     private final List<byte[]> buffer = new ArrayList<> ();
     private int batchCount = 0;
     private long batchSize = 0;
@@ -31,7 +31,7 @@ public class DorisWriterManager {
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> scheduledFuture;
 
-    public DorisWriterManager( Keys options) {
+    public DorisWriterManager( DorisWriterKeys options) {
         this.options = options;
         this.visitor = new DorisStreamLoadObserver (options);
         flushQueue = new LinkedBlockingDeque<>(options.getFlushQueueLength());

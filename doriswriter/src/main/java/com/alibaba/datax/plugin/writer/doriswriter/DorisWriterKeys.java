@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class Keys implements Serializable {
+public class DorisWriterKeys implements Serializable {
 
     private static final long serialVersionUID = 1l;
     private static final int MAX_RETRIES = 3;
@@ -67,12 +67,29 @@ public class Keys implements Serializable {
     private List<String> userSetColumns;
     private final boolean isWildcardColumn = false;
 
-    public Keys(Configuration options) {
+    private final Integer _batchRows;
+    private final Long _batchSize;
+    private final Long _flushInterval;
+    private final Integer _flushQueueLength;
+
+
+    public DorisWriterKeys(Configuration options) {
         this.options = options;
         this.userSetColumns = options.getList(COLUMN, String.class).stream().map(str -> str.replace("`", "")).collect(Collectors.toList());
 //        if (1 == options.getList(COLUMN, String.class).size() && "*".trim().equals(options.getList(COLUMN, String.class).get(0))) {
 //            this.isWildcardColumn = true;
 //        }
+        Integer rows = options.getInt(MAX_BATCH_ROWS);
+        this._batchRows = null == rows ? BATCH_ROWS : rows;
+
+        Long size = options.getLong(MAX_BATCH_SIZE);
+        this._batchSize = null == size ? DEFAULT_MAX_BATCH_SIZE : size;
+
+        Long interval = options.getLong(FLUSH_INTERVAL);
+        this._flushInterval = null == interval ? DEFAULT_FLUSH_INTERVAL : interval;
+
+        Integer len = options.getInt(FLUSH_QUEUE_LENGTH);
+        this._flushQueueLength = null == len ? 1 : len;
     }
 
     public void doPretreatment() {
@@ -150,23 +167,27 @@ public class Keys implements Serializable {
     }
 
     public int getBatchRows() {
-        Integer rows = options.getInt(MAX_BATCH_ROWS);
-        return null == rows ? BATCH_ROWS : rows;
+//        Integer rows = options.getInt(MAX_BATCH_ROWS);
+//        return null == rows ? BATCH_ROWS : rows;
+        return this._batchRows;
     }
 
     public long getBatchSize() {
-        Long size = options.getLong(MAX_BATCH_SIZE);
-        return null == size ? DEFAULT_MAX_BATCH_SIZE : size;
+//        Long size = options.getLong(MAX_BATCH_SIZE);
+//        return null == size ? DEFAULT_MAX_BATCH_SIZE : size;
+        return this._batchSize;
     }
 
     public long getFlushInterval() {
-        Long interval = options.getLong(FLUSH_INTERVAL);
-        return null == interval ? DEFAULT_FLUSH_INTERVAL : interval;
+//        Long interval = options.getLong(FLUSH_INTERVAL);
+//        return null == interval ? DEFAULT_FLUSH_INTERVAL : interval;
+        return this._flushInterval;
     }
 
     public int getFlushQueueLength() {
-        Integer len = options.getInt(FLUSH_QUEUE_LENGTH);
-        return null == len ? 1 : len;
+//        Integer len = options.getInt(FLUSH_QUEUE_LENGTH);
+//        return null == len ? 1 : len;
+        return this._flushQueueLength;
     }
 
     public StreamLoadFormat getStreamLoadFormat() {

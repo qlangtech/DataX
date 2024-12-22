@@ -89,7 +89,7 @@ public abstract class TransformerExchanger {
                 errorMsg = String.format("transformer(%s) has Exception(%s)", transformerInfoExec.getTransformerName(),
                         e.getMessage());
                 failed = true;
-                //LOG.error(errorMsg, e);
+                LOG.error(errorMsg, e);
                 // transformerInfoExec.addFailedRecords(1);
                 //脏数据不再进行后续transformer处理，按脏数据处理，并过滤该record。
                 break;

@@ -74,7 +74,7 @@ public class DorisUtil {
         }
     }
 
-    public static void preCheckPrePareSQL(Keys options) {
+    public static void preCheckPrePareSQL(DorisWriterKeys options) {
         String table = options.getTable();
         List<String> preSqls = options.getPreSqlList();
         List<String> renderedPreSqls = DorisUtil.renderPreOrPostSqls(preSqls, table);
@@ -90,7 +90,7 @@ public class DorisUtil {
         }
     }
 
-    public static void preCheckPostSQL(Keys options) {
+    public static void preCheckPostSQL(DorisWriterKeys options) {
         String table = options.getTable();
         List<String> postSqls = options.getPostSqlList();
         List<String> renderedPostSqls = DorisUtil.renderPreOrPostSqls(postSqls, table);

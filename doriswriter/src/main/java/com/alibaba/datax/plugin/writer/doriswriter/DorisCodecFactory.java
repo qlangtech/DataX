@@ -5,7 +5,7 @@ public class DorisCodecFactory {
 
     }
 
-    public static DorisCodec createCodec(Keys writerOptions) {
+    public static DorisCodec createCodec(DorisWriterKeys writerOptions) {
 //        if ( Keys.StreamLoadFormat.CSV.equals(writerOptions.getStreamLoadFormat())) {
 //            Map<String, Object> props = writerOptions.getLoadProps();
 //            return new DorisCsvCodec (null == props || !props.containsKey(Keys.LOAD_PROPS_COLUMN_SEPARATOR) ? null : String.valueOf(props.get(Keys.LOAD_PROPS_COLUMN_SEPARATOR)));
