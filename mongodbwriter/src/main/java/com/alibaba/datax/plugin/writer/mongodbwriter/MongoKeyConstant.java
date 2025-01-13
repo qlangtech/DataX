@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.mongodbwriter;
 
-public class KeyConstant {
+public class MongoKeyConstant {
+    public final static String PRE_SQL = "preSql";
     /**
      * mongodb 的 host 地址
      */

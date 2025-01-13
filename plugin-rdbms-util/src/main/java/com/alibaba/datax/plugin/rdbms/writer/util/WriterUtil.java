@@ -47,8 +47,8 @@ public final class WriterUtil {
         }
 
         String jdbcUrl;
-        List<String> preSqls = simplifiedConf.getList(Key.PRE_SQL, String.class);
-        List<String> postSqls = simplifiedConf.getList(Key.POST_SQL, String.class);
+//        List<String> preSqls = simplifiedConf.getList(Key.PRE_SQL, String.class);
+//        List<String> postSqls = simplifiedConf.getList(Key.POST_SQL, String.class);
 
         List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK, Object.class);
         SelectTable selTable = null;
@@ -68,8 +68,8 @@ public final class WriterUtil {
 
                 Configuration tempSlice = sliceConfig.clone();
                 tempSlice.set(Key.TABLE, table);
-                tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, selTable));
-                tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, selTable));
+//                tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, selTable));
+//                tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, selTable));
 
                 splitResultConfigs.add(tempSlice);
             }
@@ -79,21 +79,21 @@ public final class WriterUtil {
         return splitResultConfigs;
     }
 
-    public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, SelectTable selTable) {
-        if (null == preOrPostSqls) {
-            return Collections.emptyList();
-        }
-
-        List<String> renderedSqls = new ArrayList<String>();
-        for (String sql : preOrPostSqls) {
-            //preSql为空时，不加入执行队列
-            if (StringUtils.isNotBlank(sql)) {
-                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, selTable.getTabName()));
-            }
-        }
-
-        return renderedSqls;
-    }
+//    public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, SelectTable selTable) {
+//        if (null == preOrPostSqls) {
+//            return Collections.emptyList();
+//        }
+//
+//        List<String> renderedSqls = new ArrayList<String>();
+//        for (String sql : preOrPostSqls) {
+//            //preSql为空时，不加入执行队列
+//            if (StringUtils.isNotBlank(sql)) {
+//                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, selTable.getTabName()));
+//            }
+//        }
+//
+//        return renderedSqls;
+//    }
 
     public static void executeSqls(Connection conn, List<String> sqls, String basicMessage, DataBaseType dataBaseType) {
 
@@ -150,21 +150,21 @@ public final class WriterUtil {
         //        Configuration connConf = Configuration.from(conns.get(0).toString());
         //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
-        SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
+     //   SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
-        List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
-        List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, selTab);
+       // List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
+      //  List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, selTab);
 
-        if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
-            LOG.info("Begin to preCheck preSqls:[{}].", StringUtils.join(renderedPreSqls, ";"));
-            for (String sql : renderedPreSqls) {
-                try {
-                    DBUtil.sqlValid(sql, type);
-                } catch (ParserException e) {
-                    throw RdbmsException.asPreSQLParserException(type, e, sql);
-                }
-            }
-        }
+//        if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+//            LOG.info("Begin to preCheck preSqls:[{}].", StringUtils.join(renderedPreSqls, ";"));
+//            for (String sql : renderedPreSqls) {
+//                try {
+                //    DBUtil.sqlValid(sql, type);
+//                } catch (ParserException e) {
+//                    throw RdbmsException.asPreSQLParserException(type, e, sql);
+//                }
+//            }
+//        }
     }
 
     public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type, IDBReservedKeys escapeChar) {
@@ -172,22 +172,22 @@ public final class WriterUtil {
         //        Configuration connConf = Configuration.from(conns.get(0).toString());
         //        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
-        SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
+       // SelectTable selTab = SelectTable.create(originalConfig, escapeChar);
 
-        List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
-        List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, selTab);
-        if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
-
-            LOG.info("Begin to preCheck postSqls:[{}].", StringUtils.join(renderedPostSqls, ";"));
-            for (String sql : renderedPostSqls) {
-                try {
-                    DBUtil.sqlValid(sql, type);
-                } catch (ParserException e) {
-                    throw RdbmsException.asPostSQLParserException(type, e, sql);
-                }
-
-            }
-        }
+      //  List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
+       // List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, selTab);
+//        if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+//
+//            LOG.info("Begin to preCheck postSqls:[{}].", StringUtils.join(renderedPostSqls, ";"));
+//            for (String sql : renderedPostSqls) {
+//                try {
+//                    DBUtil.sqlValid(sql, type);
+//                } catch (ParserException e) {
+//                    throw RdbmsException.asPostSQLParserException(type, e, sql);
+//                }
+//
+//            }
+//        }
     }
 
 

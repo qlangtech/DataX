@@ -165,6 +165,14 @@ public class MongoDBReader extends Reader {
             IDataxReader dataxReader = this.loadDataXReader();
             ISelectedTab selectedTab = dataxReader.getSelectedTab(this.collection);
             this.col2IndexMapper = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), new RunningContext() {
+                @Override
+                public String getDbName() {
+                    return ((IDataSourceFactoryGetter) dataxReader).getDataSourceFactory().getDbConfig().getName();
+                }
+                @Override
+                public String getTable() {
+                    return collection;
+                }
             }, selectedTab.getCols());
 
 
@@ -184,7 +192,6 @@ public class MongoDBReader extends Reader {
 
 
         }
-
 
 
         @Override

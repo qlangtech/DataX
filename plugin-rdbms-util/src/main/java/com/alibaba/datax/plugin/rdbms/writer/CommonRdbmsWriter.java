@@ -125,25 +125,25 @@ public class CommonRdbmsWriter {
                     originalConfig.set(Key.ESCAPE_CHAR, table.getEscapeChar());
                 }
 
-                List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
-                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
+                // List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
+                // List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
 
                 originalConfig.remove(Constant.CONN_MARK);
 
-                if (CollectionUtils.isNotEmpty(renderedPreSqls)) {
-                    // 说明有 preSql 配置，则此处删除掉
-                    originalConfig.remove(Key.PRE_SQL);
-
-                    try (Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, username, password)) {
-                        LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls,
-                                ";"), jdbcUrl);
-                        WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    // DBUtil.closeDBResources(null, null, conn);
-                }
+//                if (CollectionUtils.isNotEmpty(renderedPreSqls)) {
+//                    // 说明有 preSql 配置，则此处删除掉
+//                    originalConfig.remove(Key.PRE_SQL);
+//
+//                    try (Connection conn = DBUtil.getConnection(dataSourceFactoryGetter, jdbcUrl, username, password)) {
+//                        LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls,
+//                                ";"), jdbcUrl);
+//                        WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
+//                    } catch (Exception e) {
+//                        throw new RuntimeException(e);
+//                    }
+//
+//                    // DBUtil.closeDBResources(null, null, conn);
+//                }
             }
 
             LOG.debug("After job prepare(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());
@@ -166,23 +166,23 @@ public class CommonRdbmsWriter {
                 // 已经由 prepare 进行了appendJDBCSuffix处理
                 String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
 
-                SelectTable table = SelectTable.createInTask(originalConfig,
-                        this.dataSourceFactoryGetter.getDBReservedKeys());//.getString(Key.TABLE);
+//                SelectTable table = SelectTable.createInTask(originalConfig,
+//                        this.dataSourceFactoryGetter.getDBReservedKeys());//.getString(Key.TABLE);
 
-                List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
-                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, table);
+                //  List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
+                // List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, table);
 
-                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
-                    // 说明有 postSql 配置，则此处删除掉
-                    originalConfig.remove(Key.POST_SQL);
-
-                    Connection conn = DBUtil.getConnection(this.dataSourceFactoryGetter, jdbcUrl, username, password);
-
-                    LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls,
-                            ";"), jdbcUrl);
-                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl, dataBaseType);
-                    DBUtil.closeDBResources(null, null, conn);
-                }
+//                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+//                    // 说明有 postSql 配置，则此处删除掉
+//                    originalConfig.remove(Key.POST_SQL);
+//
+//                    Connection conn = DBUtil.getConnection(this.dataSourceFactoryGetter, jdbcUrl, username, password);
+//
+//                    LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls,
+//                            ";"), jdbcUrl);
+//                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl, dataBaseType);
+//                    DBUtil.closeDBResources(null, null, conn);
+//                }
             }
         }
 
@@ -203,8 +203,8 @@ public class CommonRdbmsWriter {
         protected String jdbcUrl;
         protected SelectTable table;
         protected SelectCols columns;
-        protected List<String> preSqls;
-        protected List<String> postSqls;
+        //        protected List<String> preSqls;
+//        protected List<String> postSqls;
         protected int batchSize;
         protected int batchByteSize;
         protected int columnNumber = 0;
@@ -257,8 +257,8 @@ public class CommonRdbmsWriter {
             this.table = SelectTable.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
 
-            this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
-            this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
+//            this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
+//            this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
             this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 
@@ -281,9 +281,9 @@ public class CommonRdbmsWriter {
 
                 int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
                 if (tableNumber != 1) {
-                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
-                            BASIC_MESSAGE);
-                    WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
+//                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+//                            BASIC_MESSAGE);
+//                    WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -534,18 +534,18 @@ public class CommonRdbmsWriter {
         public void post(Configuration writerSliceConfig) {
             int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
 
-            boolean hasPostSql = (this.postSqls != null && this.postSqls.size() > 0);
-            if (tableNumber == 1 || !hasPostSql) {
-                return;
-            }
-
-            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username,
-                    password);
-
-            LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(this.postSqls, ";"),
-                    BASIC_MESSAGE);
-            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE, dataBaseType);
-            DBUtil.closeDBResources(null, null, connection);
+            //  boolean hasPostSql = (this.postSqls != null && this.postSqls.size() > 0);
+//            if (tableNumber == 1 || !hasPostSql) {
+//                return;
+//            }
+//
+//            Connection connection = DBUtil.getConnection(this.dataSourceFactoryGetter, this.jdbcUrl, username,
+//                    password);
+//
+//            LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(this.postSqls, ";"),
+//                    BASIC_MESSAGE);
+//            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE, dataBaseType);
+//            DBUtil.closeDBResources(null, null, connection);
         }
 
         public void destroy(Configuration writerSliceConfig) {

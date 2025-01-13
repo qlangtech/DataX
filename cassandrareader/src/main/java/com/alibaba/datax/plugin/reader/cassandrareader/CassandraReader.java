@@ -116,6 +116,15 @@ public class CassandraReader extends Reader {
             ISelectedTab selectedTab = dataxReader.getSelectedTab(table);
 
             DataXCol2Index col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg(), new RunningContext() {
+                @Override
+                public String getDbName() {
+                   throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public String getTable() {
+                    throw new UnsupportedOperationException();
+                }
             }, selectedTab.getCols());
 
         }

@@ -8,7 +8,7 @@ public final class Constant {
 
     public static final int DEFAULT_BATCH_BYTE_SIZE = 32 * 1024 * 1024;
 
-    public static String TABLE_NAME_PLACEHOLDER = "@table";
+  //  public static String TABLE_NAME_PLACEHOLDER = "@table";
 
     public static String CONN_MARK = "connection";
 

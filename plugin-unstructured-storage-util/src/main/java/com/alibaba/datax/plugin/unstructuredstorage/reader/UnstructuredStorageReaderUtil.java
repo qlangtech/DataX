@@ -109,18 +109,18 @@ public class UnstructuredStorageReaderUtil {
 //                    .asDataXException(
 //                            UnstructuredStorageReaderErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
 //                            String.format("不支持的编码格式 : [%s]", encoding), uee);
-        } catch (FileNotFoundException fnfe) {
-            throw DataXException.asDataXException(
-                    UnstructuredStorageReaderErrorCode.FILE_NOT_EXISTS,
-                    String.format("无法找到文件 : [%s]", context), fnfe);
-        } catch (IOException ioe) {
-            throw DataXException.asDataXException(
-                    UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
-                    String.format("读取文件错误 : [%s]", context), ioe);
+//        } catch (FileNotFoundException fnfe) {
+//            throw DataXException.asDataXException(
+//                    UnstructuredStorageReaderErrorCode.FILE_NOT_EXISTS,
+//                    String.format("无法找到文件 : [%s]", context), fnfe);
+//        } catch (IOException ioe) {
+//            throw DataXException.asDataXException(
+//                    UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
+//                    String.format("读取文件错误 : [%s]", context), ioe);
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
-                    String.format("运行时异常 : %s", e.getMessage()), e);
+                    String.format("运行时异常 : %s,[%s]", e.getMessage(), context), e);
         } finally {
             //  csvReader.close();
             IOUtils.closeQuietly(freader);

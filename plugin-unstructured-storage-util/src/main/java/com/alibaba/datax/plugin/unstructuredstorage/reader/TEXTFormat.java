@@ -46,46 +46,50 @@ public class TEXTFormat extends UnstructuredReader {
     }
 
     @Override
-    public boolean hasNext() throws IOException {
-        String line = reader.readLine();
-        if (line == null) {
-            return false;
-        }
-
-        Arrays.fill(rowVals, null);
-
-        int fieldLength = 0;
-        int fieldIndex = 0;
-        int fieldStartOffsetIndex = 0;
-        final int lineLength = line.length();
-        for (int i = 0; i < lineLength; i++) {
-            if (line.charAt(i) == fieldDelimiter) {
-                if (fieldLength > 0) {
-                    rowVals[fieldIndex] = line.substring(fieldStartOffsetIndex, fieldStartOffsetIndex + fieldLength);
-                }
-                fieldStartOffsetIndex = i + 1;
-                fieldIndex++;
-                fieldLength = 0;
-            } else {
-                fieldLength++;
+    public boolean hasNext() {
+        try {
+            String line = reader.readLine();
+            if (line == null) {
+                return false;
             }
-        }
 
-        if (fieldStartOffsetIndex < lineLength) {
-            rowVals[fieldIndex] = line.substring(fieldStartOffsetIndex, lineLength);
-        }
+            Arrays.fill(rowVals, null);
 
-        //   rowVals = line.split(fieldDelimiter);
-        return true;
+            int fieldLength = 0;
+            int fieldIndex = 0;
+            int fieldStartOffsetIndex = 0;
+            final int lineLength = line.length();
+            for (int i = 0; i < lineLength; i++) {
+                if (line.charAt(i) == fieldDelimiter) {
+                    if (fieldLength > 0) {
+                        rowVals[fieldIndex] = line.substring(fieldStartOffsetIndex, fieldStartOffsetIndex + fieldLength);
+                    }
+                    fieldStartOffsetIndex = i + 1;
+                    fieldIndex++;
+                    fieldLength = 0;
+                } else {
+                    fieldLength++;
+                }
+            }
+
+            if (fieldStartOffsetIndex < lineLength) {
+                rowVals[fieldIndex] = line.substring(fieldStartOffsetIndex, lineLength);
+            }
+
+            //   rowVals = line.split(fieldDelimiter);
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public String[] next() throws IOException {
+    public String[] next() {
         return this.rowVals;
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         IOUtils.closeQuietly(reader);
     }
 }

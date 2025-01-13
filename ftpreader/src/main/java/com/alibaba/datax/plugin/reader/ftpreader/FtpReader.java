@@ -9,8 +9,10 @@ import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredReader;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+import com.qlangtech.tis.datax.IDataxReader;
 import com.qlangtech.tis.plugin.ds.DataType;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
+import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.JDBCTypes;
 import com.qlangtech.tis.plugin.ds.RunningContext;
 import com.qlangtech.tis.plugin.tdfs.ITDFSSession;
@@ -166,35 +168,20 @@ public class FtpReader extends Reader {
         private List<ColumnEntry> colsMeta = null;
         protected Function<InputStream, UnstructuredReader> unstructuredReaderCreator;
 
+        private Optional<String> entityName;
 
         @Override
         public void init() {//连接重试
             /* for ftp connection */
             this.readerSliceConfig = this.getPluginJobConf();
-//            this.host = readerSliceConfig.getString(Key.HOST);
-//            this.protocol = readerSliceConfig.getString(Key.PROTOCOL);
-//            this.username = readerSliceConfig.getString(Key.USERNAME);
-//            this.password = readerSliceConfig.getString(Key.PASSWORD);
-//            this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
-
             this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
-            // this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
             this.hdfsSession = createTdfsSession();// FtpHelper.createFtpClient(readerSliceConfig);
-            this.colsMeta = createColsMeta(getEntityName(this.readerSliceConfig));
+
+            this.entityName = getEntityName(this.readerSliceConfig);
+            this.colsMeta = createColsMeta(entityName);
 
 
             Objects.requireNonNull(unstructuredReaderCreator, "unstructuredReaderCreator can not be null");
-//            if ("sftp".equals(protocol)) {
-//                //sftp协议
-//                this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
-//                this.ftpHelper = new SftpHelper();
-//            } else if ("ftp".equals(protocol)) {
-//                // ftp 协议
-//                this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_FTP_PORT);
-//                this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN);// 默认为被动模式
-//                this.ftpHelper = new StandardFtpHelper();
-//            }
-//            ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
         }
 
 
@@ -225,8 +212,10 @@ public class FtpReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
             LOG.debug("start read source files...");
-            DataXCol2Index col2Idx = DataXCol2Index.getCol2Index(Optional.empty(), new RunningContext() {
-            }, colsMeta.stream().map((col) -> IColMetaGetter.create(col.getColName(), DataType.getType(JDBCTypes.VARCHAR))).collect(Collectors.toUnmodifiableList()));
+
+            DataXCol2Index col2Idx = DataXCol2Index.getCol2Index(containerContext.getTransformerBuildCfg()
+                    , new DFSRunningContext(this.loadDataXReader(), this.entityName)
+                    , colsMeta.stream().map((col) -> IColMetaGetter.create(col.getColName(), DataType.getType(JDBCTypes.VARCHAR))).collect(Collectors.toUnmodifiableList()));
 
             for (String fileName : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", fileName));
@@ -237,6 +226,29 @@ public class FtpReader extends Reader {
             }
 
             LOG.debug("end read source files...");
+        }
+
+        private static class DFSRunningContext implements RunningContext {
+            private final IDataxReader dataxReader;
+            private final Optional<String> entityName;
+
+            public DFSRunningContext(IDataxReader dataxReader, Optional<String> entityName) {
+                this.dataxReader = Objects.requireNonNull(dataxReader, "dataXReader can not be null");
+                this.entityName = Objects.requireNonNull(entityName, "entityName can not be null");
+            }
+
+            @Override
+            public String getDbName() {
+                if (dataxReader instanceof IDataSourceFactoryGetter) {
+                    return ((IDataSourceFactoryGetter) dataxReader).getDataSourceFactory().getDbConfig().getName();
+                }
+                throw new UnsupportedOperationException("is not support context dbName param");
+            }
+
+            @Override
+            public String getTable() {
+                return entityName.orElseThrow(() -> new UnsupportedOperationException("is not support context tableName param"));
+            }
         }
 
         /**

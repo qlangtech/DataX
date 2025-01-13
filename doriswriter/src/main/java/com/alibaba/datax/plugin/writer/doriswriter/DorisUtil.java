@@ -23,7 +23,7 @@ import java.util.Optional;
  */
 public class DorisUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DorisUtil.class);
-
+    public static String TABLE_NAME_PLACEHOLDER = "@table";
     private DorisUtil() {
     }
 
@@ -52,7 +52,7 @@ public class DorisUtil {
         List<String> renderedSqls = new ArrayList<>();
         for (String sql : preOrPostSqls) {
             if (!Strings.isNullOrEmpty(sql)) {
-                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+                renderedSqls.add(sql.replace(TABLE_NAME_PLACEHOLDER, tableName));
             }
         }
         return renderedSqls;

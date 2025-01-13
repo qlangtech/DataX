@@ -41,14 +41,22 @@ public abstract class CSVFormat extends UnstructuredReader {
 
 
     @Override
-    public boolean hasNext() throws IOException {
-        return this.csvReader.readRecord();
+    public boolean hasNext()  {
+        try {
+            return this.csvReader.readRecord();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public String[] next() throws IOException {
-        String[] vals = this.csvReader.getValues();
-        return vals;
+    public String[] next() {
+        try {
+            String[] vals = this.csvReader.getValues();
+            return vals;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
