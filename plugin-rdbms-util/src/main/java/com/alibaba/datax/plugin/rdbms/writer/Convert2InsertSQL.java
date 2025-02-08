@@ -108,7 +108,8 @@ public class Convert2InsertSQL implements PreparedStatement {
                     .stream().collect(Collectors.toMap((col) -> col.getIndex(), (col) -> col));
         }
         Col col = idx2Col.get(parameterIndex - 1);
-        this.paramVals[parameterIndex - 1] = String.format("%." + col.getType().getDecimalDigits() + "f", x);
+        final int decimalDigits = col.getType().getDecimalDigits();
+        this.paramVals[parameterIndex - 1] = String.format("%" + (decimalDigits > 0 ? "." + col.getType().getDecimalDigits() + "f" : "d"), x);
     }
 
     @Override

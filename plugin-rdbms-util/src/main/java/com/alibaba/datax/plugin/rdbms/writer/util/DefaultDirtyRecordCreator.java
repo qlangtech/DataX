@@ -5,6 +5,8 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter.Task;
 import com.alibaba.datax.plugin.rdbms.writer.Convert2InsertSQL;
+import com.qlangtech.tis.manage.common.Config;
+import com.qlangtech.tis.web.start.TisAppLaunch;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -37,6 +39,9 @@ public class DefaultDirtyRecordCreator implements DirtyRecordCreator {
             fillPreparedStatement.accept(convert2InsertSQL);
             return convert2InsertSQL.getFinalSQL();
         } catch (Exception e) {
+            if (TisAppLaunch.isTestMock()) {
+                throw new RuntimeException(e);
+            }
             logger.warn(e.getMessage(), ExceptionUtils.getRootCause(e));
             return StringUtils.EMPTY;
         }
