@@ -109,7 +109,7 @@ public class Convert2InsertSQL implements PreparedStatement {
         }
         Col col = idx2Col.get(parameterIndex - 1);
         final int decimalDigits = col.getType().getDecimalDigits();
-        this.paramVals[parameterIndex - 1] = String.format("%" + (decimalDigits > 0 ? "." + col.getType().getDecimalDigits() + "f" : "d"), x);
+        this.paramVals[parameterIndex - 1] = String.format("%." + (decimalDigits > 0 ? decimalDigits : 0 + "f"), x);
     }
 
     @Override
