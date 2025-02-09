@@ -453,11 +453,13 @@ public class CommonRdbmsWriter {
                 // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
                 case Types.BIT:
                     return (stat, colIndex, column) -> {
-                        if (this.dataBaseType == DataBaseType.MySql) {
-                            stat.setBoolean(colIndex, column.asBoolean());
-                        } else {
-                            stat.setString(colIndex, column.asString());
-                        }
+                        // if (this.dataBaseType == DataBaseType.MySql) {
+                        // 这里只要使用setBoolean就行了吧，没有必须要使用以下的那种 setString方式 2025/02/09 baisui modify
+                        stat.setBoolean(colIndex, column.asBoolean());
+
+//                        } else {
+//                            stat.setString(colIndex, column.asString());
+//                        }
                     };
 
                 //break;
