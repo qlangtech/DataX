@@ -17,6 +17,7 @@ import com.qlangtech.tis.plugin.ds.DataType;
 import com.qlangtech.tis.plugin.ds.DataType.TypeVisitor;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import com.qlangtech.tis.plugin.ds.RunningContext;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -120,7 +121,11 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else if (val instanceof BigInteger) {
                                                     return new LongColumn((BigInteger) (val));
                                                 } else {
-                                                    return new LongColumn(String.valueOf(val));
+                                                    String v = String.valueOf(val);
+                                                    if (StringUtils.isBlank(v)) {
+                                                        return null;
+                                                    }
+                                                    return new LongColumn(v);
                                                 }
                                             }
 
@@ -149,7 +154,11 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else if (val instanceof BigInteger) {
                                                     return new DoubleColumn((BigInteger) val);
                                                 } else {
-                                                    return new DoubleColumn(String.valueOf(val));
+                                                    final String v = String.valueOf(val);
+                                                    if (StringUtils.isBlank(v)) {
+                                                        return null;
+                                                    }
+                                                    return new DoubleColumn(v);
                                                 }
                                             }
 
@@ -203,7 +212,11 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else if (val instanceof Boolean) {
                                                     return new BoolColumn((Boolean) val);
                                                 } else {
-                                                    return new BoolColumn(String.valueOf(val));
+                                                    final String v = String.valueOf(val);
+                                                    if (StringUtils.isBlank(v)) {
+                                                        return null;
+                                                    }
+                                                    return new BoolColumn(v);
                                                 }
                                             }
 
@@ -234,7 +247,11 @@ public class DataXCol2Index implements ICol2Index {
                                         return new ColumnBiFunction(type, idx.getAndIncrement()) {
                                             @Override
                                             public Column toColumn(Object val) {
-                                                return new StringColumn(String.valueOf(val));
+                                                String v = String.valueOf(val);
+                                                if (StringUtils.isBlank(v)) {
+                                                    return null;
+                                                }
+                                                return new StringColumn(v);
                                             }
 
                                             @Override
