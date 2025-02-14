@@ -5,8 +5,13 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.util.DataXCol2Index;
 import com.alibaba.fastjson.JSONObject;
 
+import com.qlangtech.tis.plugin.ds.DataType;
+import com.qlangtech.tis.plugin.ds.IColMetaGetter;
+import com.qlangtech.tis.plugin.ds.JDBCTypes;
+import com.qlangtech.tis.plugin.ds.RunningContext;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,8 +23,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class StreamReader extends Reader {
 
@@ -201,6 +209,8 @@ public class StreamReader extends Reader {
 
         private boolean haveMixupFunction;
 
+        DataXCol2Index col2Index = null;
+        List<ColumnCreator> colsCreator;
 
         @Override
         public void init() {
@@ -212,6 +222,29 @@ public class StreamReader extends Reader {
                     .getLong(Key.SLICE_RECORD_COUNT);
             this.haveMixupFunction = this.readerSliceConfig.getBool(
                     Constant.HAVE_MIXUP_FUNCTION, false);
+            final AtomicInteger colIndex = new AtomicInteger();
+            this.colsCreator = columns.stream().map((col) -> {
+                try {
+                    Configuration eachColumnConfig = Configuration.from(col);
+                    return buildOneColumn(colIndex, eachColumnConfig);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }).collect(Collectors.toUnmodifiableList());
+
+
+            this.col2Index = DataXCol2Index.getCol2Index(this.containerContext.getTransformerBuildCfg()
+                    , new RunningContext() {
+                        @Override
+                        public String getDbName() {
+                            return StringUtils.EMPTY;
+                        }
+
+                        @Override
+                        public String getTable() {
+                            return StringUtils.EMPTY;
+                        }
+                    }, colsCreator.stream().map((cc) -> cc.getMeta()).collect(Collectors.toUnmodifiableList()));
         }
 
         @Override
@@ -220,10 +253,10 @@ public class StreamReader extends Reader {
 
         @Override
         public void startRead(RecordSender recordSender) {
-            Record oneRecord = buildOneRecord(recordSender, this.columns);
+            Record oneRecord = buildOneRecord(recordSender);
             while (this.sliceRecordCount > 0) {
                 if (this.haveMixupFunction) {
-                    oneRecord = buildOneRecord(recordSender, this.columns);
+                    oneRecord = buildOneRecord(recordSender);
                 }
                 recordSender.sendToWriter(oneRecord);
                 this.sliceRecordCount--;
@@ -238,67 +271,111 @@ public class StreamReader extends Reader {
         public void destroy() {
         }
 
-        private Column buildOneColumn(Configuration eachColumnConfig) throws Exception {
+        private ColumnCreator buildOneColumn(AtomicInteger colIndex, Configuration eachColumnConfig) throws Exception {
             String columnValue = eachColumnConfig
                     .getString(Constant.VALUE);
             Type columnType = Type.valueOf(eachColumnConfig.getString(
                     Constant.TYPE).toUpperCase());
             String columnMixup = eachColumnConfig.getString(Constant.RANDOM);
-            long param1Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM1, 0L);
-            long param2Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM2, 1L);
+            final long param1Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM1, 0L);
+            final long param2Int = eachColumnConfig.getLong(Constant.MIXUP_FUNCTION_PARAM2, 1L);
             boolean isColumnMixup = StringUtils.isNotBlank(columnMixup);
+
 
             switch (columnType) {
                 case STRING:
-                    if (isColumnMixup) {
-                        return new StringColumn(RandomStringUtils.randomAlphanumeric((int) RandomUtils.nextLong(param1Int, param2Int + 1)));
-                    } else {
-                        return new StringColumn(columnValue);
-                    }
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.VARCHAR) {
+                        @Override
+                        Column create() {
+                            if (isColumnMixup) {
+                                return new StringColumn(RandomStringUtils.randomAlphanumeric((int) RandomUtils.nextLong(param1Int, param2Int + 1)));
+                            } else {
+                                return new StringColumn(columnValue);
+                            }
+                        }
+                    };
+
                 case LONG:
-                    if (isColumnMixup) {
-                        return new LongColumn(RandomUtils.nextLong(param1Int, param2Int + 1));
-                    } else {
-                        return new LongColumn(columnValue);
-                    }
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.BIGINT) {
+                        @Override
+                        Column create() {
+                            if (isColumnMixup) {
+                                return new LongColumn(RandomUtils.nextLong(param1Int, param2Int + 1));
+                            } else {
+                                return new LongColumn(columnValue);
+                            }
+                        }
+                    };
+
                 case DOUBLE:
-                    if (isColumnMixup) {
-                        return new DoubleColumn(RandomUtils.nextDouble(param1Int, param2Int + 1));
-                    } else {
-                        return new DoubleColumn(columnValue);
-                    }
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.DOUBLE) {
+                        @Override
+                        Column create() {
+                            if (isColumnMixup) {
+                                return new DoubleColumn(RandomUtils.nextDouble(param1Int, param2Int + 1));
+                            } else {
+                                return new DoubleColumn(columnValue);
+                            }
+                        }
+                    };
                 case DATE:
-                    SimpleDateFormat format = new SimpleDateFormat(
-                            eachColumnConfig.getString(Constant.DATE_FORMAT_MARK, Constant.DEFAULT_DATE_FORMAT));
-                    if (isColumnMixup) {
-                        return new DateColumn(new Date(RandomUtils.nextLong(param1Int, param2Int + 1)));
-                    } else {
-                        return new DateColumn(format.parse(columnValue));
-                    }
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.DATE) {
+                        @Override
+                        Column create() {
+                            try {
+                                SimpleDateFormat format = new SimpleDateFormat(
+                                        eachColumnConfig.getString(Constant.DATE_FORMAT_MARK, Constant.DEFAULT_DATE_FORMAT));
+                                if (isColumnMixup) {
+                                    return new DateColumn(new Date(RandomUtils.nextLong(param1Int, param2Int + 1)));
+                                } else {
+                                    return new DateColumn(format.parse(columnValue));
+                                }
+                            } catch (ParseException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    };
                 case BOOL:
-                    if (isColumnMixup) {
-                        // warn: no concern -10 etc..., how about (0, 0)(0, 1)(1,2)
-                        if (param1Int == param2Int) {
-                            param1Int = 0;
-                            param2Int = 1;
+
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.BOOLEAN) {
+                        @Override
+                        Column create() {
+                            if (isColumnMixup) {
+                                // warn: no concern -10 etc..., how about (0, 0)(0, 1)(1,2)
+                                if (param1Int == param2Int) {
+//                                    param1Int = 0;
+//                                    param2Int = 1;
+                                    throw new IllegalStateException("param1Int:" + param1Int + ",param2Int:" + param2Int + " can not be equal");
+                                }
+                                if (param1Int == 0) {
+                                    return new BoolColumn(true);
+                                } else if (param2Int == 0) {
+                                    return new BoolColumn(false);
+                                } else {
+                                    long randomInt = RandomUtils.nextLong(0, param1Int + param2Int + 1);
+                                    return new BoolColumn(randomInt <= param1Int ? false : true);
+                                }
+                            } else {
+                                return new BoolColumn("true".equalsIgnoreCase(columnValue) ? true : false);
+                            }
                         }
-                        if (param1Int == 0) {
-                            return new BoolColumn(true);
-                        } else if (param2Int == 0) {
-                            return new BoolColumn(false);
-                        } else {
-                            long randomInt = RandomUtils.nextLong(0, param1Int + param2Int + 1);
-                            return new BoolColumn(randomInt <= param1Int ? false : true);
-                        }
-                    } else {
-                        return new BoolColumn("true".equalsIgnoreCase(columnValue) ? true : false);
-                    }
+                    };
+
+
                 case BYTES:
-                    if (isColumnMixup) {
-                        return new BytesColumn(RandomStringUtils.randomAlphanumeric((int) RandomUtils.nextLong(param1Int, param2Int + 1)).getBytes());
-                    } else {
-                        return new BytesColumn(columnValue.getBytes());
-                    }
+
+                    return new ColumnCreator(colIndex.getAndIncrement(), JDBCTypes.BLOB) {
+                        @Override
+                        Column create() {
+                            if (isColumnMixup) {
+                                return new BytesColumn(RandomStringUtils.randomAlphanumeric((int) RandomUtils.nextLong(param1Int, param2Int + 1)).getBytes());
+                            } else {
+                                return new BytesColumn(columnValue.getBytes());
+                            }
+                        }
+                    };
+
+
                 default:
                     // in fact,never to be here
                     throw new Exception(String.format("不支持类型[%s]",
@@ -306,8 +383,24 @@ public class StreamReader extends Reader {
             }
         }
 
-        private Record buildOneRecord(RecordSender recordSender,
-                                      List<String> columns) {
+        static abstract class ColumnCreator {
+            private final DataType type;
+            private final Integer colIdx;
+
+            public ColumnCreator(int colIdx, JDBCTypes jdbcType) {
+                this.type = DataType.getType(jdbcType);
+                this.colIdx = colIdx;
+            }
+
+            abstract Column create();
+
+            final IColMetaGetter getMeta() {
+                return IColMetaGetter.create("column" + colIdx, type);
+            }
+        }
+
+
+        private Record buildOneRecord(RecordSender recordSender) {
             if (null == recordSender) {
                 throw new IllegalArgumentException(
                         "参数[recordSender]不能为空.");
@@ -318,11 +411,13 @@ public class StreamReader extends Reader {
                         "参数[column]不能为空.");
             }
 
-            Record record = recordSender.createRecord(null);
+
+            Record record = recordSender.createRecord(col2Index);
             try {
-                for (String eachColumn : columns) {
-                    Configuration eachColumnConfig = Configuration.from(eachColumn);
-                    record.addColumn(this.buildOneColumn(eachColumnConfig));
+                for (ColumnCreator eachColumn : colsCreator) {
+//                    Configuration eachColumnConfig = Configuration.from(eachColumn);
+//                    record.addColumn(this.buildOneColumn(eachColumnConfig));
+                    record.addColumn(eachColumn.create());
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(StreamReaderErrorCode.ILLEGAL_VALUE,

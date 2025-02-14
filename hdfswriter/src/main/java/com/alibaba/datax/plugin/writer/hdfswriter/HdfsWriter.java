@@ -65,7 +65,8 @@ public class HdfsWriter extends Writer {
             if (!fileType.equalsIgnoreCase("ORC")
                     && !fileType.equalsIgnoreCase("TEXT")
                     && !fileType.equalsIgnoreCase("CSV")
-                    && !fileType.equalsIgnoreCase("AVRO")) {
+                    && !fileType.equalsIgnoreCase("AVRO")
+                    && !fileType.equalsIgnoreCase("PARQUET")) {
                 String message = "HdfsWriter插件目前只支持ORC和TEXT两种格式的文件,请将filetype选项的值配置为ORC或者TEXT";
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE, message + ",filetype:" + fileType);
             }
