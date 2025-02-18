@@ -123,7 +123,7 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else {
                                                     String v = String.valueOf(val);
                                                     if (StringUtils.isBlank(v)) {
-                                                        return null;
+                                                        return Column.NULL;
                                                     }
                                                     return new LongColumn(v);
                                                 }
@@ -156,7 +156,7 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else {
                                                     final String v = String.valueOf(val);
                                                     if (StringUtils.isBlank(v)) {
-                                                        return null;
+                                                        return Column.NULL;
                                                     }
                                                     return new DoubleColumn(v);
                                                 }
@@ -214,7 +214,7 @@ public class DataXCol2Index implements ICol2Index {
                                                 } else {
                                                     final String v = String.valueOf(val);
                                                     if (StringUtils.isBlank(v)) {
-                                                        return null;
+                                                        return Column.NULL;
                                                     }
                                                     return new BoolColumn(v);
                                                 }
@@ -249,7 +249,7 @@ public class DataXCol2Index implements ICol2Index {
                                             public Column toColumn(Object val) {
                                                 String v = String.valueOf(val);
                                                 if (StringUtils.isBlank(v)) {
-                                                    return null;
+                                                    return Column.NULL;
                                                 }
                                                 return new StringColumn(v);
                                             }

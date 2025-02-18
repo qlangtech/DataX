@@ -120,6 +120,9 @@ public class DefaultRecord implements Record {
 
     @Override
     public void setColumn(int i, final Column column) {
+        if (column == null) {
+            throw new IllegalArgumentException("param column can not be null");
+        }
         if (i < 0) {
             throw DataXException.asDataXException(FrameworkErrorCode.ARGUMENT_ERROR,
                     "不能给index小于0的column设置值");
@@ -180,7 +183,6 @@ public class DefaultRecord implements Record {
         //内存的占用是column对象的头 再加实际大小
         memorySize = memorySize + ClassSize.ColumnHead + column.getByteSize();
     }
-
 
 
     private void expandCapacity(int totalSize) {

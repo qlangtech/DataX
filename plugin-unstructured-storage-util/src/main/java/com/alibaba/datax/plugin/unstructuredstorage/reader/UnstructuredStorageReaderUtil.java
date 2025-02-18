@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -160,10 +161,12 @@ public class UnstructuredStorageReaderUtil {
         Record record = recordSender.createRecord(col2Index);
         //  Column columnGenerated = null;
         String val = null;
+        Column col = null;
         for (ColumnEntry colMeta : columnConfigs) {
             try {
                 val = sourceLine[colMeta.getIndex()];
-                record.addColumn(colMeta.getCType().apply(val));
+                col = colMeta.getCType().apply(val);
+                record.addColumn(col);
             } catch (Exception e) {
                 throw new RuntimeException("col:" + colMeta.getColName() + ",val:'" + val + "'", e);
             }
