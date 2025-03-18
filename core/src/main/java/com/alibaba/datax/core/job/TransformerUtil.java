@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.qlangtech.tis.datax.impl.DataxReader;
 import com.qlangtech.tis.lang.TisException;
+import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
@@ -94,7 +95,7 @@ public class TransformerUtil {
         TransformerExecution texec = null;
         IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName());
         Optional<RecordTransformerRules> transformersOpt = RecordTransformerRules.loadTransformerRules(
-                pluginContext, tabRelevantTransformer);
+                pluginContext, StoreResourceType.DataApp, containerContext.getCollectionName(), tabRelevantTransformer);
         RecordTransformerRules transformers = null;
         if (transformersOpt == null
                 || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:" + tabRelevantTransformer + " relevant transformersOpt must be present"))) == null
