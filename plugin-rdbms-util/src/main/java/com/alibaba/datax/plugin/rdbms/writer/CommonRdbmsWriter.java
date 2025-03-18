@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.writer;
 
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DirtyRecordCreator;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -14,10 +13,8 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.*;
 import com.qlangtech.tis.plugin.ds.ColumnMetaData;
-import com.qlangtech.tis.plugin.ds.DataSourceMeta;
 import com.qlangtech.tis.plugin.ds.IDataSourceFactoryGetter;
 import com.qlangtech.tis.plugin.ds.JDBCConnection;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -26,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,7 +112,7 @@ public class CommonRdbmsWriter {
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 originalConfig.set(Key.JDBC_URL, jdbcUrl);
 
-                SelectTable table = SelectTable.create(originalConfig,
+                SelectTable table = SelectTableUtils.create(originalConfig,
                         this.dataSourceFactoryGetter.getDBReservedKeys());
 
                 // String table = connConf.getList(Key.TABLE, String.class).get(0);
@@ -254,7 +250,7 @@ public class CommonRdbmsWriter {
             }
             this.dataSourceFactoryGetter =
                     IDataSourceFactoryGetter.getWriterDataSourceFactoryGetter(writerSliceConfig, this.containerContext);
-            this.table = SelectTable.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
+            this.table = SelectTableUtils.createInTask(writerSliceConfig, this.dataSourceFactoryGetter.getDBReservedKeys());
 
 
 //            this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
