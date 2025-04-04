@@ -557,7 +557,7 @@ public final class DBUtil {
     private static List<String> getTableColums(IDataSourceFactoryGetter dataSourceFactoryGetter, boolean inSink, SelectTable tableName) {
         try {
             List<ColumnMetaData> tabMeta = dataSourceFactoryGetter
-                    .getDataSourceFactory().getTableMetadata(inSink, EntityName.parse(tableName.getUnescapeTabName()));
+                    .getDataSourceFactory().getTableMetadata(inSink, null, EntityName.parse(tableName.getUnescapeTabName()));
             return tabMeta.stream().map((c) -> c.getName()).collect(Collectors.toList());
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
@@ -624,7 +624,7 @@ public final class DBUtil {
             EntityName table = EntityName.parse(tableName.getUnescapeTabName());
             List<ColumnMetaData> tabCols = connection.isPresent()
                     ? dsGetter.getDataSourceFactory().getTableMetadata((connection.get()), inSink, table)
-                    : dsGetter.getDataSourceFactory().getTableMetadata(inSink, table);
+                    : dsGetter.getDataSourceFactory().getTableMetadata(inSink, null, table);
             colMapper = tabCols.stream().collect(Collectors.toMap((c) -> c.getName(), (c) -> c));
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);

@@ -41,47 +41,6 @@ public class TransformerUtil {
     private static final Logger LOG = LoggerFactory.getLogger(TransformerUtil.class);
 
 
-//    private ITransformerBuildInfo createTransformerBuildInfo(IPluginContext pluginContext, String tableNames) {
-//        DataxReader dataxReader = Objects.requireNonNull(DataxReader.load(pluginContext, pluginContext.getCollectionName())
-//                , "dataX:" + pluginContext.getCollectionName() + " relevant DataXReader can not be null");
-//
-//        RecordTransformerRules transformers = RecordTransformerRules.loadTransformerRules(
-//                pluginContext, tableName);
-//        if (CollectionUtils.isEmpty(transformers.rules)) {
-//            throw new IllegalStateException("transformer:" + tableName + " can not be empty");
-//        }
-//
-//        return new ITransformerBuildInfo() {
-//            OverwriteColsWithContextParams overwriteColsWithContextParams;
-//
-//            @Override
-//            public boolean containContextParams() {
-//                return this.overwriteColsWithContextParams != null
-//                        && CollectionUtils.isNotEmpty(overwriteColsWithContextParams.getContextParams());
-//            }
-//
-//            @Override
-//            public Map<String, Object> contextParamVals(RunningContext runningContext) {
-//                if (!containContextParams()) {
-//                    throw new IllegalStateException("must containContextParams");
-//                }
-//                Map<String, Object> contextParamVals = Maps.newHashMap();
-//                List<ContextParamConfig> contextParms = overwriteColsWithContextParams.getContextParams();
-//                for (ContextParamConfig contextParam : contextParms) {
-//                    contextParamVals.put(contextParam.getKeyName(), contextParam.valGetter().apply(runningContext));
-//                }
-//                return contextParamVals;
-//            }
-//
-//            @Override
-//            public <T extends IColMetaGetter> List<IColMetaGetter> overwriteCols(List<T> sourceCols) {
-//                overwriteColsWithContextParams = transformers.overwriteCols(sourceCols).appendSourceContextParams(dataxReader);
-//                return overwriteColsWithContextParams.getCols();
-//            }
-//        };
-//    }
-
-
     static TransformerBuildInfo buildTransformerInfo(IJobContainerContext containerContext, Configuration taskConfig) {
 
         final String tabRelevantTransformer = taskConfig.getString(TransformerConstant.JOB_TRANSFORMER_NAME);
