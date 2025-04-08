@@ -71,7 +71,8 @@ public class TransformerUtil {
         }
         List<String> fromPlugnKeys = transformers.relevantColKeys();
         if (!CollectionUtils.isEqualCollection(relevantKeys, fromPlugnKeys)) {
-            throw TisException.create("pipeline:" + pluginContext.getCollectionName() + "table:" + tabRelevantTransformer + ",relevant keys from dataX config:" + String.join(",", relevantKeys)
+            throw TisException.create("pipeline:" + pluginContext.getCollectionName()
+                    + "table:" + tabRelevantTransformer + ",relevant keys from dataX config:" + String.join(",", relevantKeys)
                     + "\n is not equal with key build from plugin:" + String.join(",", fromPlugnKeys)
                     + "\n Please regenerate the DataX Config Files then reTrigger pipeline again!!!");
         }
