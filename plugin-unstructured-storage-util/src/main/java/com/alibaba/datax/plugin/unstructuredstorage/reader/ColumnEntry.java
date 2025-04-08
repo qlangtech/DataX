@@ -17,6 +17,23 @@ public class ColumnEntry {
     private Function<String, Column> colValSetter;
     private String colName;
 
+    /**
+     * 虚拟的说明只是一个占位符，实现功能：https://github.com/datavane/tis/issues/433
+     */
+    private final boolean placeholder;
+
+    public ColumnEntry() {
+        this(false);
+    }
+
+    public ColumnEntry(boolean virtual) {
+        this.placeholder = virtual;
+    }
+
+    public boolean isPlaceholder() {
+        return placeholder;
+    }
+
     public String getColName() {
         return colName;
     }

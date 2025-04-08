@@ -566,48 +566,10 @@ public final class DBUtil {
 
     public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, boolean inSink, IDataSourceFactoryGetter conn, SelectTable tableName, String basicMsg) {
         return getTableColums(conn, inSink, tableName);
-//        List<String> columns = new ArrayList<String>();
-//        Statement statement = null;
-//        ResultSet rs = null;
-//        String queryColumnSql = null;
-//        try {
-//            statement = conn.createStatement();
-//            queryColumnSql = String.format("select * from %s where 1=2",
-//                    tableName);
-//            rs = statement.executeQuery(queryColumnSql);
-//            ResultSetMetaData rsMetaData = rs.getMetaData();
-//            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
-//                columns.add(rsMetaData.getColumnName(i + 1));
-//            }
-//
-//        } catch (SQLException e) {
-//            throw RdbmsException.asQueryException(null, e, queryColumnSql, tableName, null);
-//        } finally {
-//            DBUtil.closeDBResources(rs, statement, conn);
-//        }
-//
-//        return columns;
+
     }
 
-    /**
-     * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
-     * //
-     */
-//    public static List<ColumnMetaData> getColumnMetaData(
-//            IDataSourceFactoryGetter dataBaseType, String jdbcUrl, String user,
-//            String pass, String tableName, String column) {
-//        // Connection conn = null;
-//        //  try {
-//        //  conn = getConnection(dataBaseType, jdbcUrl, user, pass);
-//        //try {
-//        return getColumnMetaData(dataBaseType, tableName, column);
-////        } catch (SQLException e) {
-////            throw new RuntimeException(e);
-////        }
-//        // } finally {
-//        //  DBUtil.closeDBResources(null, null, conn);
-//        //}
-//    }
+
     public static List<ColumnMetaData> getColumnMetaData(
             IDataSourceFactoryGetter dsGetter, boolean inSink, SelectTable tableName, SelectCols userConfiguredColumns) {
         return getColumnMetaData(Optional.empty(), inSink, dsGetter, tableName, userConfiguredColumns);
@@ -620,8 +582,9 @@ public final class DBUtil {
             Optional<JDBCConnection> connection, boolean inSink, IDataSourceFactoryGetter dsGetter, SelectTable tableName, SelectCols userConfiguredColumns) {
 
         Map<String, ColumnMetaData> colMapper = null;
+        EntityName table = EntityName.parse(tableName.getUnescapeTabName());
         try {
-            EntityName table = EntityName.parse(tableName.getUnescapeTabName());
+
             List<ColumnMetaData> tabCols = connection.isPresent()
                     ? dsGetter.getDataSourceFactory().getTableMetadata((connection.get()), inSink, table)
                     : dsGetter.getDataSourceFactory().getTableMetadata(inSink, null, table);
@@ -633,67 +596,20 @@ public final class DBUtil {
         List<ColumnMetaData> result = Lists.newArrayList();
         for (String col : userConfiguredColumns) {
             result.add(Objects.requireNonNull(
-                    colMapper.get(col), "col:" + col + " relevant meta can not be null"));
+                    colMapper.get(col), "table:" + table.getFullName() + " for col:" + col + " relevant meta can not be null"));
         }
         return result;
-        // return tabCols.stream().filter((c) -> userConfiguredColumns.containsCol(c.getName())).collect(Collectors.toList());
-        // return tabCols;
-//        Statement statement = null;
-//        ResultSet rs = null;
-//
-//        Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
-//                new ArrayList<String>(), new ArrayList<Integer>(),
-//                new ArrayList<String>());
-//        try {
-//            statement = conn.createStatement();
-//            String queryColumnSql = "select " + column + " from " + tableName
-//                    + " where 1=2";
-//
-//            rs = statement.executeQuery(queryColumnSql);
-//            ResultSetMetaData rsMetaData = rs.getMetaData();
-//            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
-//
-//                columnMetaData.getLeft().add(rsMetaData.getColumnName(i + 1));
-//                columnMetaData.getMiddle().add(rsMetaData.getColumnType(i + 1));
-//                columnMetaData.getRight().add(
-//                        rsMetaData.getColumnTypeName(i + 1));
-//            }
-//            return columnMetaData;
-//
-//        } catch (SQLException e) {
-//            throw DataXException
-//                    .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-//                            String.format("获取表:%s 的字段的元信息时失败. 请联系 DBA 核查该库、表信息.", tableName), e);
-//        } finally {
-//            DBUtil.closeDBResources(rs, statement, null);
-//        }
+
     }
 
-    public static boolean testConnWithoutRetry(IDataSourceFactoryGetter dataBaseType,
-                                               String url, String user, String pass, boolean checkSlave) {
-
-        // try {
+    public static boolean testConnWithoutRetry(
+            IDataSourceFactoryGetter dataBaseType,
+            String url, String user, String pass, boolean checkSlave) {
         try (Connection connection = connect(dataBaseType, url, user, pass)) {
             return (connection != null);
         } catch (SQLException e) {
             throw new RuntimeException(url, e);
         }
-
-//                if (dataBaseType.equals(dataBaseType.MySql) && checkSlave) {
-//                    //dataBaseType.MySql
-//                    boolean connOk = !isSlaveBehind(connection);
-//                    return connOk;
-//                } else {
-        //    return true;
-        //}
-        // }
-//        } catch (Exception e) {
-//            LOG.warn("test connection of [{}] failed, for {}.", url,
-//                    e.getMessage(), e);
-//        } finally {
-//            DBUtil.closeDBResources(null, connection);
-//        }
-//        return false;
     }
 
     public static boolean testConnWithoutRetry(IDataSourceFactoryGetter dataBaseType,
