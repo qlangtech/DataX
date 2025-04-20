@@ -1,5 +1,6 @@
 package com.alibaba.datax.common.plugin;
 
+import com.qlangtech.tis.datax.DataXName;
 import com.qlangtech.tis.datax.IDataxProcessor;
 import com.qlangtech.tis.datax.IDataxReader;
 import com.qlangtech.tis.datax.IDataxWriter;
@@ -19,7 +20,8 @@ public abstract class AbstractJobPlugin extends AbstractPlugin {
     }
 
     protected final IDataxProcessor loadProcessor() {
-        IDataxProcessor processor = DataxProcessor.load(null, this.containerContext.getTISDataXName());
+        DataXName dataXName = this.containerContext.getTISDataXName();
+        IDataxProcessor processor = DataxProcessor.load(null, dataXName.getType(), dataXName.getPipelineName());
         return processor;
     }
 

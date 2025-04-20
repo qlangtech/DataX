@@ -8,15 +8,11 @@ import com.alibaba.datax.core.util.TISComplexTransformer;
 import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.TransformerConstant;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.qlangtech.tis.datax.impl.DataxReader;
+import com.qlangtech.tis.datax.DataXName;
 import com.qlangtech.tis.lang.TisException;
-import com.qlangtech.tis.plugin.StoreResourceType;
 import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
-import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules.OverwriteColsWithContextParams;
-import com.qlangtech.tis.plugin.ds.ContextParamConfig;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import com.qlangtech.tis.plugin.ds.RunningContext;
 import com.qlangtech.tis.util.IPluginContext;
@@ -25,10 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -52,12 +46,14 @@ public class TransformerUtil {
         List<TransformerExecution> result = Lists.newArrayList();
         TransformerInfo transformerInfo = null;
         TransformerExecution texec = null;
-        IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName());
+        DataXName dataXName = containerContext.getCollectionName();
+        IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName().getPipelineName());
         Optional<RecordTransformerRules> transformersOpt = RecordTransformerRules.loadTransformerRules(
-                pluginContext, StoreResourceType.DataApp, containerContext.getCollectionName(), tabRelevantTransformer);
+                pluginContext, dataXName.getType(), dataXName.getPipelineName(), tabRelevantTransformer);
         RecordTransformerRules transformers = null;
         if (transformersOpt == null
-                || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:" + tabRelevantTransformer + " relevant transformersOpt must be present"))) == null
+                || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:"
+                + tabRelevantTransformer + " relevant transformersOpt must be present"))) == null
                 || CollectionUtils.isEmpty(transformers.rules)) {
             throw new IllegalStateException("transformer:" + tabRelevantTransformer + " can not be empty");
         }

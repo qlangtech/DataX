@@ -30,6 +30,7 @@ import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
+import com.qlangtech.tis.datax.DataXName;
 import com.qlangtech.tis.datax.TimeFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -111,7 +112,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     @Override
-    public String getTISDataXName() {
+    public DataXName getTISDataXName() {
         throw new UnsupportedOperationException();
     }
 
@@ -126,8 +127,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     @Override
-    public String getCollectionName() {
-        return this.getDataXName();
+    public DataXName getCollectionName() {
+        return DataXName.createDataXPipeline(this.getDataXName());
     }
 
     @Override
