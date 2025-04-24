@@ -9,10 +9,14 @@ import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.TransformerConstant;
 import com.google.common.collect.Lists;
 import com.qlangtech.tis.datax.DataXName;
+import com.qlangtech.tis.datax.IDataxProcessor;
+import com.qlangtech.tis.datax.IDataxReader;
+import com.qlangtech.tis.datax.impl.DataxProcessor;
 import com.qlangtech.tis.lang.TisException;
 import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformer;
 import com.qlangtech.tis.plugin.datax.transformer.RecordTransformerRules;
+import com.qlangtech.tis.plugin.ds.DefaultTab;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import com.qlangtech.tis.plugin.ds.RunningContext;
 import com.qlangtech.tis.util.IPluginContext;
@@ -36,7 +40,7 @@ public class TransformerUtil {
 
 
     static TransformerBuildInfo buildTransformerInfo(IJobContainerContext containerContext, Configuration taskConfig) {
-
+        // targetTableName
         final String tabRelevantTransformer = taskConfig.getString(TransformerConstant.JOB_TRANSFORMER_NAME);
         // Transformer 生成的出参
         final List<String> relevantKeys = taskConfig.getList(TransformerConstant.JOB_TRANSFORMER_RELEVANT_KEYS, String.class);
@@ -47,9 +51,10 @@ public class TransformerUtil {
         TransformerInfo transformerInfo = null;
         TransformerExecution texec = null;
         DataXName dataXName = containerContext.getCollectionName();
-        IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName().getPipelineName());
+        IPluginContext pluginContext = IPluginContext.namedContext(containerContext.getCollectionName());
+        IDataxProcessor dataxProcessor = DataxProcessor.load(pluginContext, dataXName);
         Optional<RecordTransformerRules> transformersOpt = RecordTransformerRules.loadTransformerRules(
-                pluginContext, dataXName.getType(), dataXName.getPipelineName(), tabRelevantTransformer);
+                pluginContext, dataxProcessor, tabRelevantTransformer);
         RecordTransformerRules transformers = null;
         if (transformersOpt == null
                 || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:"
@@ -73,7 +78,8 @@ public class TransformerUtil {
                     + "\n Please regenerate the DataX Config Files then reTrigger pipeline again!!!");
         }
 
-        final ITransformerBuildInfo transformerCfg = transformers.createTransformerBuildInfo(pluginContext);
+        final ITransformerBuildInfo transformerCfg
+                = transformers.createTransformerBuildInfo(dataxProcessor.getReader(pluginContext, new DefaultTab(tabRelevantTransformer)));
 
         return new TransformerBuildInfo() {
             @Override

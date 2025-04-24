@@ -127,8 +127,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     @Override
-    public DataXName getCollectionName() {
-        return DataXName.createDataXPipeline(this.getDataXName());
+    public final DataXName getCollectionName() {
+        return this.getTISDataXName();
     }
 
     @Override
