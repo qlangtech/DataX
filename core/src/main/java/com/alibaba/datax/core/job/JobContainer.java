@@ -27,6 +27,7 @@ import com.alibaba.datax.core.util.TransformerBuildInfo;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.core.util.container.TransformerConstant;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
@@ -89,11 +90,18 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     private final Map<Class<?>, Object> customizeAttrs = Maps.newHashMap();
 
     private Optional<TransformerBuildInfo> transformerBuildInfo;
+    private Configuration transformerRuleCfg;
 
     public JobContainer(Configuration configuration) {
         super(configuration);
 
         errorLimit = new ErrorRecordChecker(configuration);
+    }
+
+    @Override
+    public String getSourceTableName() {
+        return Objects.requireNonNull(this.transformerRuleCfg, "transformerRuleCfg can not be null")
+                .getString(TransformerConstant.JOB_TRANSFORMER_NAME);
     }
 
     @Override
@@ -348,10 +356,11 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(this.getContainerCommunicator());
 
-        Optional<Configuration> transformerList =
-                Optional.ofNullable(this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER));
+        this.transformerRuleCfg =
+                this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
 
-        this.transformerBuildInfo = transformerList.map((transformerCfg) -> {
+        this.transformerBuildInfo = Optional.of(Objects.requireNonNull(transformerRuleCfg, "transformerRuleCfg can not be null"))
+                .map((transformerCfg) -> {
             return TransformerUtil.buildTransformerInfo(JobContainer.this, transformerCfg);
         });
 

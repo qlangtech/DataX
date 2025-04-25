@@ -44,8 +44,10 @@ public class TransformerUtil {
         final String tabRelevantTransformer = taskConfig.getString(TransformerConstant.JOB_TRANSFORMER_NAME);
         // Transformer 生成的出参
         final List<String> relevantKeys = taskConfig.getList(TransformerConstant.JOB_TRANSFORMER_RELEVANT_KEYS, String.class);
-        if (StringUtils.isEmpty(tabRelevantTransformer)) {
-            throw new IllegalArgumentException("tabRelevantTransformer name can not be null");
+        if (StringUtils.isEmpty(tabRelevantTransformer)
+                || CollectionUtils.isEmpty(relevantKeys)) {
+            // throw new IllegalArgumentException("tabRelevantTransformer name can not be null");
+            return null;
         }
         List<TransformerExecution> result = Lists.newArrayList();
         TransformerInfo transformerInfo = null;
@@ -57,8 +59,8 @@ public class TransformerUtil {
                 pluginContext, dataxProcessor, tabRelevantTransformer);
         RecordTransformerRules transformers = null;
         if (transformersOpt == null
-                || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:"
-                + tabRelevantTransformer + " relevant transformersOpt must be present"))) == null
+                || (transformers = transformersOpt.orElseThrow(() -> new IllegalStateException("tabRelevantTransformer:'"
+                + tabRelevantTransformer + "' relevant transformersOpt must be present"))) == null
                 || CollectionUtils.isEmpty(transformers.rules)) {
             throw new IllegalStateException("transformer:" + tabRelevantTransformer + " can not be empty");
         }
