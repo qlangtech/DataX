@@ -29,5 +29,6 @@ hbase20xsqlreader\
 ,mongodbwriter\
 ,kingbaseesreader\
 ,kingbaseeswriter \
+,paimonwrite \
 -am -fn
 
