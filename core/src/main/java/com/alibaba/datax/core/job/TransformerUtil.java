@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -64,7 +65,7 @@ public class TransformerUtil {
                 || CollectionUtils.isEmpty(transformers.rules)) {
             throw new IllegalStateException("transformer:" + tabRelevantTransformer + " can not be empty");
         }
-
+        RecordTransformerRules transformersFinal = transformers;
         for (RecordTransformer t : transformers.rules) {
             transformerInfo = new TransformerInfo();
             transformerInfo.setTransformer(new TISComplexTransformer(t.getUdf()));
@@ -87,6 +88,11 @@ public class TransformerUtil {
             @Override
             public List<TransformerExecution> getExecutions() {
                 return result;
+            }
+
+            @Override
+            public RecordTransformerRules getTransformersRules() {
+                return Objects.requireNonNull(transformersFinal);
             }
 
             @Override

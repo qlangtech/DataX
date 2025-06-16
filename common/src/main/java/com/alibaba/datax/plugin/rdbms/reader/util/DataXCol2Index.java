@@ -14,6 +14,7 @@ import com.google.common.collect.Maps;
 import com.qlangtech.tis.plugin.datax.transformer.OutputParameter;
 import com.qlangtech.tis.plugin.ds.ContextParamConfig;
 import com.qlangtech.tis.plugin.ds.DataType;
+import com.qlangtech.tis.plugin.ds.DataType.PartialTypeVisitor;
 import com.qlangtech.tis.plugin.ds.DataType.TypeVisitor;
 import com.qlangtech.tis.plugin.ds.IColMetaGetter;
 import com.qlangtech.tis.plugin.ds.RunningContext;
@@ -108,7 +109,7 @@ public class DataXCol2Index implements ICol2Index {
                 .collect(
                         Collectors.toMap((colGetter) -> colGetter.getName(), (colGetter) -> {
                             {
-                                return colGetter.getType().accept(new TypeVisitor<ColumnBiFunction>() {
+                                return colGetter.getType().accept(new PartialTypeVisitor<ColumnBiFunction>() {
                                     @Override
                                     public ColumnBiFunction bigInt(DataType type) {
                                         return new ColumnBiFunction(type, idx.getAndIncrement()) {
