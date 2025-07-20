@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.reader.mongodbreader;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,6 +18,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 
 //import com.mongodb.MongoClient;
+import com.google.common.base.Strings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -27,6 +30,9 @@ import com.qlangtech.tis.plugin.ds.RunningContext;
 import org.apache.commons.lang.StringUtils;
 import org.bson.BsonDocument;
 import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by jianying.wcj on 2015/3/19 0019.
@@ -88,7 +94,7 @@ public class MongoDBReader extends Reader {
 
 
     public static class Task extends Reader.Task {
-
+        private static final Logger logger = LoggerFactory.getLogger(Task.class);
         private Configuration readerSliceConfig;
 
         private MongoClient mongoClient;
@@ -124,16 +130,37 @@ public class MongoDBReader extends Reader {
             MongoCollection<BsonDocument> col = db.getCollection(this.collection, BsonDocument.class);
 
             MongoCursor<BsonDocument> dbCursor = null;
-            Document filter = mongoTable.getCollectionQueryFilter();// new Document();
+            Document queryFilter = mongoTable.getCollectionQueryFilter();// new Document();
+
+
+            Document filter = new Document();
+            if (lowerBound.equals("min")) {
+                if (!upperBound.equals("max")) {
+                    filter.append(KeyConstant.MONGO_PRIMARY_ID
+                            , new Document("$lt", isObjectId ? new ObjectId(upperBound.toString()) : upperBound));
+                }
+            } else if (upperBound.equals("max")) {
+                filter.append(KeyConstant.MONGO_PRIMARY_ID
+                        , new Document("$gte", isObjectId ? new ObjectId(lowerBound.toString()) : lowerBound));
+            } else {
+                filter.append(KeyConstant.MONGO_PRIMARY_ID
+                        , new Document("$gte", isObjectId ? new ObjectId(lowerBound.toString()) : lowerBound)
+                                .append("$lt", isObjectId ? new ObjectId(upperBound.toString()) : upperBound));
+            }
+
+            filter = new Document("$and", Arrays.asList(filter, queryFilter));
 
             dbCursor = col.find(filter).iterator();
             BsonDocument item = null;
             // Record record = null;
             Objects.requireNonNull(this.col2IndexMapper, "col2IndexMapper can not be null");
+            // List<String> ids = new ArrayList<>();
             while (dbCursor.hasNext()) {
                 item = dbCursor.next();
+                //ids.add(String.valueOf(item.getObjectId("_id").getValue()));
                 recordSender.sendToWriter(this.mongoTable.convert2RecordByItem(recordSender.createRecord(this.col2IndexMapper), item));
             }
+            //logger.info(String.join(",", ids));
         }
 
         @Override
@@ -169,6 +196,7 @@ public class MongoDBReader extends Reader {
                 public String getDbName() {
                     return ((IDataSourceFactoryGetter) dataxReader).getDataSourceFactory().getDbConfig().getName();
                 }
+
                 @Override
                 public String getTable() {
                     return collection;
