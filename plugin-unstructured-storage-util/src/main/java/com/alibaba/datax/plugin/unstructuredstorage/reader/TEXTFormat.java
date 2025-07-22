@@ -31,6 +31,9 @@ public class TEXTFormat extends UnstructuredReader {
         try {
             // skipHeader: false 说明header中有内容需要进行读取
             this.header = skipHeader ? null : StringUtils.split(reader.readLine(), fieldDelimiter);
+            if (!skipHeader && colSize < 1) {
+                colSize = this.header.length;
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

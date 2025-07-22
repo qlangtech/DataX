@@ -116,7 +116,7 @@ public class MongoDBWriter extends Writer {
 //              and  { "pv" : { "$gt" : 200 , "$lt" : 3000} , "pid" : { "$ne" : "xxx"}}
 //              or  { "$or" : [ { "age" : { "$gt" : 27}} , { "age" : { "$lt" : 15}}]}
                 } else {
-                    query =  BasicDBObject.parse(json);
+                    query = BasicDBObject.parse(json);
                 }
                 col.deleteMany(query);
             }
@@ -171,16 +171,19 @@ public class MongoDBWriter extends Writer {
                     }
                     if (Column.Type.INT.name().equalsIgnoreCase(type)) {
                         //int是特殊类型, 其他类型按照保存时Column的类型进行处理
-                        try {
+//                        try {
+//                            data.put(columnMeta.getJSONObject(i).getString(MongoKeyConstant.COLUMN_NAME),
+//                                    Integer.parseInt(
+//                                            String.valueOf(record.getColumn(i).getRawData())));
+
                             data.put(columnMeta.getJSONObject(i).getString(MongoKeyConstant.COLUMN_NAME),
-                                    Integer.parseInt(
-                                            String.valueOf(record.getColumn(i).getRawData())));
-                        } catch (Exception e) {
-                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
-                        }
+                                    record.getColumn(i).asLong().intValue());
+//                        } catch (Exception e) {
+//                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
+//                        }
                     } else if (record.getColumn(i) instanceof StringColumn) {
                         //处理ObjectId和数组类型
-                        try {
+                        //try {
                             if (MongoKeyConstant.isObjectIdType(type.toLowerCase())) {
                                 data.put(columnMeta.getJSONObject(i).getString(MongoKeyConstant.COLUMN_NAME),
                                         new ObjectId(record.getColumn(i).asString()));
@@ -237,9 +240,9 @@ public class MongoDBWriter extends Writer {
                             } else {
                                 data.put(columnMeta.getJSONObject(i).getString(MongoKeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                             }
-                        } catch (Exception e) {
-                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
-                        }
+//                        } catch (Exception e) {
+//                            super.getTaskPluginCollector().collectDirtyRecord(DirtyRecord.create(record), e);
+//                        }
                     } else if (record.getColumn(i) instanceof LongColumn) {
 
                         if (Column.Type.LONG.name().equalsIgnoreCase(type)) {
