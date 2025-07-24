@@ -183,7 +183,7 @@ public class OdpsWriter extends Writer {
                     LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
                             accessKey);
                 }
-                LOG.info("accessId:[{}] .", accessId);
+               // LOG.info("accessId:[{}] .", accessId);
             }
         }
 
@@ -258,10 +258,10 @@ public class OdpsWriter extends Writer {
                 accessId = this.originalConfig.getString(Key.ACCESS_ID);
                 accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
                 if (IS_DEBUG) {
-                    LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
-                            accessKey);
+//                    LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
+//                            accessKey);
                 }
-                LOG.info("accessId:[{}] .", accessId);
+               // LOG.info("accessId:[{}] .", accessId);
             }
 
             // init odps config

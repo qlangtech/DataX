@@ -26,7 +26,6 @@ public class TEXTFormat extends UnstructuredReader {
     public TEXTFormat(BufferedReader reader, boolean skipHeader, int colSize, Character fieldDelimiter) {
         this.reader = reader;
         this.colSize = colSize;
-        this.rowVals = new String[colSize];
         this.fieldDelimiter = fieldDelimiter.charValue();
         try {
             // skipHeader: false 说明header中有内容需要进行读取
@@ -42,6 +41,7 @@ public class TEXTFormat extends UnstructuredReader {
                 throw new IllegalStateException("colSize:" + colSize + " is not equal header length:" + this.header.length);
             }
         }
+        this.rowVals = new String[colSize];
     }
 
     public String[] getHeader() {

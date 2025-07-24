@@ -268,7 +268,7 @@ public class OTSStreamReaderConfig {
 
         LOG.info("endpoint: {}, accessId: {}, accessKey: {}, instanceName: {}, dataTableName: {}, statusTableName: {}," +
                 " isExportSequenceInfo: {}, startTimestampMillis: {}, endTimestampMillis:{}, maxRetries:{}.", config.getEndpoint(),
-                config.getAccessId(), config.getAccessKey(), config.getInstanceName(), config.getDataTable(),
+                config.getAccessId(), "****", config.getInstanceName(), config.getDataTable(),
                 config.getStatusTable(), config.isExportSequenceInfo(), config.getStartTimestampMillis(),
                 config.getEndTimestampMillis(), config.getMaxRetries());
 
