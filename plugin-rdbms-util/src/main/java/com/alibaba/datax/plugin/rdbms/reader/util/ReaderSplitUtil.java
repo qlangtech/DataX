@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.constant.CommonConstant;
+import com.alibaba.datax.common.plugin.DataXSelectTable;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.IJobContainerContext;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
@@ -34,7 +35,8 @@ public final class ReaderSplitUtil {
 
         String column = originalSliceConfig.getString(Key.COLUMN);
         List<String> cols = originalSliceConfig.getList(Key.COLUMN_LIST, String.class);
-        String where = originalSliceConfig.getString(Key.WHERE, null);
+        final String where = containerContext.getAttr(DataXSelectTable.class)
+                .getWhere().orElse(null); //originalSliceConfig.getString(Key.WHERE, null);
 
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 

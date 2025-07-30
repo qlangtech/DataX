@@ -35,8 +35,8 @@ public class SqlServerReader extends Reader {
                     com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     fetchSize);
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-                    DATABASE_TYPE, this.containerContext);
+            this.commonRdbmsReaderJob = CommonRdbmsReader.Job.create(
+                    DATABASE_TYPE, this, this.containerContext);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 

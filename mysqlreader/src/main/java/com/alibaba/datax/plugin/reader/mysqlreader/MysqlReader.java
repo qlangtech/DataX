@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.plugin.DataXSelectTable;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
@@ -35,7 +36,11 @@ public class MysqlReader extends Reader {
                 this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             }
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE, containerContext);
+
+//            containerContext.setAttr(DataXSelectTable.class
+//                    , this.loadSelectTable(containerContext.getSourceTableName()));
+            // ISelectedTab
+            this.commonRdbmsReaderJob = CommonRdbmsReader.Job.create(DATABASE_TYPE, this, containerContext);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 

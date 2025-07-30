@@ -31,7 +31,7 @@ public class OracleReader extends Reader {
 
             //dealFetchSize(this.originalConfig);
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE, this.containerContext);
+            this.commonRdbmsReaderJob = CommonRdbmsReader.Job.create(DATABASE_TYPE, this, this.containerContext);
             this.commonRdbmsReaderJob.init(this.originalConfig);
 
             // 注意：要在 this.commonRdbmsReaderJob.init(this.originalConfig); 之后执行，这样可以直接快速判断是否是querySql 模式

@@ -8,6 +8,8 @@ import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
+import com.alibaba.datax.common.plugin.DataXSelectTable;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
@@ -70,7 +72,13 @@ public class CommonRdbmsReader {
         public IDataSourceFactoryGetter dataSourceFactoryGetter;
         private final IJobContainerContext containerContext;
 
-        public Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
+        public static Job create(DataBaseType dataBaseType, AbstractJobPlugin plugin, IJobContainerContext containerContext) {
+            containerContext.setAttr(DataXSelectTable.class
+                    , plugin.loadSelectTable(containerContext.getSourceTableName()));
+            return new Job(dataBaseType, containerContext);
+        }
+
+        private Job(DataBaseType dataBaseType, IJobContainerContext containerContext) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
             this.containerContext = Objects.requireNonNull(containerContext, "containerContext can not be null");

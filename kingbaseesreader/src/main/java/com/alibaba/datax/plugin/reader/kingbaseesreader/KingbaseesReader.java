@@ -28,7 +28,7 @@ public class KingbaseesReader extends Reader {
 //            }
 //            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE, this.containerContext);
+            this.commonRdbmsReaderMaster = CommonRdbmsReader.Job.create(DATABASE_TYPE, this, this.containerContext);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
 
