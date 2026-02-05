@@ -81,7 +81,7 @@ public class PerfTrace {
         //                }
         //            }
         // }
-        return PerfTrace.getInstance(false, -1111, -1111, 0, true);
+        return PerfTrace.getInstance(false, -1111, -1111, 0, false);
         //   return Objects.requireNonNull( instance , "instance can not be null");
     }
 
