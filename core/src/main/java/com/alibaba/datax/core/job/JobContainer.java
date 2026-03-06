@@ -101,8 +101,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
     @Override
     public String getSourceTableName() {
-        return Objects.requireNonNull(this.transformerRuleCfg, "transformerRuleCfg can not be null")
-                .getString(TransformerConstant.JOB_TRANSFORMER_NAME);
+        return Objects.requireNonNull(this.transformerRuleCfg, "transformerRuleCfg can not be null").getString(TransformerConstant.JOB_TRANSFORMER_NAME);
     }
 
     @Override
@@ -125,10 +124,10 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Integer getTaskId() {
-        throw new UnsupportedOperationException();
-    }
+    //    @Override
+    //    public Integer getTaskId() {
+    //        throw new UnsupportedOperationException();
+    //    }
 
     @Override
     public String getJobName() {
@@ -141,7 +140,7 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     }
 
     @Override
-    public String getDataXName() {
+    public DataXName getDataXName() {
         throw new UnsupportedOperationException();
     }
 
@@ -157,7 +156,9 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
     @Override
     public <T> T getAttr(Class<T> key) {
-        return (T) Objects.requireNonNull(customizeAttrs.get(key), "key:" + key + " relevant attribute can not be null");
+        return (T) Objects.requireNonNull( //
+                customizeAttrs.get(key) //
+                , "key:" + key + " relevant attribute can not be null");
     }
 
     @Override
@@ -357,11 +358,10 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(this.getContainerCommunicator());
 
-        this.transformerRuleCfg =
-                this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
+        this.transformerRuleCfg = this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
 
-        this.transformerBuildInfo = Optional.of(Objects.requireNonNull(transformerRuleCfg, "transformerRuleCfg can not be null"))
-                .map((transformerCfg) -> {
+        this.transformerBuildInfo = Optional.of(Objects.requireNonNull(transformerRuleCfg, "transformerRuleCfg can "
+                + "not be null")).map((transformerCfg) -> {
             return TransformerUtil.buildTransformerInfo(JobContainer.this, transformerCfg);
         });
 
@@ -788,9 +788,9 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
             taskConfig.set(CoreConstant.JOB_WRITER_NAME, this.writerPluginName);
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER, writerTasksConfigs.get(i));
 
-//            if (transformerConfigs != null && transformerConfigs.size() > 0) {
-//
-//            }
+            //            if (transformerConfigs != null && transformerConfigs.size() > 0) {
+            //
+            //            }
             transformerConfigs.ifPresent((transformerCfg) -> {
                 taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerCfg);
             });
@@ -831,8 +831,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
     private List<Configuration> distributeTasksToTaskGroup(int averTaskPerChannel, int channelNumber,
                                                            int channelsPerTaskGroup) {
         Validate.isTrue(averTaskPerChannel > 0 && channelNumber > 0 && channelsPerTaskGroup > 0,
-                "每个channel的平均task" + "数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel"
-                        + "数[channelsPerTaskGroup]都应该为正数");
+                "每个channel的平均task" + "数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel" +
+                        "数[channelsPerTaskGroup]都应该为正数");
         List<Configuration> taskConfigs = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
         int taskGroupNumber = channelNumber / channelsPerTaskGroup;
         int leftChannelNumber = channelNumber % channelsPerTaskGroup;
