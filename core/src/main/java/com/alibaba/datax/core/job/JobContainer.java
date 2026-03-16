@@ -124,10 +124,10 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
         throw new UnsupportedOperationException();
     }
 
-    //    @Override
-    //    public Integer getTaskId() {
-    //        throw new UnsupportedOperationException();
-    //    }
+    @Override
+    public Integer getTaskId() {
+        return (int) this.jobId;
+    }
 
     @Override
     public String getJobName() {
@@ -360,8 +360,8 @@ public class JobContainer extends AbstractContainer implements IJobContainerCont
 
         this.transformerRuleCfg = this.configuration.getConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
 
-        this.transformerBuildInfo = Optional.of(Objects.requireNonNull(transformerRuleCfg, "transformerRuleCfg can "
-                + "not be null")).map((transformerCfg) -> {
+        this.transformerBuildInfo = Optional.of(Objects.requireNonNull(transformerRuleCfg,
+                "transformerRuleCfg can " + "not be null")).map((transformerCfg) -> {
             return TransformerUtil.buildTransformerInfo(JobContainer.this, transformerCfg);
         });
 
